@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Tally — by Harulabs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --matcha:#4a7c59;
+  --matcha-light:#e8f0e9;
+  --matcha-mid:#7fa98a;
+  --cream:#faf7f2;
+  --cream-dark:#f0ebe0;
+  --wood:#8b5e3c;
+  --wood-light:#f5ede3;
+  --ink:#1c1a16;
+  --ink-mid:#5a5550;
+  --ink-soft:#9a938a;
+  --vermillion:#c0392b;
+  --vermillion-light:#fcecea;
+  --border:#e0d8cc;
+  --input-bg:#fffdf9;
+  --white:#ffffff;
+}
+html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;color:var(--ink);}
+.screen{display:none;flex-direction:column;height:100vh;overflow-y:auto;}
+.screen.active{display:flex;}
+.topbar{display:flex;align-items:center;gap:10px;padding:1rem 1.1rem 0.85rem;background:var(--cream);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;flex-shrink:0;}
+.topbar-title{flex:1;font-size:15px;font-weight:500;color:var(--ink);}
+.back-btn{width:32px;height:32px;border-radius:8px;background:var(--cream-dark);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--ink-mid);font-size:18px;cursor:pointer;flex-shrink:0;}
+.outlet-chip{font-size:11px;background:var(--cream-dark);border:1px solid var(--border);border-radius:20px;padding:4px 10px;color:var(--ink-mid);cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;}
+.pad{padding:1rem 1.1rem;flex:1;}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:0.85rem;}
+.card-head{font-size:11px;color:var(--ink-soft);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:0.85rem;display:flex;align-items:center;gap:6px;}
+.form-lbl{font-size:12px;color:var(--ink-mid);margin-bottom:5px;display:block;}
+.form-row{margin-bottom:0.9rem;}
+.form-row-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:0.9rem;}
+.inp{width:100%;padding:10px 12px;font-size:14px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--ink);outline:none;-webkit-appearance:none;appearance:none;color-scheme:light;}
+.inp:focus{border-color:var(--matcha-mid);}
+.inp::placeholder{color:var(--ink-soft);}
+.ch-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.ch-lbl{font-size:12px;color:var(--ink-mid);width:86px;flex-shrink:0;}
+.ch-inp{flex:1;padding:9px 12px;font-size:14px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--ink);outline:none;-webkit-appearance:none;color-scheme:light;}
+.ch-inp:focus{border-color:var(--matcha-mid);}
+.var-box{border-radius:8px;padding:0.75rem 1rem;font-size:13px;margin-top:0.6rem;display:none;}
+.var-ok{background:var(--matcha-light);color:var(--matcha);}
+.var-short{background:var(--vermillion-light);color:var(--vermillion);}
+.submit-btn{width:100%;padding:13px;background:var(--matcha);border:none;border-radius:12px;font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;color:var(--white);cursor:pointer;margin-top:1.25rem;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:0.02em;}
+.submit-btn:active{opacity:0.85;}
+.submit-btn.wood{background:var(--wood);}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.add-btn{width:100%;padding:11px;border:1px dashed var(--border);border-radius:8px;background:var(--input-bg);color:var(--ink-soft);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;border-radius:20px;padding:2px 8px;font-weight:500;}
+.badge-green{background:var(--matcha-light);color:var(--matcha);}
+.badge-red{background:var(--vermillion-light);color:var(--vermillion);}
+.badge-wood{background:var(--wood-light);color:var(--wood);}
+.badge-amber{background:#faeeda;color:#854F0B;}
+.badge-neutral{background:var(--cream-dark);color:var(--ink-mid);}
+.stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:1.25rem;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:0.9rem 1rem;}
+.stat-label{font-size:11px;color:var(--ink-soft);margin-bottom:6px;letter-spacing:0.02em;}
+.stat-val{font-size:21px;font-weight:500;color:var(--ink);}
+.stat-sub{font-size:11px;margin-top:4px;}
+.section-lbl{font-size:11px;color:var(--ink-soft);letter-spacing:0.1em;text-transform:uppercase;margin:0 0 0.6rem;}
+.menu-card{background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:1.25rem;}
+.menu-item{display:flex;align-items:center;gap:12px;padding:0.85rem 1.1rem;border-bottom:1px solid var(--border);cursor:pointer;}
+.menu-item:last-child{border-bottom:none;}
+.menu-item:active{background:var(--cream-dark);}
+.menu-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.mi-matcha{background:var(--matcha-light);color:var(--matcha);}
+.mi-wood{background:var(--wood-light);color:var(--wood);}
+.mi-amber{background:#faeeda;color:#854F0B;}
+.mi-ink{background:var(--cream-dark);color:var(--ink-mid);}
+.menu-text{flex:1;}
+.menu-text strong{font-size:14px;font-weight:500;display:block;color:var(--ink);}
+.menu-text span{font-size:12px;color:var(--ink-soft);}
+.menu-arrow{color:var(--ink-soft);font-size:14px;}
+.exp-row{display:flex;align-items:center;gap:8px;padding:0.7rem 0;border-bottom:1px solid var(--border);}
+.exp-row:last-child{border-bottom:none;}
+.exp-cat{font-size:10px;border-radius:20px;padding:3px 9px;font-weight:500;flex-shrink:0;}
+.cat-supply{background:var(--matcha-light);color:var(--matcha);}
+.cat-clean{background:#E6F1FB;color:#185FA5;}
+.cat-pack{background:var(--wood-light);color:var(--wood);}
+.cat-maint{background:#EEEDFE;color:#534AB7;}
+.cat-other{background:var(--cream-dark);color:var(--ink-mid);}
+.w-tag{font-size:10px;border-radius:20px;padding:3px 9px;font-weight:500;flex-shrink:0;}
+.w-burnt{background:#faeeda;color:#854F0B;}
+.w-spill{background:#E6F1FB;color:#185FA5;}
+.w-staff{background:#EEEDFE;color:#534AB7;}
+.w-spoil{background:var(--vermillion-light);color:var(--vermillion);}
+.w-other{background:var(--cream-dark);color:var(--ink-mid);}
+.exp-name{flex:1;font-size:13px;color:var(--ink);}
+.exp-amt{font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;}
+.total-row{display:flex;justify-content:space-between;align-items:center;padding-top:0.75rem;margin-top:0.25rem;border-top:1px solid var(--border);}
+.tab-row{display:flex;gap:6px;margin-bottom:1rem;}
+.tab{flex:1;padding:7px 4px;font-size:11px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--ink-soft);cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.02em;}
+.tab.on{background:var(--matcha);color:var(--white);border-color:var(--matcha);}
+.bar-wrap{margin-bottom:10px;}
+.bar-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-mid);margin-bottom:4px;}
+.bar-bg{height:7px;background:var(--cream-dark);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.6s ease;}
+.logo-mark{font-size:20px;font-weight:400;color:var(--matcha);letter-spacing:0.04em;font-family:'DM Serif Display',serif;}
+.logo-sub{font-size:10px;color:var(--ink-soft);letter-spacing:0.14em;text-transform:uppercase;}
+.hero{padding:1.25rem 1.1rem 0.5rem;}
+.hero-date{font-size:11px;color:var(--ink-soft);letter-spacing:0.06em;margin-bottom:4px;}
+.hero-greeting{font-size:20px;font-weight:400;color:var(--ink);margin-bottom:1rem;font-family:'DM Serif Display',serif;}
+.hero-divider{width:28px;height:2px;background:var(--matcha);border-radius:2px;margin-bottom:1.25rem;}
+.empty-state{text-align:center;padding:2rem 1rem;color:var(--ink-soft);font-size:13px;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--white);padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+.loading{text-align:center;padding:1.5rem;color:var(--ink-soft);font-size:13px;}
+.onboard-hero{padding:2.5rem 1.4rem 1.5rem;text-align:center;}
+.onboard-logo{font-size:32px;font-weight:400;color:var(--matcha);letter-spacing:0.04em;font-family:'DM Serif Display',serif;margin-bottom:4px;}
+.onboard-sub{font-size:11px;color:var(--ink-soft);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:1.5rem;}
+.onboard-divider{width:28px;height:2px;background:var(--matcha);border-radius:2px;margin:0 auto 1.25rem;}
+.onboard-text{font-size:14px;color:var(--ink-mid);line-height:1.6;}
+.outlet-setup{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.6rem;}
+.outlet-header{display:flex;align-items:center;gap:8px;margin-bottom:0.75rem;}
+.outlet-num{width:22px;height:22px;border-radius:50%;background:var(--matcha-light);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--matcha);flex-shrink:0;}
+.outlet-title{font-size:13px;font-weight:500;color:var(--ink);flex:1;}
+.outlet-remove{font-size:16px;color:var(--ink-soft);background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;}
+.outlet-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.hint{font-size:11px;color:var(--ink-soft);text-align:center;margin-top:0.85rem;line-height:1.6;}
+.insight-metric{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:0.6rem;display:flex;justify-content:space-between;align-items:center;}
+.insight-label{font-size:12px;color:var(--ink-mid);}
+.insight-val{font-size:18px;font-weight:500;color:var(--ink);}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ONBOARDING -->
+<div class="screen active" id="s-onboard">
+  <div style="overflow-y:auto;flex:1;">
+    <div class="onboard-hero">
+      <div class="onboard-logo">Tally</div>
+      <div class="onboard-sub">by Harulabs</div>
+      <div class="onboard-divider"></div>
+      <div class="onboard-text">Let's set up your workspace.<br/>You can always edit this later.</div>
+    </div>
+    <div class="pad">
+      <div class="card">
+        <div class="card-head">Your business</div>
+        <div class="form-row">
+          <label class="form-lbl">Business name</label>
+          <input class="inp" id="ob-biz" type="text" placeholder="e.g. Koharu Taiyaki"/>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Your name</label>
+          <input class="inp" id="ob-name" type="text" placeholder="Owner / manager name"/>
+        </div>
+      </div>
+      <div class="section-lbl">Your outlets</div>
+      <div id="outlets-setup"></div>
+      <button class="add-btn" onclick="addOutletField()">+ Add another outlet</button>
+      <button class="submit-btn" onclick="saveOnboarding()" id="ob-btn" style="margin-top:1.5rem;">Let's go</button>
+      <div class="hint">You can add or rename outlets anytime.</div>
+    </div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="screen" id="s-home">
+  <div class="topbar">
+    <div style="flex:1;">
+      <div class="logo-mark">Tally</div>
+      <div class="logo-sub">by Harulabs</div>
+    </div>
+    <div class="outlet-chip" onclick="go('s-outlets')">
+      <span id="current-outlet-name">Loading...</span> &#9660;
+    </div>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="hero">
+      <div class="hero-date" id="home-date"></div>
+      <div class="hero-greeting" id="home-greeting">Good day</div>
+      <div class="hero-divider"></div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Today's sales</div>
+          <div class="stat-val" id="stat-sales">RM 0</div>
+          <div class="stat-sub"><span class="badge badge-neutral" id="stat-sales-sub">No entries</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Cash variance</div>
+          <div class="stat-val" id="stat-variance">—</div>
+          <div class="stat-sub"><span class="badge badge-neutral" id="stat-variance-sub">No entry</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Expenses</div>
+          <div class="stat-val" id="stat-expenses">RM 0</div>
+          <div class="stat-sub"><span class="badge badge-neutral" id="stat-exp-sub">0 items</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Wastage</div>
+          <div class="stat-val" id="stat-wastage">RM 0</div>
+          <div class="stat-sub"><span class="badge badge-neutral" id="stat-wast-sub">0 items</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0 1.1rem;">
+      <div class="section-lbl">Daily closing</div>
+    </div>
+    <div class="menu-card">
+      <div class="menu-item" onclick="go('s-sales')">
+        <div class="menu-icon mi-matcha">&#128176;</div>
+        <div class="menu-text"><strong>Sales entry</strong><span>Log channels &amp; cash variance</span></div>
+        <span class="menu-arrow">&#8250;</span>
+      </div>
+      <div class="menu-item" onclick="go('s-expenses')">
+        <div class="menu-icon mi-wood">&#129534;</div>
+        <div class="menu-text"><strong>Expenses</strong><span>Ad-hoc purchases &amp; costs</span></div>
+        <span class="menu-arrow">&#8250;</span>
+      </div>
+      <div class="menu-item" onclick="go('s-wastage')">
+        <div class="menu-icon mi-amber">&#128465;</div>
+        <div class="menu-text"><strong>Wastage</strong><span>Spills, rejects, consumption</span></div>
+        <span class="menu-arrow">&#8250;</span>
+      </div>
+    </div>
+    <div style="padding:0 1.1rem;">
+      <div class="section-lbl">Reports</div>
+    </div>
+    <div class="menu-card" style="margin-bottom:2rem;">
+      <div class="menu-item" onclick="go('s-insights')">
+        <div class="menu-icon mi-ink">&#128202;</div>
+        <div class="menu-text"><strong>Insights</strong><span>Trends, patterns, all outlets</span></div>
+        <span class="menu-arrow">&#8250;</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OUTLETS -->
+<div class="screen" id="s-outlets">
+  <div class="topbar">
+    <div class="back-btn" onclick="go('s-home')">&#8592;</div>
+    <span class="topbar-title">Select outlet</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div style="height:0.85rem;"></div>
+    <div class="menu-card" id="outlets-list"></div>
+  </div>
+</div>
+
+<!-- SALES -->
+<div class="screen" id="s-sales">
+  <div class="topbar">
+    <div class="back-btn" onclick="go('s-home')">&#8592;</div>
+    <span class="topbar-title">Sales entry</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head">POS system total</div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">POS total (RM)</label>
+          <input class="inp" id="pos-total" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">Sales by channel</div>
+        <div class="ch-row"><span class="ch-lbl">Cash</span><input class="ch-inp" id="ch-cash" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
+        <div class="ch-row"><span class="ch-lbl">Card</span><input class="ch-inp" id="ch-card" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
+        <div class="ch-row"><span class="ch-lbl">GrabFood</span><input class="ch-inp" id="ch-grab" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
+        <div class="ch-row"><span class="ch-lbl">FoodPanda</span><input class="ch-inp" id="ch-panda" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
+        <div class="var-box" id="var-box"><span id="var-txt"></span></div>
+      </div>
+      <div class="card">
+        <div class="card-head">Closing staff</div>
+        <div class="form-row">
+          <label class="form-lbl">Your name</label>
+          <input class="inp" id="sales-staff" type="text" placeholder="Enter your name"/>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Notes (optional)</label>
+          <input class="inp" id="sales-notes" type="text" placeholder="e.g. busy night, promo running"/>
+        </div>
+      </div>
+      <button class="submit-btn" id="sales-btn" onclick="saveSales()">Save sales entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPENSES -->
+<div class="screen" id="s-expenses">
+  <div class="topbar">
+    <div class="back-btn" onclick="go('s-home')">&#8592;</div>
+    <span class="topbar-title">Expenses</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head">Logged today &nbsp;<span class="badge badge-neutral" id="exp-count" style="text-transform:none;letter-spacing:0;">0 items</span></div>
+        <div id="exp-list"><div class="empty-state">No expenses logged yet today.</div></div>
+        <div class="total-row" id="exp-total-row" style="display:none;">
+          <span style="font-size:12px;color:var(--ink-mid);">Total today</span>
+          <span style="font-size:15px;font-weight:500;" id="exp-total">RM 0</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">Add expense</div>
+        <div class="form-row">
+          <label class="form-lbl">Item name</label>
+          <input class="inp" id="exp-item" type="text" placeholder="e.g. ice cubes, kitchen towels"/>
+        </div>
+        <div class="form-row-2">
+          <div>
+            <label class="form-lbl">Amount (RM)</label>
+            <input class="inp" id="exp-amount" type="number" inputmode="decimal" placeholder="0.00"/>
+          </div>
+          <div>
+            <label class="form-lbl">Category</label>
+            <select class="inp" id="exp-cat">
+              <option value="Supplies">Supplies</option>
+              <option value="Cleaning">Cleaning</option>
+              <option value="Packaging">Packaging</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Bought by</label>
+          <input class="inp" id="exp-by" type="text" placeholder="Staff name"/>
+        </div>
+        <button class="submit-btn" id="exp-btn" onclick="saveExpense()">Add expense</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WASTAGE -->
+<div class="screen" id="s-wastage">
+  <div class="topbar">
+    <div class="back-btn" onclick="go('s-home')">&#8592;</div>
+    <span class="topbar-title">Wastage</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head">Logged today &nbsp;<span class="badge badge-neutral" id="wast-count" style="text-transform:none;letter-spacing:0;">0 items</span></div>
+        <div id="wast-list"><div class="empty-state">No wastage logged yet today.</div></div>
+        <div class="total-row" id="wast-total-row" style="display:none;">
+          <span style="font-size:12px;color:var(--ink-mid);">Total today</span>
+          <span style="font-size:15px;font-weight:500;" id="wast-total">RM 0</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">Log wastage</div>
+        <div class="form-row">
+          <label class="form-lbl">Item</label>
+          <input class="inp" id="wast-item" type="text" placeholder="e.g. taiyaki, matcha latte"/>
+        </div>
+        <div class="form-row-2">
+          <div>
+            <label class="form-lbl">Est. cost (RM)</label>
+            <input class="inp" id="wast-cost" type="number" inputmode="decimal" placeholder="0.00"/>
+          </div>
+          <div>
+            <label class="form-lbl">Reason</label>
+            <select class="inp" id="wast-reason">
+              <option value="Burnt / rejected">Burnt / rejected</option>
+              <option value="Spilled">Spilled</option>
+              <option value="Staff consumption">Staff consumption</option>
+              <option value="Expired / spoiled">Expired / spoiled</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Logged by</label>
+          <input class="inp" id="wast-by" type="text" placeholder="Staff name"/>
+        </div>
+        <button class="submit-btn" id="wast-btn" onclick="saveWastage()">Log wastage</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INSIGHTS -->
+<div class="screen" id="s-insights">
+  <div class="topbar">
+    <div class="back-btn" onclick="go('s-home')">&#8592;</div>
+    <span class="topbar-title">Insights</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="tab-row">
+        <button class="tab on" onclick="setInsightTab(this,'today')">Today</button>
+        <button class="tab" onclick="setInsightTab(this,'week')">This week</button>
+        <button class="tab" onclick="setInsightTab(this,'month')">This month</button>
+      </div>
+      <div id="insights-content"><div class="loading">Loading insights...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gvilerrdqzwsdprobacc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_2iBCyH3Q2lcQLE4Qj1C1Zg_4SJjlOxq';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentOutlet = null;
+let outlets = [];
+let ownerName = '';
+let insightPeriod = 'today';
+let outletFields = 1;
+
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id === 's-home') loadHomeStats();
+  if(id === 's-expenses') loadExpenses();
+  if(id === 's-wastage') loadWastage();
+  if(id === 's-insights') loadInsights();
+  if(id === 's-outlets') renderOutletsList();
+}
+
+function showToast(msg, duration) {
+  duration = duration || 2500;
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, duration);
+}
+
+function getToday() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function formatDate(d) {
+  return new Date(d).toLocaleDateString('en-MY', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+}
+
+function greeting() {
+  const h = new Date().getHours();
+  if(h < 12) return 'Good morning';
+  if(h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function addOutletField() {
+  outletFields++;
+  const c = document.getElementById('outlets-setup');
+  const d = document.createElement('div');
+  d.className = 'outlet-setup';
+  d.id = 'outlet-field-' + outletFields;
+  d.innerHTML = '<div class="outlet-header"><div class="outlet-num">' + outletFields + '</div><span class="outlet-title">Outlet ' + outletFields + '</span><button class="outlet-remove" onclick="removeOutletField(' + outletFields + ')">&#215;</button></div><div class="outlet-fields"><div><label class="form-lbl">Outlet name</label><input class="inp" id="ob-outlet-name-' + outletFields + '" type="text" placeholder="e.g. Vivacity"/></div><div><label class="form-lbl">Location</label><input class="inp" id="ob-outlet-loc-' + outletFields + '" type="text" placeholder="e.g. Kuching"/></div></div>';
+  c.appendChild(d);
+}
+
+function removeOutletField(n) {
+  const el = document.getElementById('outlet-field-' + n);
+  if(el) el.remove();
+}
+
+function initOnboarding() {
+  const c = document.getElementById('outlets-setup');
+  c.innerHTML = '<div class="outlet-setup" id="outlet-field-1"><div class="outlet-header"><div class="outlet-num">1</div><span class="outlet-title">Outlet 1</span></div><div class="outlet-fields"><div><label class="form-lbl">Outlet name</label><input class="inp" id="ob-outlet-name-1" type="text" placeholder="e.g. AEON"/></div><div><label class="form-lbl">Location</label><input class="inp" id="ob-outlet-loc-1" type="text" placeholder="e.g. Kuching"/></div></div></div>';
+}
+
+async function saveOnboarding() {
+  const biz = document.getElementById('ob-biz').value.trim();
+  const name = document.getElementById('ob-name').value.trim();
+  if(!biz || !name) { showToast('Please fill in your business and name!'); return; }
+  const outletData = [];
+  for(let i = 1; i <= outletFields; i++) {
+    const n = document.getElementById('ob-outlet-name-' + i);
+    const l = document.getElementById('ob-outlet-loc-' + i);
+    if(n && n.value.trim()) {
+      outletData.push({name: n.value.trim(), location: l ? l.value.trim() : ''});
+    }
+  }
+  if(outletData.length === 0) { showToast('Add at least one outlet!'); return; }
+  const btn = document.getElementById('ob-btn');
+  btn.disabled = true; btn.textContent = 'Setting up...';
+  const result = await sb.from('outlets').insert(outletData).select();
+  if(result.error) { showToast('Error: ' + result.error.message); btn.disabled=false; btn.textContent="Let's go"; return; }
+  localStorage.setItem('tally_owner', name);
+  localStorage.setItem('tally_biz', biz);
+  localStorage.setItem('tally_outlet_id', result.data[0].id);
+  localStorage.setItem('tally_setup', '1');
+  ownerName = name;
+  currentOutlet = result.data[0];
+  outlets = result.data;
+  initHome();
+  go('s-home');
+}
+
+function initHome() {
+  document.getElementById('home-date').textContent = formatDate(new Date());
+  document.getElementById('home-greeting').textContent = greeting() + ', ' + ownerName;
+  document.getElementById('current-outlet-name').textContent = currentOutlet ? currentOutlet.name : 'Select outlet';
+}
+
+async function loadHomeStats() {
+  if(!currentOutlet) return;
+  const today = getToday();
+  const results = await Promise.all([
+    sb.from('sales_entries').select('*').eq('outlet_id', currentOutlet.id).eq('date', today),
+    sb.from('expenses').select('*').eq('outlet_id', currentOutlet.id).eq('date', today),
+    sb.from('wastage').select('*').eq('outlet_id', currentOutlet.id).eq('date', today)
+  ]);
+  const salesData = results[0].data || [];
+  const expData = results[1].data || [];
+  const wastData = results[2].data || [];
+  if(salesData.length > 0) {
+    const s = salesData[0];
+    const total = (+s.cash)+(+s.card)+(+s.grabfood)+(+s.foodpanda);
+    document.getElementById('stat-sales').textContent = 'RM ' + total.toFixed(2);
+    document.getElementById('stat-sales-sub').className = 'badge badge-green';
+    document.getElementById('stat-sales-sub').textContent = 'Logged';
+    const variance = total - (+s.pos_total);
+    const vEl = document.getElementById('stat-variance');
+    const vSub = document.getElementById('stat-variance-sub');
+    if(Math.abs(variance) < 0.01) {
+      vEl.textContent = 'RM 0.00'; vEl.style.color = 'var(--matcha)';
+      vSub.className = 'badge badge-green'; vSub.textContent = 'Balanced';
+    } else if(variance < 0) {
+      vEl.textContent = '-RM ' + Math.abs(variance).toFixed(2); vEl.style.color = 'var(--vermillion)';
+      vSub.className = 'badge badge-red'; vSub.textContent = 'Shortage';
+    } else {
+      vEl.textContent = '+RM ' + variance.toFixed(2); vEl.style.color = 'var(--matcha)';
+      vSub.className = 'badge badge-green'; vSub.textContent = 'Overage';
+    }
+  }
+  if(expData.length > 0) {
+    const total = expData.reduce(function(a,b){ return a + parseFloat(b.amount); }, 0);
+    document.getElementById('stat-expenses').textContent = 'RM ' + total.toFixed(2);
+    document.getElementById('stat-exp-sub').className = 'badge badge-wood';
+    document.getElementById('stat-exp-sub').textContent = expData.length + ' item' + (expData.length !== 1 ? 's' : '');
+  }
+  if(wastData.length > 0) {
+    const total = wastData.reduce(function(a,b){ return a + parseFloat(b.estimated_cost); }, 0);
+    document.getElementById('stat-wastage').textContent = 'RM ' + total.toFixed(2);
+    document.getElementById('stat-wast-sub').className = 'badge badge-amber';
+    document.getElementById('stat-wast-sub').textContent = wastData.length + ' item' + (wastData.length !== 1 ? 's' : '');
+  }
+}
+
+async function loadOutlets() {
+  const result = await sb.from('outlets').select('*').order('created_at');
+  if(result.data) outlets = result.data;
+}
+
+function renderOutletsList() {
+  const c = document.getElementById('outlets-list');
+  c.innerHTML = outlets.map(function(o) {
+    const isActive = currentOutlet && currentOutlet.id === o.id;
+    return '<div class="menu-item" onclick="selectOutlet(\'' + o.id + '\')"><div class="menu-icon mi-matcha">&#127978;</div><div class="menu-text"><strong>' + o.name + '</strong><span>' + (o.location || '') + '</span></div>' + (isActive ? '<span style="color:var(--matcha);font-size:16px;">&#10003;</span>' : '<span class="menu-arrow">&#8250;</span>') + '</div>';
+  }).join('');
+}
+
+function selectOutlet(id) {
+  currentOutlet = outlets.find(function(o){ return o.id === id; });
+  localStorage.setItem('tally_outlet_id', id);
+  document.getElementById('current-outlet-name').textContent = currentOutlet.name;
+  go('s-home');
+  showToast('Switched to ' + currentOutlet.name);
+}
+
+function calcVar() {
+  const pos = parseFloat(document.getElementById('pos-total').value) || 0;
+  const cash = parseFloat(document.getElementById('ch-cash').value) || 0;
+  const card = parseFloat(document.getElementById('ch-card').value) || 0;
+  const grab = parseFloat(document.getElementById('ch-grab').value) || 0;
+  const panda = parseFloat(document.getElementById('ch-panda').value) || 0;
+  const total = cash + card + grab + panda;
+  const diff = total - pos;
+  const box = document.getElementById('var-box');
+  const txt = document.getElementById('var-txt');
+  if(pos === 0 && total === 0) { box.style.display='none'; return; }
+  box.style.display = 'block';
+  if(Math.abs(diff) < 0.01) {
+    box.className = 'var-box var-ok';
+    txt.textContent = 'All good — sales tally matches POS exactly.';
+  } else if(diff < 0) {
+    box.className = 'var-box var-short';
+    txt.textContent = 'Cash shortage of RM ' + Math.abs(diff).toFixed(2) + ' vs POS total.';
+  } else {
+    box.className = 'var-box var-ok';
+    txt.textContent = 'Overage of RM ' + diff.toFixed(2) + ' vs POS total.';
+  }
+}
+
+async function saveSales() {
+  if(!currentOutlet) { showToast('Please select an outlet first!'); return; }
+  const pos = parseFloat(document.getElementById('pos-total').value) || 0;
+  const cash = parseFloat(document.getElementById('ch-cash').value) || 0;
+  const card = parseFloat(document.getElementById('ch-card').value) || 0;
+  const grab = parseFloat(document.getElementById('ch-grab').value) || 0;
+  const panda = parseFloat(document.getElementById('ch-panda').value) || 0;
+  const staff = document.getElementById('sales-staff').value.trim();
+  const notes = document.getElementById('sales-notes').value.trim();
+  if(!staff) { showToast('Please enter your name!'); return; }
+  const variance = (cash + card + grab + panda) - pos;
+  const btn = document.getElementById('sales-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const today = getToday();
+  const existing = await sb.from('sales_entries').select('id').eq('outlet_id', currentOutlet.id).eq('date', today);
+  let error;
+  if(existing.data && existing.data.length > 0) {
+    const r = await sb.from('sales_entries').update({pos_total:pos,cash:cash,card:card,grabfood:grab,foodpanda:panda,variance:variance,staff_name:staff,notes:notes}).eq('id', existing.data[0].id);
+    error = r.error;
+  } else {
+    const r = await sb.from('sales_entries').insert({outlet_id:currentOutlet.id,date:today,pos_total:pos,cash:cash,card:card,grabfood:grab,foodpanda:panda,variance:variance,staff_name:staff,notes:notes});
+    error = r.error;
+  }
+  btn.disabled = false; btn.textContent = 'Save sales entry';
+  if(error) { showToast('Error: ' + error.message); return; }
+  showToast('Sales entry saved!');
+  ['pos-total','ch-cash','ch-card','ch-grab','ch-panda','sales-staff','sales-notes'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('var-box').style.display = 'none';
+  go('s-home');
+}
+
+async function loadExpenses() {
+  if(!currentOutlet) return;
+  const result = await sb.from('expenses').select('*').eq('outlet_id', currentOutlet.id).eq('date', getToday()).order('created_at', {ascending:false});
+  const data = result.data || [];
+  const list = document.getElementById('exp-list');
+  const countEl = document.getElementById('exp-count');
+  const totalRow = document.getElementById('exp-total-row');
+  if(data.length === 0) {
+    list.innerHTML = '<div class="empty-state">No expenses logged yet today.</div>';
+    countEl.textContent = '0 items'; totalRow.style.display = 'none'; return;
+  }
+  const catClass = {Supplies:'cat-supply',Cleaning:'cat-clean',Packaging:'cat-pack',Maintenance:'cat-maint',Other:'cat-other'};
+  list.innerHTML = data.map(function(e){
+    return '<div class="exp-row"><span class="exp-cat ' + (catClass[e.category]||'cat-other') + '">' + e.category + '</span><span class="exp-name">' + e.item_name + (e.bought_by ? ' <span style="color:var(--ink-soft);font-size:11px;">· ' + e.bought_by + '</span>' : '') + '</span><span class="exp-amt">RM ' + parseFloat(e.amount).toFixed(2) + '</span></div>';
+  }).join('');
+  const total = data.reduce(function(a,b){ return a + parseFloat(b.amount); }, 0);
+  countEl.textContent = data.length + ' item' + (data.length !== 1 ? 's' : '');
+  document.getElementById('exp-total').textContent = 'RM ' + total.toFixed(2);
+  totalRow.style.display = 'flex';
+}
+
+async function saveExpense() {
+  if(!currentOutlet) { showToast('Please select an outlet first!'); return; }
+  const item = document.getElementById('exp-item').value.trim();
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const cat = document.getElementById('exp-cat').value;
+  const by = document.getElementById('exp-by').value.trim();
+  if(!item) { showToast('Please enter an item name!'); return; }
+  if(!amount || amount <= 0) { showToast('Please enter a valid amount!'); return; }
+  const btn = document.getElementById('exp-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const result = await sb.from('expenses').insert({outlet_id:currentOutlet.id,date:getToday(),item_name:item,amount:amount,category:cat,bought_by:by});
+  btn.disabled = false; btn.textContent = 'Add expense';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  showToast('Expense added!');
+  ['exp-item','exp-amount','exp-by'].forEach(function(id){ document.getElementById(id).value = ''; });
+  loadExpenses();
+}
+
+async function loadWastage() {
+  if(!currentOutlet) return;
+  const result = await sb.from('wastage').select('*').eq('outlet_id', currentOutlet.id).eq('date', getToday()).order('created_at', {ascending:false});
+  const data = result.data || [];
+  const list = document.getElementById('wast-list');
+  const countEl = document.getElementById('wast-count');
+  const totalRow = document.getElementById('wast-total-row');
+  if(data.length === 0) {
+    list.innerHTML = '<div class="empty-state">No wastage logged yet today.</div>';
+    countEl.textContent = '0 items'; totalRow.style.display = 'none'; return;
+  }
+  const tagClass = {'Burnt / rejected':'w-burnt','Spilled':'w-spill','Staff consumption':'w-staff','Expired / spoiled':'w-spoil','Other':'w-other'};
+  list.innerHTML = data.map(function(w){
+    return '<div class="exp-row"><span class="w-tag ' + (tagClass[w.reason]||'w-other') + '">' + w.reason.split('/')[0].trim() + '</span><span class="exp-name">' + w.item_name + (w.logged_by ? ' <span style="color:var(--ink-soft);font-size:11px;">· ' + w.logged_by + '</span>' : '') + '</span><span class="exp-amt">RM ' + parseFloat(w.estimated_cost).toFixed(2) + '</span></div>';
+  }).join('');
+  const total = data.reduce(function(a,b){ return a + parseFloat(b.estimated_cost); }, 0);
+  countEl.textContent = data.length + ' item' + (data.length !== 1 ? 's' : '');
+  document.getElementById('wast-total').textContent = 'RM ' + total.toFixed(2);
+  totalRow.style.display = 'flex';
+}
+
+async function saveWastage() {
+  if(!currentOutlet) { showToast('Please select an outlet first!'); return; }
+  const item = document.getElementById('wast-item').value.trim();
+  const cost = parseFloat(document.getElementById('wast-cost').value) || 0;
+  const reason = document.getElementById('wast-reason').value;
+  const by = document.getElementById('wast-by').value.trim();
+  if(!item) { showToast('Please enter an item name!'); return; }
+  const btn = document.getElementById('wast-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const result = await sb.from('wastage').insert({outlet_id:currentOutlet.id,date:getToday(),item_name:item,estimated_cost:cost,reason:reason,logged_by:by});
+  btn.disabled = false; btn.textContent = 'Log wastage';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  showToast('Wastage logged!');
+  ['wast-item','wast-cost','wast-by'].forEach(function(id){ document.getElementById(id).value = ''; });
+  loadWastage();
+}
+
+function setInsightTab(el, period) {
+  document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('on'); });
+  el.classList.add('on');
+  insightPeriod = period;
+  loadInsights();
+}
+
+function getDateRange(period) {
+  const today = getToday();
+  if(period === 'today') return {from: today, to: today};
+  const d = new Date();
+  if(period === 'week') d.setDate(d.getDate() - 6);
+  if(period === 'month') d.setDate(1);
+  return {from: d.toISOString().split('T')[0], to: today};
+}
+
+async function loadInsights() {
+  const c = document.getElementById('insights-content');
+  c.innerHTML = '<div class="loading">Loading insights...</div>';
+  if(!currentOutlet) { c.innerHTML = '<div class="empty-state">Select an outlet first.</div>'; return; }
+  const range = getDateRange(insightPeriod);
+  const results = await Promise.all([
+    sb.from('sales_entries').select('*').eq('outlet_id', currentOutlet.id).gte('date', range.from).lte('date', range.to),
+    sb.from('expenses').select('*').eq('outlet_id', currentOutlet.id).gte('date', range.from).lte('date', range.to),
+    sb.from('wastage').select('*').eq('outlet_id', currentOutlet.id).gte('date', range.from).lte('date', range.to)
+  ]);
+  const sd = results[0].data || [];
+  const ed = results[1].data || [];
+  const wd = results[2].data || [];
+  const totalSales = sd.reduce(function(a,b){ return a+(+b.cash)+(+b.card)+(+b.grabfood)+(+b.foodpanda); }, 0);
+  const totalCash = sd.reduce(function(a,b){ return a+(+b.cash); }, 0);
+  const totalCard = sd.reduce(function(a,b){ return a+(+b.card); }, 0);
+  const totalGrab = sd.reduce(function(a,b){ return a+(+b.grabfood); }, 0);
+  const totalPanda = sd.reduce(function(a,b){ return a+(+b.foodpanda); }, 0);
+  const totalExp = ed.reduce(function(a,b){ return a+(+b.amount); }, 0);
+  const totalWast = wd.reduce(function(a,b){ return a+(+b.estimated_cost); }, 0);
+  const shortages = sd.filter(function(s){ return (+s.variance) < -0.01; }).length;
+  const expCats = {};
+  ed.forEach(function(e){ expCats[e.item_name] = (expCats[e.item_name]||0)+1; });
+  const topExp = Object.entries(expCats).sort(function(a,b){ return b[1]-a[1]; }).slice(0,3);
+  const wastReasons = {};
+  wd.forEach(function(w){ wastReasons[w.reason] = (wastReasons[w.reason]||0)+(+w.estimated_cost); });
+  const barMax = Math.max(totalCash, totalCard, totalGrab, totalPanda, 1);
+  const tagClass = {'Burnt / rejected':'w-burnt','Spilled':'w-spill','Staff consumption':'w-staff','Expired / spoiled':'w-spoil','Other':'w-other'};
+  let html = '<div class="card"><div class="card-head">Sales overview</div>';
+  html += '<div class="insight-metric"><span class="insight-label">Total sales</span><span class="insight-val">RM ' + totalSales.toFixed(2) + '</span></div>';
+  html += '<div class="insight-metric"><span class="insight-label">Total expenses</span><span class="insight-val">RM ' + totalExp.toFixed(2) + '</span></div>';
+  html += '<div class="insight-metric"><span class="insight-label">Total wastage</span><span class="insight-val">RM ' + totalWast.toFixed(2) + '</span></div>';
+  html += '<div class="insight-metric"><span class="insight-label">Cash shortages</span><span class="insight-val" style="color:' + (shortages > 0 ? 'var(--vermillion)' : 'var(--matcha)') + '">' + shortages + ' day' + (shortages !== 1 ? 's' : '') + '</span></div></div>';
+  html += '<div class="card"><div class="card-head">Sales by channel</div>';
+  if(totalSales === 0) {
+    html += '<div class="empty-state">No sales data yet.</div>';
+  } else {
+    const bw = function(v){ return Math.round((v/barMax)*100); };
+    html += '<div class="bar-wrap"><div class="bar-lbl"><span>Cash</span><span>RM ' + totalCash.toFixed(2) + '</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + bw(totalCash) + '%;background:var(--matcha);"></div></div></div>';
+    html += '<div class="bar-wrap"><div class="bar-lbl"><span>Card</span><span>RM ' + totalCard.toFixed(2) + '</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + bw(totalCard) + '%;background:var(--matcha-mid);"></div></div></div>';
+    html += '<div class="bar-wrap"><div class="bar-lbl"><span>GrabFood</span><span>RM ' + totalGrab.toFixed(2) + '</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + bw(totalGrab) + '%;background:var(--wood);"></div></div></div>';
+    html += '<div class="bar-wrap"><div class="bar-lbl"><span>FoodPanda</span><span>RM ' + totalPanda.toFixed(2) + '</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + bw(totalPanda) + '%;background:var(--border);"></div></div></div>';
+  }
+  html += '</div>';
+  if(topExp.length > 0) {
+    html += '<div class="card"><div class="card-head">Top recurring expenses</div>';
+    topExp.forEach(function(entry){ html += '<div class="exp-row"><span class="exp-name">' + entry[0] + '</span><span class="badge badge-amber">' + entry[1] + 'x</span></div>'; });
+    html += '</div>';
+  }
+  if(Object.keys(wastReasons).length > 0) {
+    html += '<div class="card"><div class="card-head">Wastage breakdown</div>';
+    Object.entries(wastReasons).sort(function(a,b){ return b[1]-a[1]; }).forEach(function(entry){
+      html += '<div class="exp-row"><span class="w-tag ' + (tagClass[entry[0]]||'w-other') + '">' + entry[0].split('/')[0].trim() + '</span><span class="exp-name">' + entry[0] + '</span><span class="exp-amt">RM ' + entry[1].toFixed(2) + '</span></div>';
+    });
+    html += '</div>';
+  }
+  c.innerHTML = html;
+}
+
+async function init() {
+  initOnboarding();
+  const setup = localStorage.getItem('tally_setup');
+  if(setup) {
+    ownerName = localStorage.getItem('tally_owner') || 'there';
+    await loadOutlets();
+    const savedId = localStorage.getItem('tally_outlet_id');
+    currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+    if(currentOutlet) {
+      initHome();
+      go('s-home');
+    }
+  }
+}
+
+init();
+</script>
+</body>
+</html>
