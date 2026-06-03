@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{
@@ -173,9 +174,11 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="logo-sub">by Harulabs</div>
     </div>
     <div class="outlet-chip" onclick="go('s-outlets')">
-      <span id="current-outlet-name">Loading...</span> &#9660;
+      <i class="ti ti-building-store" style="font-size:13px"></i>
+      <span id="current-outlet-name">Loading...</span>
+      <i class="ti ti-chevron-down" style="font-size:11px"></i>
     </div>
-    <div class="back-btn" onclick="openSettings()" style="margin-left:4px;" title="Settings">&#9881;</div>
+    <div class="back-btn" onclick="openSettings()" style="margin-left:4px;" title="Settings"><i class="ti ti-settings" style="font-size:16px"></i></div>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="hero">
@@ -210,19 +213,19 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     </div>
     <div class="menu-card">
       <div class="menu-item" onclick="go('s-sales')">
-        <div class="menu-icon mi-matcha">&#128176;</div>
+        <div class="menu-icon mi-matcha"><i class="ti ti-cash"></i></div>
         <div class="menu-text"><strong>Sales entry</strong><span>Log channels &amp; cash variance</span></div>
-        <span class="menu-arrow">&#8250;</span>
+        <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
       <div class="menu-item" onclick="go('s-expenses')">
-        <div class="menu-icon mi-wood">&#129534;</div>
+        <div class="menu-icon mi-wood"><i class="ti ti-receipt"></i></div>
         <div class="menu-text"><strong>Expenses</strong><span>Ad-hoc purchases &amp; costs</span></div>
-        <span class="menu-arrow">&#8250;</span>
+        <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
       <div class="menu-item" onclick="go('s-wastage')">
-        <div class="menu-icon mi-amber">&#128465;</div>
+        <div class="menu-icon mi-amber"><i class="ti ti-trash"></i></div>
         <div class="menu-text"><strong>Wastage</strong><span>Spills, rejects, consumption</span></div>
-        <span class="menu-arrow">&#8250;</span>
+        <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
     </div>
     <div style="padding:0 1.1rem;">
@@ -230,9 +233,9 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     </div>
     <div class="menu-card" style="margin-bottom:2rem;">
       <div class="menu-item" onclick="go('s-insights')">
-        <div class="menu-icon mi-ink">&#128202;</div>
+        <div class="menu-icon mi-ink"><i class="ti ti-chart-bar"></i></div>
         <div class="menu-text"><strong>Insights</strong><span>Trends, patterns, all outlets</span></div>
-        <span class="menu-arrow">&#8250;</span>
+        <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
     </div>
   </div>
@@ -241,7 +244,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 <!-- OUTLETS -->
 <div class="screen" id="s-outlets">
   <div class="topbar">
-    <div class="back-btn" onclick="go('s-home')">&#8592;</div>
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
     <span class="topbar-title">Select outlet</span>
   </div>
   <div style="overflow-y:auto;flex:1;">
@@ -253,20 +256,20 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 <!-- SALES -->
 <div class="screen" id="s-sales">
   <div class="topbar">
-    <div class="back-btn" onclick="go('s-home')">&#8592;</div>
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
     <span class="topbar-title">Sales entry</span>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
       <div class="card">
-        <div class="card-head">POS system total</div>
+        <div class="card-head"><i class="ti ti-device-mobile" style="font-size:14px"></i> POS system total</div>
         <div class="form-row" style="margin-bottom:0;">
           <label class="form-lbl">POS total (RM)</label>
           <input class="inp" id="pos-total" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/>
         </div>
       </div>
       <div class="card">
-        <div class="card-head">Sales by channel</div>
+        <div class="card-head"><i class="ti ti-cash" style="font-size:14px"></i> Sales by channel</div>
         <div class="ch-row"><span class="ch-lbl">Cash</span><input class="ch-inp" id="ch-cash" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
         <div class="ch-row"><span class="ch-lbl">Card</span><input class="ch-inp" id="ch-card" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
         <div class="ch-row"><span class="ch-lbl">GrabFood</span><input class="ch-inp" id="ch-grab" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
@@ -274,7 +277,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="var-box" id="var-box"><span id="var-txt"></span></div>
       </div>
       <div class="card">
-        <div class="card-head">Closing staff</div>
+        <div class="card-head"><i class="ti ti-user" style="font-size:14px"></i> Closing staff</div>
         <div class="form-row">
           <label class="form-lbl">Your name</label>
           <input class="inp" id="sales-staff" type="text" placeholder="Enter your name"/>
@@ -292,13 +295,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 <!-- EXPENSES -->
 <div class="screen" id="s-expenses">
   <div class="topbar">
-    <div class="back-btn" onclick="go('s-home')">&#8592;</div>
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
     <span class="topbar-title">Expenses</span>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
       <div class="card">
-        <div class="card-head">Logged today &nbsp;<span class="badge badge-neutral" id="exp-count" style="text-transform:none;letter-spacing:0;">0 items</span></div>
+        <div class="card-head"><i class="ti ti-clock" style="font-size:14px"></i> Logged today &nbsp;<span class="badge badge-neutral" id="exp-count" style="text-transform:none;letter-spacing:0;">0 items</span></div>
         <div id="exp-list"><div class="empty-state">No expenses logged yet today.</div></div>
         <div class="total-row" id="exp-total-row" style="display:none;">
           <span style="font-size:12px;color:var(--ink-mid);">Total today</span>
@@ -306,7 +309,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
       <div class="card">
-        <div class="card-head">Add expense</div>
+        <div class="card-head"><i class="ti ti-plus" style="font-size:14px"></i> Add expense</div>
         <div class="form-row">
           <label class="form-lbl">Item name</label>
           <input class="inp" id="exp-item" type="text" placeholder="e.g. ice cubes, kitchen towels"/>
@@ -340,13 +343,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 <!-- WASTAGE -->
 <div class="screen" id="s-wastage">
   <div class="topbar">
-    <div class="back-btn" onclick="go('s-home')">&#8592;</div>
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
     <span class="topbar-title">Wastage</span>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
       <div class="card">
-        <div class="card-head">Logged today &nbsp;<span class="badge badge-neutral" id="wast-count" style="text-transform:none;letter-spacing:0;">0 items</span></div>
+        <div class="card-head"><i class="ti ti-clock" style="font-size:14px"></i> Logged today &nbsp;<span class="badge badge-neutral" id="wast-count" style="text-transform:none;letter-spacing:0;">0 items</span></div>
         <div id="wast-list"><div class="empty-state">No wastage logged yet today.</div></div>
         <div class="total-row" id="wast-total-row" style="display:none;">
           <span style="font-size:12px;color:var(--ink-mid);">Total today</span>
@@ -354,7 +357,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
       <div class="card">
-        <div class="card-head">Log wastage</div>
+        <div class="card-head"><i class="ti ti-plus" style="font-size:14px"></i> Log wastage</div>
         <div class="form-row">
           <label class="form-lbl">Item</label>
           <input class="inp" id="wast-item" type="text" placeholder="e.g. taiyaki, matcha latte"/>
@@ -388,13 +391,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 <!-- SETTINGS -->
 <div class="screen" id="s-settings">
   <div class="topbar">
-    <div class="back-btn" onclick="go('s-home')">&#8592;</div>
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
     <span class="topbar-title">Settings</span>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
       <div class="card">
-        <div class="card-head">Your business</div>
+        <div class="card-head"><i class="ti ti-briefcase" style="font-size:14px"></i> Your business</div>
         <div class="form-row">
           <label class="form-lbl">Business name</label>
           <input class="inp" id="set-biz" type="text" placeholder="e.g. Koharu Taiyaki"/>
@@ -406,11 +409,11 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       </div>
       <div class="section-lbl">Outlets</div>
       <div class="menu-card" id="settings-outlets-list"></div>
-      <button class="add-btn" onclick="go('s-add-outlet')" style="margin-bottom:0.85rem;">+ Add new outlet</button>
+      <button class="add-btn" onclick="go('s-add-outlet')" style="margin-bottom:0.85rem;"><i class="ti ti-plus" style="font-size:14px"></i> Add new outlet</button>
       <button class="submit-btn" onclick="saveSettings()">Save changes</button>
       <div style="margin-top:1.5rem;">
         <div class="card" style="border-color:var(--vermillion-light);">
-          <div class="card-head" style="color:var(--vermillion);">Danger zone</div>
+          <div class="card-head" style="color:var(--vermillion);"><i class="ti ti-alert-triangle" style="font-size:14px"></i> Danger zone</div>
           <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.85rem;line-height:1.6;">Reset the app and clear all local data. Your Supabase data is not affected.</div>
           <button onclick="resetApp()" style="width:100%;padding:11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Reset onboarding</button>
         </div>
@@ -423,13 +426,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 <!-- ADD OUTLET -->
 <div class="screen" id="s-add-outlet">
   <div class="topbar">
-    <div class="back-btn" onclick="go('s-settings')">&#8592;</div>
+    <div class="back-btn" onclick="go('s-settings')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
     <span class="topbar-title">Add outlet</span>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
       <div class="card">
-        <div class="card-head">New outlet</div>
+        <div class="card-head"><i class="ti ti-building-store" style="font-size:14px"></i> New outlet</div>
         <div class="form-row">
           <label class="form-lbl">Outlet name</label>
           <input class="inp" id="new-outlet-name" type="text" placeholder="e.g. Outlet 3"/>
@@ -444,10 +447,35 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
 </div>
 
+<!-- EDIT OUTLET -->
+<div class="screen" id="s-edit-outlet">
+  <div class="topbar">
+    <div class="back-btn" onclick="go('s-settings')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Edit outlet</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <input type="hidden" id="edit-outlet-id"/>
+      <div class="card">
+        <div class="card-head">Outlet details</div>
+        <div class="form-row">
+          <label class="form-lbl">Outlet name</label>
+          <input class="inp" id="edit-outlet-name" type="text" placeholder="e.g. Koharu AEON"/>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Location</label>
+          <input class="inp" id="edit-outlet-loc" type="text" placeholder="e.g. AEON Mall Kuching"/>
+        </div>
+      </div>
+      <button class="submit-btn" id="edit-outlet-btn" onclick="saveEditOutlet()">Save outlet</button>
+    </div>
+  </div>
+</div>
+
 <!-- INSIGHTS -->
 <div class="screen" id="s-insights">
   <div class="topbar">
-    <div class="back-btn" onclick="go('s-home')">&#8592;</div>
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
     <span class="topbar-title">Insights</span>
   </div>
   <div style="overflow-y:auto;flex:1;">
@@ -564,32 +592,43 @@ function initHome() {
 async function loadHomeStats() {
   if(!currentOutlet) return;
   const today = getToday();
-  const results = await Promise.all([
-    sb.from('sales_entries').select('*').eq('outlet_id', currentOutlet.id).eq('date', today),
-    sb.from('expenses').select('*').eq('outlet_id', currentOutlet.id).eq('date', today),
-    sb.from('wastage').select('*').eq('outlet_id', currentOutlet.id).eq('date', today)
-  ]);
-  const salesData = results[0].data || [];
-  const expData = results[1].data || [];
-  const wastData = results[2].data || [];
+  let salesData = [], expData = [], wastData = [];
+  if(currentOutlet.id === 'all') {
+    const results = await Promise.all([
+      sb.from('sales_entries').select('*').eq('date', today),
+      sb.from('expenses').select('*').eq('date', today),
+      sb.from('wastage').select('*').eq('date', today)
+    ]);
+    salesData = results[0].data || [];
+    expData = results[1].data || [];
+    wastData = results[2].data || [];
+  } else {
+    const results = await Promise.all([
+      sb.from('sales_entries').select('*').eq('outlet_id', currentOutlet.id).eq('date', today),
+      sb.from('expenses').select('*').eq('outlet_id', currentOutlet.id).eq('date', today),
+      sb.from('wastage').select('*').eq('outlet_id', currentOutlet.id).eq('date', today)
+    ]);
+    salesData = results[0].data || [];
+    expData = results[1].data || [];
+    wastData = results[2].data || [];
+  }
   if(salesData.length > 0) {
-    const s = salesData[0];
-    const total = (+s.cash)+(+s.card)+(+s.grabfood)+(+s.foodpanda);
+    const total = salesData.reduce(function(a,s){ return a+(+s.cash)+(+s.card)+(+s.grabfood)+(+s.foodpanda); }, 0);
     document.getElementById('stat-sales').textContent = 'RM ' + total.toFixed(2);
     document.getElementById('stat-sales-sub').className = 'badge badge-green';
-    document.getElementById('stat-sales-sub').textContent = 'Logged';
-    const variance = total - (+s.pos_total);
+    document.getElementById('stat-sales-sub').textContent = currentOutlet.id === 'all' ? salesData.length + ' outlet' + (salesData.length !== 1 ? 's' : '') : 'Logged';
+    const totalVariance = salesData.reduce(function(a,s){ return a+(+s.variance); }, 0);
     const vEl = document.getElementById('stat-variance');
     const vSub = document.getElementById('stat-variance-sub');
-    if(Math.abs(variance) < 0.01) {
+    if(Math.abs(totalVariance) < 0.01) {
       vEl.textContent = 'RM 0.00'; vEl.style.color = 'var(--matcha)';
-      vSub.className = 'badge badge-green'; vSub.textContent = 'Balanced';
-    } else if(variance < 0) {
-      vEl.textContent = '-RM ' + Math.abs(variance).toFixed(2); vEl.style.color = 'var(--vermillion)';
-      vSub.className = 'badge badge-red'; vSub.textContent = 'Shortage';
+      vSub.className = 'badge badge-green'; vSub.textContent = currentOutlet.id === 'all' ? 'All balanced' : 'Balanced';
+    } else if(totalVariance < 0) {
+      vEl.textContent = '-RM ' + Math.abs(totalVariance).toFixed(2); vEl.style.color = 'var(--vermillion)';
+      vSub.className = 'badge badge-red'; vSub.textContent = currentOutlet.id === 'all' ? 'Total shortage' : 'Shortage';
     } else {
-      vEl.textContent = '+RM ' + variance.toFixed(2); vEl.style.color = 'var(--matcha)';
-      vSub.className = 'badge badge-green'; vSub.textContent = 'Overage';
+      vEl.textContent = '+RM ' + totalVariance.toFixed(2); vEl.style.color = 'var(--matcha)';
+      vSub.className = 'badge badge-green'; vSub.textContent = currentOutlet.id === 'all' ? 'Total overage' : 'Overage';
     }
   }
   if(expData.length > 0) {
@@ -613,13 +652,24 @@ async function loadOutlets() {
 
 function renderOutletsList() {
   const c = document.getElementById('outlets-list');
-  c.innerHTML = outlets.map(function(o) {
+  const isAll = currentOutlet && currentOutlet.id === 'all';
+  let html = '<div class="menu-item" onclick="selectOutlet(\'all\')"><div class="menu-icon mi-ink"><i class="ti ti-layout-grid"></i></div><div class="menu-text"><strong>All outlets</strong><span>Combined view across all outlets</span></div>' + (isAll ? '<span style="color:var(--matcha);font-size:16px;"><i class="ti ti-check"></i></span>' : '<span class="menu-arrow"><i class="ti ti-chevron-right"></i></span>') + '</div>';
+  html += outlets.map(function(o) {
     const isActive = currentOutlet && currentOutlet.id === o.id;
-    return '<div class="menu-item" onclick="selectOutlet(\'' + o.id + '\')"><div class="menu-icon mi-matcha">&#127978;</div><div class="menu-text"><strong>' + o.name + '</strong><span>' + (o.location || '') + '</span></div>' + (isActive ? '<span style="color:var(--matcha);font-size:16px;">&#10003;</span>' : '<span class="menu-arrow">&#8250;</span>') + '</div>';
+    return '<div class="menu-item" onclick="selectOutlet(\'' + o.id + '\')"><div class="menu-icon mi-matcha"><i class="ti ti-building-store"></i></div><div class="menu-text"><strong>' + o.name + '</strong><span>' + (o.location || '') + '</span></div>' + (isActive ? '<span style="color:var(--matcha);font-size:16px;"><i class="ti ti-check"></i></span>' : '<span class="menu-arrow"><i class="ti ti-chevron-right"></i></span>') + '</div>';
   }).join('');
+  c.innerHTML = html;
 }
 
 function selectOutlet(id) {
+  if(id === 'all') {
+    currentOutlet = {id:'all', name:'All outlets'};
+    localStorage.setItem('tally_outlet_id', 'all');
+    document.getElementById('current-outlet-name').textContent = 'All outlets';
+    go('s-home');
+    showToast('Viewing all outlets');
+    return;
+  }
   currentOutlet = outlets.find(function(o){ return o.id === id; });
   localStorage.setItem('tally_outlet_id', id);
   document.getElementById('current-outlet-name').textContent = currentOutlet.name;
@@ -780,11 +830,20 @@ async function loadInsights() {
   c.innerHTML = '<div class="loading">Loading insights...</div>';
   if(!currentOutlet) { c.innerHTML = '<div class="empty-state">Select an outlet first.</div>'; return; }
   const range = getDateRange(insightPeriod);
-  const results = await Promise.all([
-    sb.from('sales_entries').select('*').eq('outlet_id', currentOutlet.id).gte('date', range.from).lte('date', range.to),
-    sb.from('expenses').select('*').eq('outlet_id', currentOutlet.id).gte('date', range.from).lte('date', range.to),
-    sb.from('wastage').select('*').eq('outlet_id', currentOutlet.id).gte('date', range.from).lte('date', range.to)
-  ]);
+  let results;
+  if(currentOutlet.id === 'all') {
+    results = await Promise.all([
+      sb.from('sales_entries').select('*').gte('date', range.from).lte('date', range.to),
+      sb.from('expenses').select('*').gte('date', range.from).lte('date', range.to),
+      sb.from('wastage').select('*').gte('date', range.from).lte('date', range.to)
+    ]);
+  } else {
+    results = await Promise.all([
+      sb.from('sales_entries').select('*').eq('outlet_id', currentOutlet.id).gte('date', range.from).lte('date', range.to),
+      sb.from('expenses').select('*').eq('outlet_id', currentOutlet.id).gte('date', range.from).lte('date', range.to),
+      sb.from('wastage').select('*').eq('outlet_id', currentOutlet.id).gte('date', range.from).lte('date', range.to)
+    ]);
+  }
   const sd = results[0].data || [];
   const ed = results[1].data || [];
   const wd = results[2].data || [];
@@ -803,12 +862,12 @@ async function loadInsights() {
   wd.forEach(function(w){ wastReasons[w.reason] = (wastReasons[w.reason]||0)+(+w.estimated_cost); });
   const barMax = Math.max(totalCash, totalCard, totalGrab, totalPanda, 1);
   const tagClass = {'Burnt / rejected':'w-burnt','Spilled':'w-spill','Staff consumption':'w-staff','Expired / spoiled':'w-spoil','Other':'w-other'};
-  let html = '<div class="card"><div class="card-head">Sales overview</div>';
+  let html = '<div class="card"><div class="card-head"><i class="ti ti-chart-bar" style="font-size:14px"></i> Sales overview</div>';
   html += '<div class="insight-metric"><span class="insight-label">Total sales</span><span class="insight-val">RM ' + totalSales.toFixed(2) + '</span></div>';
   html += '<div class="insight-metric"><span class="insight-label">Total expenses</span><span class="insight-val">RM ' + totalExp.toFixed(2) + '</span></div>';
   html += '<div class="insight-metric"><span class="insight-label">Total wastage</span><span class="insight-val">RM ' + totalWast.toFixed(2) + '</span></div>';
   html += '<div class="insight-metric"><span class="insight-label">Cash shortages</span><span class="insight-val" style="color:' + (shortages > 0 ? 'var(--vermillion)' : 'var(--matcha)') + '">' + shortages + ' day' + (shortages !== 1 ? 's' : '') + '</span></div></div>';
-  html += '<div class="card"><div class="card-head">Sales by channel</div>';
+  html += '<div class="card"><div class="card-head"><i class="ti ti-building-store" style="font-size:14px"></i> Sales by channel</div>';
   if(totalSales === 0) {
     html += '<div class="empty-state">No sales data yet.</div>';
   } else {
@@ -820,12 +879,12 @@ async function loadInsights() {
   }
   html += '</div>';
   if(topExp.length > 0) {
-    html += '<div class="card"><div class="card-head">Top recurring expenses</div>';
+    html += '<div class="card"><div class="card-head"><i class="ti ti-repeat" style="font-size:14px"></i> Top recurring expenses</div>';
     topExp.forEach(function(entry){ html += '<div class="exp-row"><span class="exp-name">' + entry[0] + '</span><span class="badge badge-amber">' + entry[1] + 'x</span></div>'; });
     html += '</div>';
   }
   if(Object.keys(wastReasons).length > 0) {
-    html += '<div class="card"><div class="card-head">Wastage breakdown</div>';
+    html += '<div class="card"><div class="card-head"><i class="ti ti-trash" style="font-size:14px"></i> Wastage breakdown</div>';
     Object.entries(wastReasons).sort(function(a,b){ return b[1]-a[1]; }).forEach(function(entry){
       html += '<div class="exp-row"><span class="w-tag ' + (tagClass[entry[0]]||'w-other') + '">' + entry[0].split('/')[0].trim() + '</span><span class="exp-name">' + entry[0] + '</span><span class="exp-amt">RM ' + entry[1].toFixed(2) + '</span></div>';
     });
@@ -846,8 +905,38 @@ function renderSettingsOutlets() {
   const c = document.getElementById('settings-outlets-list');
   if(!outlets.length) { c.innerHTML = '<div class="empty-state">No outlets found.</div>'; return; }
   c.innerHTML = outlets.map(function(o){
-    return '<div class="menu-item"><div class="menu-icon mi-matcha">&#127978;</div><div class="menu-text"><strong>' + o.name + '</strong><span>' + (o.location||'') + '</span></div></div>';
+    return '<div class="menu-item" onclick="openEditOutlet(\'' + o.id + '\')"><div class="menu-icon mi-matcha"><i class='ti ti-building-store'></i></div><div class="menu-text"><strong>' + o.name + '</strong><span>' + (o.location||'No location set') + '</span></div><span class="menu-arrow"><i class='ti ti-chevron-right'></i></span></div>';
   }).join('');
+}
+
+function openEditOutlet(id) {
+  const outlet = outlets.find(function(o){ return o.id === id; });
+  if(!outlet) return;
+  document.getElementById('edit-outlet-id').value = outlet.id;
+  document.getElementById('edit-outlet-name').value = outlet.name;
+  document.getElementById('edit-outlet-loc').value = outlet.location || '';
+  go('s-edit-outlet');
+}
+
+async function saveEditOutlet() {
+  const id = document.getElementById('edit-outlet-id').value;
+  const name = document.getElementById('edit-outlet-name').value.trim();
+  const loc = document.getElementById('edit-outlet-loc').value.trim();
+  if(!name) { showToast('Please enter an outlet name!'); return; }
+  const btn = document.getElementById('edit-outlet-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const result = await sb.from('outlets').update({name:name, location:loc}).eq('id', id);
+  btn.disabled = false; btn.textContent = 'Save outlet';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  const idx = outlets.findIndex(function(o){ return o.id === id; });
+  if(idx > -1) { outlets[idx].name = name; outlets[idx].location = loc; }
+  if(currentOutlet && currentOutlet.id === id) {
+    currentOutlet.name = name; currentOutlet.location = loc;
+    document.getElementById('current-outlet-name').textContent = name;
+  }
+  showToast('Outlet updated!');
+  go('s-settings');
+  renderSettingsOutlets();
 }
 
 function saveSettings() {
@@ -893,7 +982,11 @@ async function init() {
     ownerName = localStorage.getItem('tally_owner') || 'there';
     await loadOutlets();
     const savedId = localStorage.getItem('tally_outlet_id');
-    currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+    if(savedId === 'all') {
+      currentOutlet = {id:'all', name:'All outlets'};
+    } else {
+      currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+    }
     if(currentOutlet) {
       initHome();
       go('s-home');
