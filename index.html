@@ -175,6 +175,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     <div class="outlet-chip" onclick="go('s-outlets')">
       <span id="current-outlet-name">Loading...</span> &#9660;
     </div>
+    <div class="back-btn" onclick="openSettings()" style="margin-left:4px;" title="Settings">&#9881;</div>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="hero">
@@ -380,6 +381,65 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
         <button class="submit-btn" id="wast-btn" onclick="saveWastage()">Log wastage</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="screen" id="s-settings">
+  <div class="topbar">
+    <div class="back-btn" onclick="go('s-home')">&#8592;</div>
+    <span class="topbar-title">Settings</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head">Your business</div>
+        <div class="form-row">
+          <label class="form-lbl">Business name</label>
+          <input class="inp" id="set-biz" type="text" placeholder="e.g. Koharu Taiyaki"/>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Your name</label>
+          <input class="inp" id="set-name" type="text" placeholder="Owner / manager name"/>
+        </div>
+      </div>
+      <div class="section-lbl">Outlets</div>
+      <div class="menu-card" id="settings-outlets-list"></div>
+      <button class="add-btn" onclick="go('s-add-outlet')" style="margin-bottom:0.85rem;">+ Add new outlet</button>
+      <button class="submit-btn" onclick="saveSettings()">Save changes</button>
+      <div style="margin-top:1.5rem;">
+        <div class="card" style="border-color:var(--vermillion-light);">
+          <div class="card-head" style="color:var(--vermillion);">Danger zone</div>
+          <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.85rem;line-height:1.6;">Reset the app and clear all local data. Your Supabase data is not affected.</div>
+          <button onclick="resetApp()" style="width:100%;padding:11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Reset onboarding</button>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:1rem;">Tally v1.0 · by Harulabs</div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD OUTLET -->
+<div class="screen" id="s-add-outlet">
+  <div class="topbar">
+    <div class="back-btn" onclick="go('s-settings')">&#8592;</div>
+    <span class="topbar-title">Add outlet</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head">New outlet</div>
+        <div class="form-row">
+          <label class="form-lbl">Outlet name</label>
+          <input class="inp" id="new-outlet-name" type="text" placeholder="e.g. Outlet 3"/>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Location</label>
+          <input class="inp" id="new-outlet-loc" type="text" placeholder="e.g. Kuching"/>
+        </div>
+      </div>
+      <button class="submit-btn" id="add-outlet-btn" onclick="addNewOutlet()">Add outlet</button>
     </div>
   </div>
 </div>
@@ -772,6 +832,58 @@ async function loadInsights() {
     html += '</div>';
   }
   c.innerHTML = html;
+}
+
+// SETTINGS
+function openSettings() {
+  document.getElementById('set-biz').value = localStorage.getItem('tally_biz') || '';
+  document.getElementById('set-name').value = localStorage.getItem('tally_owner') || '';
+  renderSettingsOutlets();
+  go('s-settings');
+}
+
+function renderSettingsOutlets() {
+  const c = document.getElementById('settings-outlets-list');
+  if(!outlets.length) { c.innerHTML = '<div class="empty-state">No outlets found.</div>'; return; }
+  c.innerHTML = outlets.map(function(o){
+    return '<div class="menu-item"><div class="menu-icon mi-matcha">&#127978;</div><div class="menu-text"><strong>' + o.name + '</strong><span>' + (o.location||'') + '</span></div></div>';
+  }).join('');
+}
+
+function saveSettings() {
+  const biz = document.getElementById('set-biz').value.trim();
+  const name = document.getElementById('set-name').value.trim();
+  if(!biz || !name) { showToast('Please fill in all fields!'); return; }
+  localStorage.setItem('tally_biz', biz);
+  localStorage.setItem('tally_owner', name);
+  ownerName = name;
+  initHome();
+  showToast('Settings saved!');
+  go('s-home');
+}
+
+async function addNewOutlet() {
+  const name = document.getElementById('new-outlet-name').value.trim();
+  const loc = document.getElementById('new-outlet-loc').value.trim();
+  if(!name) { showToast('Please enter an outlet name!'); return; }
+  const btn = document.getElementById('add-outlet-btn');
+  btn.disabled = true; btn.textContent = 'Adding...';
+  const result = await sb.from('outlets').insert({name:name, location:loc}).select();
+  btn.disabled = false; btn.textContent = 'Add outlet';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  outlets.push(result.data[0]);
+  document.getElementById('new-outlet-name').value = '';
+  document.getElementById('new-outlet-loc').value = '';
+  showToast('Outlet added!');
+  go('s-settings');
+  renderSettingsOutlets();
+}
+
+function resetApp() {
+  if(confirm('This will reset your onboarding. Your saved data in Supabase is safe. Continue?')) {
+    localStorage.clear();
+    location.reload();
+  }
 }
 
 async function init() {
