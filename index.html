@@ -4,10 +4,14 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>Tally — by Harulabs</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' rx='22' fill='%23e8f0e9'/><line x1='33' y1='22' x2='33' y2='74' stroke='%234a7c59' stroke-width='4' stroke-linecap='round'/><line x1='43' y1='22' x2='43' y2='74' stroke='%234a7c59' stroke-width='4' stroke-linecap='round'/><line x1='53' y1='22' x2='53' y2='74' stroke='%234a7c59' stroke-width='4' stroke-linecap='round'/><line x1='63' y1='22' x2='63' y2='74' stroke='%234a7c59' stroke-width='4' stroke-linecap='round'/><line x1='25' y1='48' x2='71' y2='48' stroke='%238b5e3c' stroke-width='3.5' stroke-linecap='round'/></svg>"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' rx='22' fill='%23e8f0e9'/><line x1='33' y1='22' x2='33' y2='74' stroke='%234a7c59' stroke-width='4' stroke-linecap='round'/><line x1='43' y1='22' x2='43' y2='74' stroke='%234a7c59' stroke-width='4' stroke-linecap='round'/><line x1='53' y1='22' x2='53' y2='74' stroke='%234a7c59' stroke-width='4' stroke-linecap='round'/><line x1='63' y1='22' x2='63' y2='74' stroke='%234a7c59' stroke-width='4' stroke-linecap='round'/><line x1='25' y1='48' x2='71' y2='48' stroke='%238b5e3c' stroke-width='3.5' stroke-linecap='round'/></svg>"/>
+<meta name="apple-mobile-web-app-title" content="Tally"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#e8f0e9"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -24,6 +28,10 @@
   --ink-soft:#9a938a;
   --vermillion:#c0392b;
   --vermillion-light:#fcecea;
+  --amber:#c47a1e;
+  --amber-light:#faeeda;
+  --rose:#b03030;
+  --rose-light:#fce8e8;
   --border:#e0d8cc;
   --input-bg:#fffdf9;
   --white:#ffffff;
@@ -60,7 +68,8 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .badge-green{background:var(--matcha-light);color:var(--matcha);}
 .badge-red{background:var(--vermillion-light);color:var(--vermillion);}
 .badge-wood{background:var(--wood-light);color:var(--wood);}
-.badge-amber{background:#faeeda;color:#854F0B;}
+.badge-amber{background:var(--amber-light);color:var(--amber);}
+.badge-rose{background:var(--rose-light);color:var(--rose);}
 .badge-neutral{background:var(--cream-dark);color:var(--ink-mid);}
 .stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:1.25rem;}
 .stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:0.9rem 1rem;}
@@ -75,7 +84,8 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .menu-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
 .mi-matcha{background:var(--matcha-light);color:var(--matcha);}
 .mi-wood{background:var(--wood-light);color:var(--wood);}
-.mi-amber{background:#faeeda;color:#854F0B;}
+.mi-amber{background:var(--amber-light);color:var(--amber);}
+.mi-rose{background:var(--rose-light);color:var(--rose);}
 .mi-ink{background:var(--cream-dark);color:var(--ink-mid);}
 .menu-text{flex:1;}
 .menu-text strong{font-size:14px;font-weight:500;display:block;color:var(--ink);}
@@ -86,14 +96,14 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .exp-cat{font-size:10px;border-radius:20px;padding:3px 9px;font-weight:500;flex-shrink:0;}
 .cat-supply{background:var(--matcha-light);color:var(--matcha);}
 .cat-clean{background:#E6F1FB;color:#185FA5;}
-.cat-pack{background:var(--wood-light);color:var(--wood);}
+.cat-pack{background:var(--amber-light);color:var(--amber);}
 .cat-maint{background:#EEEDFE;color:#534AB7;}
 .cat-other{background:var(--cream-dark);color:var(--ink-mid);}
 .w-tag{font-size:10px;border-radius:20px;padding:3px 9px;font-weight:500;flex-shrink:0;}
-.w-burnt{background:#faeeda;color:#854F0B;}
+.w-burnt{background:var(--amber-light);color:var(--amber);}
 .w-spill{background:#E6F1FB;color:#185FA5;}
 .w-staff{background:#EEEDFE;color:#534AB7;}
-.w-spoil{background:var(--vermillion-light);color:var(--vermillion);}
+.w-spoil{background:var(--rose-light);color:var(--rose);}
 .w-other{background:var(--cream-dark);color:var(--ink-mid);}
 .exp-name{flex:1;font-size:13px;color:var(--ink);}
 .exp-amt{font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;}
@@ -136,8 +146,24 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 
 <div class="toast" id="toast"></div>
 
+<!-- LOADING -->
+<div class="screen active" id="s-loading" style="align-items:center;justify-content:center;background:var(--cream);">
+  <div style="text-align:center;">
+    <svg width="48" height="48" viewBox="0 0 96 96" fill="none" style="margin-bottom:12px;">
+      <rect width="96" height="96" rx="22" fill="#e8f0e9"/>
+      <line x1="33" y1="22" x2="33" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
+      <line x1="43" y1="22" x2="43" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
+      <line x1="53" y1="22" x2="53" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
+      <line x1="63" y1="22" x2="63" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
+      <line x1="25" y1="48" x2="71" y2="48" stroke="#8b5e3c" stroke-width="3.5" stroke-linecap="round"/>
+    </svg>
+    <div style="font-size:20px;font-weight:400;color:var(--matcha);font-family:'DM Serif Display',serif;letter-spacing:0.04em;">Tally</div>
+    <div style="font-size:11px;color:var(--ink-soft);letter-spacing:0.14em;text-transform:uppercase;margin-top:4px;">Loading...</div>
+  </div>
+</div>
+
 <!-- ONBOARDING -->
-<div class="screen active" id="s-onboard">
+<div class="screen" id="s-onboard">
   <div style="overflow-y:auto;flex:1;">
     <div class="onboard-hero">
       <div class="onboard-logo">Tally</div>
@@ -174,7 +200,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="logo-sub">by Harulabs</div>
     </div>
     <div class="outlet-chip" onclick="go('s-outlets')">
-      <i class="ti ti-building-store" style="font-size:13px"></i>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       <span id="current-outlet-name">Loading...</span>
       <i class="ti ti-chevron-down" style="font-size:11px"></i>
     </div>
@@ -218,12 +244,12 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
       <div class="menu-item" onclick="go('s-expenses')">
-        <div class="menu-icon mi-wood"><i class="ti ti-receipt"></i></div>
+        <div class="menu-icon mi-amber"><i class="ti ti-receipt"></i></div>
         <div class="menu-text"><strong>Expenses</strong><span>Ad-hoc purchases &amp; costs</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
       <div class="menu-item" onclick="go('s-wastage')">
-        <div class="menu-icon mi-amber"><i class="ti ti-trash"></i></div>
+        <div class="menu-icon mi-rose"><i class="ti ti-trash"></i></div>
         <div class="menu-text"><strong>Wastage</strong><span>Spills, rejects, consumption</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
@@ -288,28 +314,24 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
       <button class="submit-btn" id="sales-btn" onclick="saveSales()">Save sales entry</button>
+      <div class="card" style="margin-top:1rem;">
+        <div class="card-head"><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="sales-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
+        <div id="sales-history"><div class="empty-state">Loading history...</div></div>
+      </div>
     </div>
   </div>
 </div>
 
 <!-- EXPENSES -->
 <div class="screen" id="s-expenses">
-  <div class="topbar">
+  <div class="topbar" style="border-bottom-color:var(--amber-light);">
     <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
     <span class="topbar-title">Expenses</span>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
       <div class="card">
-        <div class="card-head"><i class="ti ti-clock" style="font-size:14px"></i> Logged today &nbsp;<span class="badge badge-neutral" id="exp-count" style="text-transform:none;letter-spacing:0;">0 items</span></div>
-        <div id="exp-list"><div class="empty-state">No expenses logged yet today.</div></div>
-        <div class="total-row" id="exp-total-row" style="display:none;">
-          <span style="font-size:12px;color:var(--ink-mid);">Total today</span>
-          <span style="font-size:15px;font-weight:500;" id="exp-total">RM 0</span>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-head"><i class="ti ti-plus" style="font-size:14px"></i> Add expense</div>
+        <div class="card-head" style="color:var(--amber);"><i class="ti ti-plus" style="font-size:14px"></i> Add expense</div>
         <div class="form-row">
           <label class="form-lbl">Item name</label>
           <input class="inp" id="exp-item" type="text" placeholder="e.g. ice cubes, kitchen towels"/>
@@ -334,7 +356,19 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <label class="form-lbl">Bought by</label>
           <input class="inp" id="exp-by" type="text" placeholder="Staff name"/>
         </div>
-        <button class="submit-btn" id="exp-btn" onclick="saveExpense()">Add expense</button>
+        <button class="submit-btn" id="exp-btn" onclick="saveExpense()" style="background:var(--amber);">Add expense</button>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:var(--amber);"><i class="ti ti-clock" style="font-size:14px"></i> Logged today &nbsp;<span class="badge badge-neutral" id="exp-count" style="text-transform:none;letter-spacing:0;">0 items</span></div>
+        <div id="exp-list"><div class="empty-state">No expenses logged yet today.</div></div>
+        <div class="total-row" id="exp-total-row" style="display:none;">
+          <span style="font-size:12px;color:var(--ink-mid);">Total today</span>
+          <span style="font-size:15px;font-weight:500;" id="exp-total">RM 0</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="exp-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
+        <div id="exp-history"><div class="empty-state">Loading history...</div></div>
       </div>
     </div>
   </div>
@@ -342,22 +376,14 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 
 <!-- WASTAGE -->
 <div class="screen" id="s-wastage">
-  <div class="topbar">
+  <div class="topbar" style="border-bottom-color:var(--rose-light);">
     <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
     <span class="topbar-title">Wastage</span>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
       <div class="card">
-        <div class="card-head"><i class="ti ti-clock" style="font-size:14px"></i> Logged today &nbsp;<span class="badge badge-neutral" id="wast-count" style="text-transform:none;letter-spacing:0;">0 items</span></div>
-        <div id="wast-list"><div class="empty-state">No wastage logged yet today.</div></div>
-        <div class="total-row" id="wast-total-row" style="display:none;">
-          <span style="font-size:12px;color:var(--ink-mid);">Total today</span>
-          <span style="font-size:15px;font-weight:500;" id="wast-total">RM 0</span>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-head"><i class="ti ti-plus" style="font-size:14px"></i> Log wastage</div>
+        <div class="card-head" style="color:var(--rose);"><i class="ti ti-plus" style="font-size:14px"></i> Log wastage</div>
         <div class="form-row">
           <label class="form-lbl">Item</label>
           <input class="inp" id="wast-item" type="text" placeholder="e.g. taiyaki, matcha latte"/>
@@ -382,7 +408,19 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <label class="form-lbl">Logged by</label>
           <input class="inp" id="wast-by" type="text" placeholder="Staff name"/>
         </div>
-        <button class="submit-btn" id="wast-btn" onclick="saveWastage()">Log wastage</button>
+        <button class="submit-btn" id="wast-btn" onclick="saveWastage()" style="background:var(--rose);">Log wastage</button>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:var(--rose);"><i class="ti ti-clock" style="font-size:14px"></i> Logged today &nbsp;<span class="badge badge-neutral" id="wast-count" style="text-transform:none;letter-spacing:0;">0 items</span></div>
+        <div id="wast-list"><div class="empty-state">No wastage logged yet today.</div></div>
+        <div class="total-row" id="wast-total-row" style="display:none;">
+          <span style="font-size:12px;color:var(--ink-mid);">Total today</span>
+          <span style="font-size:15px;font-weight:500;" id="wast-total">RM 0</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="wast-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
+        <div id="wast-history"><div class="empty-state">Loading history...</div></div>
       </div>
     </div>
   </div>
@@ -414,8 +452,27 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div style="margin-top:1.5rem;">
         <div class="card" style="border-color:var(--vermillion-light);">
           <div class="card-head" style="color:var(--vermillion);"><i class="ti ti-alert-triangle" style="font-size:14px"></i> Danger zone</div>
-          <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.85rem;line-height:1.6;">Reset the app and clear all local data. Your Supabase data is not affected.</div>
+
+          <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.5rem;line-height:1.6;">Reset onboarding clears your name from this device only. Your Supabase data stays safe.</div>
           <button onclick="resetApp()" style="width:100%;padding:11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Reset onboarding</button>
+
+          <div style="height:1px;background:var(--vermillion-light);margin:0.75rem 0;"></div>
+
+          <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.75rem;line-height:1.6;"><strong style="color:var(--vermillion);">Clear test data</strong> — deletes all sales, expenses and wastage entries. Your outlets and business setup stay intact. Use this before going live.</div>
+          <div class="form-row" style="margin-bottom:0.5rem;">
+            <label class="form-lbl">Type <strong>CLEAR</strong> to confirm</label>
+            <input class="inp" id="clear-data-confirm" type="text" placeholder="Type CLEAR here" style="border-color:var(--vermillion-light);"/>
+          </div>
+          <button onclick="clearTestData()" style="width:100%;padding:11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;margin-bottom:0.75rem;"><i class="ti ti-eraser" style="font-size:13px"></i> Clear test data</button>
+
+          <div style="height:1px;background:var(--vermillion-light);margin-bottom:0.75rem;"></div>
+
+          <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.75rem;line-height:1.6;"><strong style="color:var(--vermillion);">Full factory reset</strong> — permanently deletes ALL data including outlets, sales, expenses and wastage. This cannot be undone.</div>
+          <div class="form-row" style="margin-bottom:0.5rem;">
+            <label class="form-lbl">Type <strong>DELETE</strong> to confirm</label>
+            <input class="inp" id="factory-reset-confirm" type="text" placeholder="Type DELETE here" style="border-color:var(--vermillion-light);"/>
+          </div>
+          <button onclick="factoryReset()" style="width:100%;padding:11px;background:var(--vermillion-light);border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;"><i class="ti ti-trash" style="font-size:13px"></i> Full factory reset</button>
         </div>
       </div>
       <div class="hint" style="margin-top:1rem;">Tally v1.0 · by Harulabs</div>
@@ -432,13 +489,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
       <div class="card">
-        <div class="card-head"><i class="ti ti-building-store" style="font-size:14px"></i> New outlet</div>
+        <div class="card-head"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> New outlet</div>
         <div class="form-row">
           <label class="form-lbl">Outlet name</label>
           <input class="inp" id="new-outlet-name" type="text" placeholder="e.g. Outlet 3"/>
         </div>
         <div class="form-row" style="margin-bottom:0;">
-          <label class="form-lbl">Location</label>
+          <label class="form-lbl">Location <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
           <input class="inp" id="new-outlet-loc" type="text" placeholder="e.g. Kuching"/>
         </div>
       </div>
@@ -463,11 +520,18 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <input class="inp" id="edit-outlet-name" type="text" placeholder="e.g. Koharu AEON"/>
         </div>
         <div class="form-row" style="margin-bottom:0;">
-          <label class="form-lbl">Location</label>
+          <label class="form-lbl">Location <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
           <input class="inp" id="edit-outlet-loc" type="text" placeholder="e.g. AEON Mall Kuching"/>
         </div>
       </div>
       <button class="submit-btn" id="edit-outlet-btn" onclick="saveEditOutlet()">Save outlet</button>
+      <div style="margin-top:1rem;">
+        <div class="card" style="border-color:var(--vermillion-light);">
+          <div class="card-head" style="color:var(--vermillion);"><i class="ti ti-alert-triangle" style="font-size:14px"></i> Danger zone</div>
+          <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.85rem;line-height:1.6;">Deleting an outlet is permanent. All sales, expense and wastage data for this outlet will remain in the database but the outlet will be removed.</div>
+          <button id="delete-outlet-btn" onclick="deleteOutlet()" style="width:100%;padding:11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;"><i class="ti ti-trash" style="font-size:14px"></i> Delete this outlet</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -493,7 +557,96 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 <script>
 const SUPABASE_URL = 'https://gvilerrdqzwsdprobacc.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_2iBCyH3Q2lcQLE4Qj1C1Zg_4SJjlOxq';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Lightweight Supabase REST client - no library needed
+const sb = {
+  from: function(table) {
+    const base = SUPABASE_URL + '/rest/v1/' + table;
+    const h = {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json'
+    };
+    const q = { filters: [], cols: '*', orderBy: null, orderAsc: true, method: 'GET', body: null, returnData: false };
+
+    const chain = {
+      select: function(cols) {
+        if(q.method === 'GET') q.cols = cols || '*';
+        q.returnData = true;
+        return chain;
+      },
+      insert: function(data) {
+        q.method = 'POST';
+        q.body = Array.isArray(data) ? data : [data];
+        return chain;
+      },
+      update: function(data) {
+        q.method = 'PATCH';
+        q.body = data;
+        return chain;
+      },
+      eq: function(col, val) {
+        q.filters.push(col + '=eq.' + val);
+        return chain;
+      },
+      gte: function(col, val) {
+        q.filters.push(col + '=gte.' + val);
+        return chain;
+      },
+      lte: function(col, val) {
+        q.filters.push(col + '=lte.' + val);
+        return chain;
+      },
+      order: function(col, opts) {
+        q.orderBy = col;
+        q.orderAsc = !(opts && opts.ascending === false);
+        return chain;
+      },
+      exec: async function() {
+        const params = [];
+        if(q.method === 'GET' || q.returnData) params.push('select=' + q.cols);
+        q.filters.forEach(function(f) { params.push(f); });
+        if(q.orderBy) params.push('order=' + q.orderBy + '.' + (q.orderAsc ? 'asc' : 'desc'));
+        const url = base + (params.length ? '?' + params.join('&') : '');
+        const opts = { headers: Object.assign({}, h) };
+        if(q.method === 'POST') {
+          opts.method = 'POST';
+          opts.body = JSON.stringify(q.body);
+          opts.headers['Prefer'] = 'return=representation';
+        } else if(q.method === 'PATCH') {
+          opts.method = 'PATCH';
+          opts.body = JSON.stringify(q.body);
+          opts.headers['Prefer'] = 'return=representation';
+        } else {
+          opts.method = 'GET';
+          delete opts.headers['Content-Type'];
+        }
+        console.log('DB QUERY:', opts.method || 'GET', url.substring(0, 120));
+        try {
+          const res = await fetch(url, opts);
+          const text = await res.text();
+          let data = [];
+          try { data = JSON.parse(text); } catch(e) {}
+          if(!res.ok) {
+            const msg = (data && data.message) ? data.message : (data && data.hint) ? data.hint : text;
+            console.log('DB ERROR:', res.status, msg);
+            return { data: null, error: { message: msg } };
+          }
+          if(!Array.isArray(data)) data = data ? [data] : [];
+          console.log('DB OK:', Array.isArray(data) ? data.length + ' rows' : 'done');
+          return { data: data, error: null };
+        } catch(e) {
+          console.log('DB FETCH ERROR:', e.message, url.substring(0, 120));
+          return { data: null, error: { message: e.message } };
+        }
+      },
+      then: function(resolve, reject) {
+        return chain.exec().then(resolve, reject);
+      }
+    };
+    return chain;
+  }
+};
 
 let currentOutlet = null;
 let outlets = [];
@@ -510,6 +663,7 @@ function go(id) {
   if(id === 's-wastage') loadWastage();
   if(id === 's-insights') loadInsights();
   if(id === 's-outlets') renderOutletsList();
+  if(id === 's-sales') loadSalesHistory();
 }
 
 function showToast(msg, duration) {
@@ -537,11 +691,32 @@ function greeting() {
 
 function addOutletField() {
   outletFields++;
+  const num = outletFields;
   const c = document.getElementById('outlets-setup');
   const d = document.createElement('div');
   d.className = 'outlet-setup';
-  d.id = 'outlet-field-' + outletFields;
-  d.innerHTML = '<div class="outlet-header"><div class="outlet-num">' + outletFields + '</div><span class="outlet-title">Outlet ' + outletFields + '</span><button class="outlet-remove" onclick="removeOutletField(' + outletFields + ')">&#215;</button></div><div class="outlet-fields"><div><label class="form-lbl">Outlet name</label><input class="inp" id="ob-outlet-name-' + outletFields + '" type="text" placeholder="e.g. Vivacity"/></div><div><label class="form-lbl">Location</label><input class="inp" id="ob-outlet-loc-' + outletFields + '" type="text" placeholder="e.g. Kuching"/></div></div>';
+  d.id = 'outlet-field-' + num;
+  const nameInp = document.createElement('input');
+  nameInp.className = 'inp'; nameInp.type = 'text'; nameInp.placeholder = 'e.g. Vivacity'; nameInp.setAttribute('data-outlet-name', '');
+  const locInp = document.createElement('input');
+  locInp.className = 'inp'; locInp.type = 'text'; locInp.placeholder = 'e.g. Kuching'; locInp.setAttribute('data-outlet-loc', '');
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'outlet-remove'; removeBtn.innerHTML = '&#215;';
+  removeBtn.onclick = function(){ d.remove(); };
+  const header = document.createElement('div');
+  header.className = 'outlet-header';
+  header.innerHTML = '<div class="outlet-num">' + num + '</div><span class="outlet-title">Outlet ' + num + '</span>';
+  header.appendChild(removeBtn);
+  const nameWrap = document.createElement('div');
+  nameWrap.innerHTML = '<label class="form-lbl">Outlet name</label>';
+  nameWrap.appendChild(nameInp);
+  const locWrap = document.createElement('div');
+  locWrap.innerHTML = '<label class="form-lbl">Location <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>';
+  locWrap.appendChild(locInp);
+  const fields = document.createElement('div');
+  fields.className = 'outlet-fields';
+  fields.appendChild(nameWrap); fields.appendChild(locWrap);
+  d.appendChild(header); d.appendChild(fields);
   c.appendChild(d);
 }
 
@@ -551,25 +726,42 @@ function removeOutletField(n) {
 }
 
 function initOnboarding() {
+  outletFields = 1;
   const c = document.getElementById('outlets-setup');
-  c.innerHTML = '<div class="outlet-setup" id="outlet-field-1"><div class="outlet-header"><div class="outlet-num">1</div><span class="outlet-title">Outlet 1</span></div><div class="outlet-fields"><div><label class="form-lbl">Outlet name</label><input class="inp" id="ob-outlet-name-1" type="text" placeholder="e.g. AEON"/></div><div><label class="form-lbl">Location</label><input class="inp" id="ob-outlet-loc-1" type="text" placeholder="e.g. Kuching"/></div></div></div>';
+  c.innerHTML = '<div class="outlet-setup" id="outlet-field-1"><div class="outlet-header"><div class="outlet-num">1</div><span class="outlet-title">Outlet 1</span></div><div class="outlet-fields"><div><label class="form-lbl">Outlet name</label><input class="inp" type="text" placeholder="e.g. AEON" data-outlet-name/></div><div><label class="form-lbl">Location <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><input class="inp" type="text" placeholder="e.g. Kuching" data-outlet-loc/></div></div></div>';
 }
 
 async function saveOnboarding() {
   const biz = document.getElementById('ob-biz').value.trim();
   const name = document.getElementById('ob-name').value.trim();
   if(!biz || !name) { showToast('Please fill in your business and name!'); return; }
-  const outletData = [];
-  for(let i = 1; i <= outletFields; i++) {
-    const n = document.getElementById('ob-outlet-name-' + i);
-    const l = document.getElementById('ob-outlet-loc-' + i);
-    if(n && n.value.trim()) {
-      outletData.push({name: n.value.trim(), location: l ? l.value.trim() : ''});
-    }
-  }
-  if(outletData.length === 0) { showToast('Add at least one outlet!'); return; }
   const btn = document.getElementById('ob-btn');
   btn.disabled = true; btn.textContent = 'Setting up...';
+
+  // If outlets already exist in Supabase, just save name/biz and go home
+  if(outlets.length > 0) {
+    localStorage.setItem('tally_owner', name);
+    localStorage.setItem('tally_biz', biz);
+    localStorage.setItem('tally_outlet_id', outlets[0].id);
+    localStorage.setItem('tally_setup', '1');
+    ownerName = name;
+    currentOutlet = outlets[0];
+    btn.disabled = false; btn.textContent = "Let's go";
+    initHome();
+    go('s-home');
+    return;
+  }
+
+  // New user - collect and create outlets
+  const outletData = [];
+  document.querySelectorAll('#outlets-setup .outlet-setup').forEach(function(el) {
+    const nameInput = el.querySelector('[data-outlet-name]');
+    const locInput = el.querySelector('[data-outlet-loc]');
+    if(nameInput && nameInput.value.trim()) {
+      outletData.push({name: nameInput.value.trim(), location: locInput ? locInput.value.trim() : ''});
+    }
+  });
+  if(outletData.length === 0) { showToast('Add at least one outlet!'); btn.disabled=false; btn.textContent="Let's go"; return; }
   const result = await sb.from('outlets').insert(outletData).select();
   if(result.error) { showToast('Error: ' + result.error.message); btn.disabled=false; btn.textContent="Let's go"; return; }
   localStorage.setItem('tally_owner', name);
@@ -577,8 +769,9 @@ async function saveOnboarding() {
   localStorage.setItem('tally_outlet_id', result.data[0].id);
   localStorage.setItem('tally_setup', '1');
   ownerName = name;
-  currentOutlet = result.data[0];
-  outlets = result.data;
+  outlets = result.data.map(function(o){ return {id:o.id,name:o.name,location:o.location,created_at:o.created_at}; });
+  currentOutlet = outlets[0];
+  btn.disabled = false; btn.textContent = "Let's go";
   initHome();
   go('s-home');
 }
@@ -633,21 +826,23 @@ async function loadHomeStats() {
   }
   if(expData.length > 0) {
     const total = expData.reduce(function(a,b){ return a + parseFloat(b.amount); }, 0);
+    document.getElementById('stat-expenses').style.color = 'var(--amber)';
     document.getElementById('stat-expenses').textContent = 'RM ' + total.toFixed(2);
-    document.getElementById('stat-exp-sub').className = 'badge badge-wood';
+    document.getElementById('stat-exp-sub').className = 'badge badge-amber';
     document.getElementById('stat-exp-sub').textContent = expData.length + ' item' + (expData.length !== 1 ? 's' : '');
   }
   if(wastData.length > 0) {
     const total = wastData.reduce(function(a,b){ return a + parseFloat(b.estimated_cost); }, 0);
+    document.getElementById('stat-wastage').style.color = 'var(--rose)';
     document.getElementById('stat-wastage').textContent = 'RM ' + total.toFixed(2);
-    document.getElementById('stat-wast-sub').className = 'badge badge-amber';
+    document.getElementById('stat-wast-sub').className = 'badge badge-rose';
     document.getElementById('stat-wast-sub').textContent = wastData.length + ' item' + (wastData.length !== 1 ? 's' : '');
   }
 }
 
 async function loadOutlets() {
   const result = await sb.from('outlets').select('*').order('created_at');
-  if(result.data) outlets = result.data;
+  if(result.data) outlets = result.data.map(function(o){ return {id:o.id,name:o.name,location:o.location,created_at:o.created_at}; });
 }
 
 function renderOutletsList() {
@@ -656,7 +851,7 @@ function renderOutletsList() {
   let html = '<div class="menu-item" onclick="selectOutlet(\'all\')"><div class="menu-icon mi-ink"><i class="ti ti-layout-grid"></i></div><div class="menu-text"><strong>All outlets</strong><span>Combined view across all outlets</span></div>' + (isAll ? '<span style="color:var(--matcha);font-size:16px;"><i class="ti ti-check"></i></span>' : '<span class="menu-arrow"><i class="ti ti-chevron-right"></i></span>') + '</div>';
   html += outlets.map(function(o) {
     const isActive = currentOutlet && currentOutlet.id === o.id;
-    return '<div class="menu-item" onclick="selectOutlet(\'' + o.id + '\')"><div class="menu-icon mi-matcha"><i class="ti ti-building-store"></i></div><div class="menu-text"><strong>' + o.name + '</strong><span>' + (o.location || '') + '</span></div>' + (isActive ? '<span style="color:var(--matcha);font-size:16px;"><i class="ti ti-check"></i></span>' : '<span class="menu-arrow"><i class="ti ti-chevron-right"></i></span>') + '</div>';
+    return '<div class="menu-item" onclick="selectOutlet(\'' + o.id + '\')"><div class="menu-icon mi-matcha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><div class="menu-text"><strong>' + o.name + '</strong><span>' + (o.location || '') + '</span></div>' + (isActive ? '<span style="color:var(--matcha);font-size:16px;"><i class="ti ti-check"></i></span>' : '<span class="menu-arrow"><i class="ti ti-chevron-right"></i></span>') + '</div>';
   }).join('');
   c.innerHTML = html;
 }
@@ -701,8 +896,43 @@ function calcVar() {
   }
 }
 
+async function loadSalesHistory() {
+  if(!currentOutlet) return;
+  const today = getToday();
+  const d30 = new Date(); d30.setDate(d30.getDate() - 30);
+  const from30 = d30.toISOString().split('T')[0];
+  let q = sb.from('sales_entries').select('*').gte('date', from30).lte('date', today).order('date', {ascending:false});
+  if(currentOutlet.id !== 'all') q = q.eq('outlet_id', currentOutlet.id);
+  const result = await q;
+  const hist = result.data || [];
+  const histEl = document.getElementById('sales-history');
+  const histCount = document.getElementById('sales-hist-count');
+  if(!histEl) return;
+  if(hist.length === 0) {
+    histEl.innerHTML = '<div class="empty-state">No sales entries yet.</div>';
+    histCount.textContent = ''; return;
+  }
+  histEl.innerHTML = hist.map(function(s){
+    const total = (+s.cash)+(+s.card)+(+s.grabfood)+(+s.foodpanda);
+    const variance = total - (+s.pos_total);
+    const isToday = s.date === today;
+    const label = isToday ? 'Today' : new Date(s.date+'T00:00:00').toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short'});
+    const varColor = Math.abs(variance) < 0.01 ? 'var(--matcha)' : variance < 0 ? 'var(--vermillion)' : 'var(--matcha)';
+    const varText = Math.abs(variance) < 0.01 ? 'Balanced' : variance < 0 ? '−RM '+Math.abs(variance).toFixed(2) : '+RM '+variance.toFixed(2);
+    return '<div style="display:flex;align-items:center;gap:8px;padding:0.65rem 0;border-bottom:1px solid var(--border);">' +
+      '<div style="flex:1;">' +
+      '<div style="font-size:12px;font-weight:500;color:' + (isToday ? 'var(--matcha)' : 'var(--ink-mid)') + ';">' + label + (s.staff_name ? ' · <span style="font-weight:400;color:var(--ink-soft);">' + s.staff_name + '</span>' : '') + '</div>' +
+      '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">Cash RM' + (+s.cash).toFixed(2) + ' · Card RM' + (+s.card).toFixed(2) + ' · Grab RM' + (+s.grabfood).toFixed(2) + ' · Panda RM' + (+s.foodpanda).toFixed(2) + '</div></div>' +
+      '<div style="text-align:right;">' +
+      '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + total.toFixed(2) + '</div>' +
+      '<div style="font-size:10px;color:' + varColor + ';">' + varText + '</div></div></div>';
+  }).join('');
+  histCount.textContent = hist.length + ' entr' + (hist.length !== 1 ? 'ies' : 'y');
+}
+
 async function saveSales() {
   if(!currentOutlet) { showToast('Please select an outlet first!'); return; }
+  if(currentOutlet.id === 'all') { showToast('Please select a specific outlet to log sales!'); return; }
   const pos = parseFloat(document.getElementById('pos-total').value) || 0;
   const cash = parseFloat(document.getElementById('ch-cash').value) || 0;
   const card = parseFloat(document.getElementById('ch-card').value) || 0;
@@ -734,27 +964,74 @@ async function saveSales() {
 
 async function loadExpenses() {
   if(!currentOutlet) return;
-  const result = await sb.from('expenses').select('*').eq('outlet_id', currentOutlet.id).eq('date', getToday()).order('created_at', {ascending:false});
-  const data = result.data || [];
+  const today = getToday();
+  const d30 = new Date(); d30.setDate(d30.getDate() - 30);
+  const from30 = d30.toISOString().split('T')[0];
+
+  // Load today
+  let q1 = sb.from('expenses').select('*').eq('date', today).order('created_at', {ascending:false});
+  if(currentOutlet.id !== 'all') q1 = q1.eq('outlet_id', currentOutlet.id);
+
+  // Load last 30 days (excluding today)
+  let q2 = sb.from('expenses').select('*').gte('date', from30).lte('date', today).order('date', {ascending:false});
+  if(currentOutlet.id !== 'all') q2 = q2.eq('outlet_id', currentOutlet.id);
+
+  const [r1, r2] = await Promise.all([q1, q2]);
+  const data = r1.data || [];
+  const hist = r2.data || [];
+
   const list = document.getElementById('exp-list');
   const countEl = document.getElementById('exp-count');
   const totalRow = document.getElementById('exp-total-row');
+  const histEl = document.getElementById('exp-history');
+  const histCount = document.getElementById('exp-hist-count');
+  const catClass = {Supplies:'cat-supply',Cleaning:'cat-clean',Packaging:'cat-pack',Maintenance:'cat-maint',Other:'cat-other'};
+
+  // Today
   if(data.length === 0) {
     list.innerHTML = '<div class="empty-state">No expenses logged yet today.</div>';
-    countEl.textContent = '0 items'; totalRow.style.display = 'none'; return;
+    countEl.textContent = '0 items'; totalRow.style.display = 'none';
+  } else {
+    list.innerHTML = data.map(function(e){
+      return '<div class="exp-row"><span class="exp-cat ' + (catClass[e.category]||'cat-other') + '">' + e.category + '</span>' +
+        '<span class="exp-name">' + e.item_name + '<br/>' + (e.bought_by ? '<span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> ' + e.bought_by + '</span>' : '<span style="color:var(--border);font-size:11px;">No name logged</span>') + '</span>' +
+        '<span class="exp-amt">RM ' + parseFloat(e.amount).toFixed(2) + '</span></div>';
+    }).join('');
+    const total = data.reduce(function(a,b){ return a + parseFloat(b.amount); }, 0);
+    countEl.textContent = data.length + ' item' + (data.length !== 1 ? 's' : '');
+    document.getElementById('exp-total').textContent = 'RM ' + total.toFixed(2);
+    totalRow.style.display = 'flex';
   }
-  const catClass = {Supplies:'cat-supply',Cleaning:'cat-clean',Packaging:'cat-pack',Maintenance:'cat-maint',Other:'cat-other'};
-  list.innerHTML = data.map(function(e){
-    return '<div class="exp-row"><span class="exp-cat ' + (catClass[e.category]||'cat-other') + '">' + e.category + '</span><span class="exp-name">' + e.item_name + (e.bought_by ? ' <span style="color:var(--ink-soft);font-size:11px;">· ' + e.bought_by + '</span>' : '') + '</span><span class="exp-amt">RM ' + parseFloat(e.amount).toFixed(2) + '</span></div>';
-  }).join('');
-  const total = data.reduce(function(a,b){ return a + parseFloat(b.amount); }, 0);
-  countEl.textContent = data.length + ' item' + (data.length !== 1 ? 's' : '');
-  document.getElementById('exp-total').textContent = 'RM ' + total.toFixed(2);
-  totalRow.style.display = 'flex';
+
+  // History - group by date
+  if(hist.length === 0) {
+    histEl.innerHTML = '<div class="empty-state">No expense history yet.</div>';
+    histCount.textContent = '';
+  } else {
+    const grouped = {};
+    hist.forEach(function(e){ if(!grouped[e.date]) grouped[e.date]=[]; grouped[e.date].push(e); });
+    histEl.innerHTML = Object.keys(grouped).map(function(date){
+      const items = grouped[date];
+      const dayTotal = items.reduce(function(a,b){ return a+parseFloat(b.amount); }, 0);
+      const isToday = date === today;
+      const label = isToday ? 'Today' : new Date(date+'T00:00:00').toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short'});
+      return '<div style="padding:0.5rem 0;border-bottom:1px solid var(--border);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+        '<span style="font-size:11px;font-weight:500;color:' + (isToday ? 'var(--matcha)' : 'var(--ink-mid)') + ';">' + label + '</span>' +
+        '<span style="font-size:11px;color:var(--ink-soft);">RM ' + dayTotal.toFixed(2) + '</span></div>' +
+        items.map(function(e){
+          return '<div class="exp-row" style="padding:4px 0;"><span class="exp-cat ' + (catClass[e.category]||'cat-other') + '">' + e.category + '</span>' +
+            '<span class="exp-name">' + e.item_name + (e.bought_by ? '<br/><span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> '+e.bought_by+'</span>' : '') + '</span>' +
+            '<span class="exp-amt">RM ' + parseFloat(e.amount).toFixed(2) + '</span></div>';
+        }).join('') + '</div>';
+    }).join('');
+    histCount.textContent = hist.length + ' entries';
+  }
 }
 
 async function saveExpense() {
   if(!currentOutlet) { showToast('Please select an outlet first!'); return; }
+  if(currentOutlet.id === 'all') { showToast('Please select a specific outlet to log expenses!'); return; }
   const item = document.getElementById('exp-item').value.trim();
   const amount = parseFloat(document.getElementById('exp-amount').value);
   const cat = document.getElementById('exp-cat').value;
@@ -773,27 +1050,72 @@ async function saveExpense() {
 
 async function loadWastage() {
   if(!currentOutlet) return;
-  const result = await sb.from('wastage').select('*').eq('outlet_id', currentOutlet.id).eq('date', getToday()).order('created_at', {ascending:false});
-  const data = result.data || [];
+  const today = getToday();
+  const d30 = new Date(); d30.setDate(d30.getDate() - 30);
+  const from30 = d30.toISOString().split('T')[0];
+
+  let q1 = sb.from('wastage').select('*').eq('date', today).order('created_at', {ascending:false});
+  if(currentOutlet.id !== 'all') q1 = q1.eq('outlet_id', currentOutlet.id);
+
+  let q2 = sb.from('wastage').select('*').gte('date', from30).lte('date', today).order('date', {ascending:false});
+  if(currentOutlet.id !== 'all') q2 = q2.eq('outlet_id', currentOutlet.id);
+
+  const [r1, r2] = await Promise.all([q1, q2]);
+  const data = r1.data || [];
+  const hist = r2.data || [];
+
   const list = document.getElementById('wast-list');
   const countEl = document.getElementById('wast-count');
   const totalRow = document.getElementById('wast-total-row');
+  const histEl = document.getElementById('wast-history');
+  const histCount = document.getElementById('wast-hist-count');
+  const tagClass = {'Burnt / rejected':'w-burnt','Spilled':'w-spill','Staff consumption':'w-staff','Expired / spoiled':'w-spoil','Other':'w-other'};
+
+  // Today
   if(data.length === 0) {
     list.innerHTML = '<div class="empty-state">No wastage logged yet today.</div>';
-    countEl.textContent = '0 items'; totalRow.style.display = 'none'; return;
+    countEl.textContent = '0 items'; totalRow.style.display = 'none';
+  } else {
+    list.innerHTML = data.map(function(w){
+      return '<div class="exp-row"><span class="w-tag ' + (tagClass[w.reason]||'w-other') + '">' + w.reason.split('/')[0].trim() + '</span>' +
+        '<span class="exp-name">' + w.item_name + '<br/>' + (w.logged_by ? '<span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> ' + w.logged_by + '</span>' : '<span style="color:var(--border);font-size:11px;">No name logged</span>') + '</span>' +
+        '<span class="exp-amt">RM ' + parseFloat(w.estimated_cost).toFixed(2) + '</span></div>';
+    }).join('');
+    const total = data.reduce(function(a,b){ return a + parseFloat(b.estimated_cost); }, 0);
+    countEl.textContent = data.length + ' item' + (data.length !== 1 ? 's' : '');
+    document.getElementById('wast-total').textContent = 'RM ' + total.toFixed(2);
+    totalRow.style.display = 'flex';
   }
-  const tagClass = {'Burnt / rejected':'w-burnt','Spilled':'w-spill','Staff consumption':'w-staff','Expired / spoiled':'w-spoil','Other':'w-other'};
-  list.innerHTML = data.map(function(w){
-    return '<div class="exp-row"><span class="w-tag ' + (tagClass[w.reason]||'w-other') + '">' + w.reason.split('/')[0].trim() + '</span><span class="exp-name">' + w.item_name + (w.logged_by ? ' <span style="color:var(--ink-soft);font-size:11px;">· ' + w.logged_by + '</span>' : '') + '</span><span class="exp-amt">RM ' + parseFloat(w.estimated_cost).toFixed(2) + '</span></div>';
-  }).join('');
-  const total = data.reduce(function(a,b){ return a + parseFloat(b.estimated_cost); }, 0);
-  countEl.textContent = data.length + ' item' + (data.length !== 1 ? 's' : '');
-  document.getElementById('wast-total').textContent = 'RM ' + total.toFixed(2);
-  totalRow.style.display = 'flex';
+
+  // History - group by date
+  if(hist.length === 0) {
+    histEl.innerHTML = '<div class="empty-state">No wastage history yet.</div>';
+    histCount.textContent = '';
+  } else {
+    const grouped = {};
+    hist.forEach(function(w){ if(!grouped[w.date]) grouped[w.date]=[]; grouped[w.date].push(w); });
+    histEl.innerHTML = Object.keys(grouped).map(function(date){
+      const items = grouped[date];
+      const dayTotal = items.reduce(function(a,b){ return a+parseFloat(b.estimated_cost); }, 0);
+      const isToday = date === today;
+      const label = isToday ? 'Today' : new Date(date+'T00:00:00').toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short'});
+      return '<div style="padding:0.5rem 0;border-bottom:1px solid var(--border);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+        '<span style="font-size:11px;font-weight:500;color:' + (isToday ? 'var(--matcha)' : 'var(--ink-mid)') + ';">' + label + '</span>' +
+        '<span style="font-size:11px;color:var(--ink-soft);">RM ' + dayTotal.toFixed(2) + '</span></div>' +
+        items.map(function(w){
+          return '<div class="exp-row" style="padding:4px 0;"><span class="w-tag ' + (tagClass[w.reason]||'w-other') + '">' + w.reason.split('/')[0].trim() + '</span>' +
+            '<span class="exp-name">' + w.item_name + (w.logged_by ? '<br/><span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> '+w.logged_by+'</span>' : '') + '</span>' +
+            '<span class="exp-amt">RM ' + parseFloat(w.estimated_cost).toFixed(2) + '</span></div>';
+        }).join('') + '</div>';
+    }).join('');
+    histCount.textContent = hist.length + ' entries';
+  }
 }
 
 async function saveWastage() {
   if(!currentOutlet) { showToast('Please select an outlet first!'); return; }
+  if(currentOutlet.id === 'all') { showToast('Please select a specific outlet to log wastage!'); return; }
   const item = document.getElementById('wast-item').value.trim();
   const cost = parseFloat(document.getElementById('wast-cost').value) || 0;
   const reason = document.getElementById('wast-reason').value;
@@ -867,7 +1189,7 @@ async function loadInsights() {
   html += '<div class="insight-metric"><span class="insight-label">Total expenses</span><span class="insight-val">RM ' + totalExp.toFixed(2) + '</span></div>';
   html += '<div class="insight-metric"><span class="insight-label">Total wastage</span><span class="insight-val">RM ' + totalWast.toFixed(2) + '</span></div>';
   html += '<div class="insight-metric"><span class="insight-label">Cash shortages</span><span class="insight-val" style="color:' + (shortages > 0 ? 'var(--vermillion)' : 'var(--matcha)') + '">' + shortages + ' day' + (shortages !== 1 ? 's' : '') + '</span></div></div>';
-  html += '<div class="card"><div class="card-head"><i class="ti ti-building-store" style="font-size:14px"></i> Sales by channel</div>';
+  html += '<div class="card"><div class="card-head"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Sales by channel</div>';
   if(totalSales === 0) {
     html += '<div class="empty-state">No sales data yet.</div>';
   } else {
@@ -905,7 +1227,10 @@ function renderSettingsOutlets() {
   const c = document.getElementById('settings-outlets-list');
   if(!outlets.length) { c.innerHTML = '<div class="empty-state">No outlets found.</div>'; return; }
   c.innerHTML = outlets.map(function(o){
-    return '<div class="menu-item" onclick="openEditOutlet(\'' + o.id + '\')"><div class="menu-icon mi-matcha"><i class='ti ti-building-store'></i></div><div class="menu-text"><strong>' + o.name + '</strong><span>' + (o.location||'No location set') + '</span></div><span class="menu-arrow"><i class='ti ti-chevron-right'></i></span></div>';
+    return '<div class="menu-item" onclick="openEditOutlet(\'' + o.id + '\')">' +
+      '<div class="menu-icon mi-matcha"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>' +
+      '<div class="menu-text"><strong>' + o.name + '</strong><span>' + (o.location||'No location set') + '</span></div>' +
+      '<span class="menu-arrow"><i class="ti ti-chevron-right"></i></span></div>';
   }).join('');
 }
 
@@ -939,6 +1264,35 @@ async function saveEditOutlet() {
   renderSettingsOutlets();
 }
 
+async function deleteOutlet() {
+  const id = document.getElementById('edit-outlet-id').value;
+  const outlet = outlets.find(function(o){ return o.id === id; });
+  if(!outlet) return;
+  if(!confirm('Delete "' + outlet.name + '"? This cannot be undone.')) return;
+  if(outlets.length <= 1) { showToast('You must have at least one outlet!'); return; }
+  const btn = document.getElementById('delete-outlet-btn');
+  btn.disabled = true; btn.textContent = 'Deleting...';
+  const delResult = await fetch(SUPABASE_URL + '/rest/v1/outlets?id=eq.' + id, {
+    method: 'DELETE',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Prefer': 'return=minimal'
+    }
+  });
+  btn.disabled = false; btn.textContent = 'Delete this outlet';
+  if(!delResult.ok) { showToast('Error deleting outlet'); return; }
+  outlets = outlets.filter(function(o){ return o.id !== id; });
+  if(currentOutlet && currentOutlet.id === id) {
+    currentOutlet = outlets[0];
+    localStorage.setItem('tally_outlet_id', outlets[0].id);
+    document.getElementById('current-outlet-name').textContent = outlets[0].name;
+  }
+  showToast(outlet.name + ' deleted');
+  go('s-settings');
+  renderSettingsOutlets();
+}
+
 function saveSettings() {
   const biz = document.getElementById('set-biz').value.trim();
   const name = document.getElementById('set-name').value.trim();
@@ -960,7 +1314,7 @@ async function addNewOutlet() {
   const result = await sb.from('outlets').insert({name:name, location:loc}).select();
   btn.disabled = false; btn.textContent = 'Add outlet';
   if(result.error) { showToast('Error: ' + result.error.message); return; }
-  outlets.push(result.data[0]);
+  const newOutlet = result.data[0]; outlets.push({id:newOutlet.id,name:newOutlet.name,location:newOutlet.location,created_at:newOutlet.created_at});
   document.getElementById('new-outlet-name').value = '';
   document.getElementById('new-outlet-loc').value = '';
   showToast('Outlet added!');
@@ -969,28 +1323,104 @@ async function addNewOutlet() {
 }
 
 function resetApp() {
-  if(confirm('This will reset your onboarding. Your saved data in Supabase is safe. Continue?')) {
+  if(confirm('This will reset your onboarding on this device. Your saved data in Supabase is safe. Continue?')) {
     localStorage.clear();
     location.reload();
   }
 }
 
+async function clearTestData() {
+  const confirm1 = document.getElementById('clear-data-confirm').value.trim();
+  if(confirm1 !== 'CLEAR') { showToast('Please type CLEAR to confirm!'); return; }
+  if(!confirm('This will delete all sales, expenses and wastage data. Your outlets stay intact. Continue?')) return;
+  const btn = document.querySelector('[onclick="clearTestData()"]');
+  btn.disabled = true; btn.textContent = 'Clearing...';
+  try {
+    const tables = ['sales_entries', 'expenses', 'wastage'];
+    for(let i = 0; i < tables.length; i++) {
+      await fetch(SUPABASE_URL + '/rest/v1/' + tables[i] + '?id=neq.00000000-0000-0000-0000-000000000000', {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Prefer': 'return=minimal'
+        }
+      });
+    }
+    document.getElementById('clear-data-confirm').value = '';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-eraser" style="font-size:13px"></i> Clear test data';
+    showToast('All test data cleared! Ready for live use. ✓', 3000);
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-eraser" style="font-size:13px"></i> Clear test data';
+    showToast('Error: ' + e.message);
+  }
+}
+
+async function factoryReset() {
+  const confirm1 = document.getElementById('factory-reset-confirm').value.trim();
+  if(confirm1 !== 'DELETE') {
+    showToast('Please type DELETE to confirm!');
+    return;
+  }
+  if(!confirm('FINAL WARNING — this will permanently delete ALL your Tally data including all outlets, sales, expenses and wastage. This cannot be undone. Are you absolutely sure?')) return;
+  const btn = document.querySelector('[onclick="factoryReset()"]');
+  btn.disabled = true; btn.textContent = 'Deleting everything...';
+  try {
+    // Delete all data from all tables using direct fetch
+    const tables = ['sales_entries', 'expenses', 'wastage', 'outlets'];
+    for(let i = 0; i < tables.length; i++) {
+      await fetch(SUPABASE_URL + '/rest/v1/' + tables[i] + '?id=neq.00000000-0000-0000-0000-000000000000', {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Prefer': 'return=minimal'
+        }
+      });
+    }
+    localStorage.clear();
+    showToast('All data deleted. Restarting...');
+    setTimeout(function(){ location.reload(); }, 1500);
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-trash" style="font-size:13px"></i> Full factory reset';
+    showToast('Error: ' + e.message);
+  }
+}
+
 async function init() {
   initOnboarding();
-  const setup = localStorage.getItem('tally_setup');
-  if(setup) {
-    ownerName = localStorage.getItem('tally_owner') || 'there';
-    await loadOutlets();
+  await loadOutlets();
+  const savedOwner = localStorage.getItem('tally_owner');
+  const savedBiz = localStorage.getItem('tally_biz');
+  if(outlets.length > 0 && savedOwner && savedBiz) {
+    // Returning user with full setup - go straight home
+    ownerName = savedOwner;
     const savedId = localStorage.getItem('tally_outlet_id');
     if(savedId === 'all') {
       currentOutlet = {id:'all', name:'All outlets'};
     } else {
       currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
     }
-    if(currentOutlet) {
-      initHome();
-      go('s-home');
-    }
+    initHome();
+    go('s-home');
+  } else if(outlets.length > 0 && (!savedOwner || !savedBiz)) {
+    // Outlets exist but name missing - show onboarding pre-filled
+    // Hide the outlets section since they already exist
+    document.getElementById('ob-biz').value = savedBiz || '';
+    document.getElementById('ob-name').value = savedOwner || '';
+    var outletSection = document.getElementById('outlets-setup');
+    var addBtn = document.querySelector('#s-onboard .add-btn');
+    var sectionLbl = document.querySelector('#s-onboard .section-lbl');
+    if(outletSection) outletSection.style.display = 'none';
+    if(addBtn) addBtn.style.display = 'none';
+    if(sectionLbl) sectionLbl.style.display = 'none';
+    go('s-onboard');
+  } else {
+    // Brand new user
+    go('s-onboard');
   }
 }
 
