@@ -1147,7 +1147,7 @@ function go(id) {
   if(currentUser) {
     const role = currentUser.role;
     if(role === 'staff') {
-      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff'];
+      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-add-product','s-edit-product'];
       if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
     }
     if(role === 'admin') {
@@ -1294,6 +1294,12 @@ function applyRoleUI() {
   // Settings - hidden for staff only
   const settingsBtn = document.querySelector('[onclick="openSettings()"]');
   if(settingsBtn) settingsBtn.style.display = isStaff ? 'none' : '';
+
+  // Costing section - hidden for staff
+  const ingredientsMenu = document.querySelector('[onclick="go(\'s-ingredients\')"]');
+  const costingMenu = document.querySelector('[onclick="go(\'s-costing\')"]');
+  if(ingredientsMenu) ingredientsMenu.closest('.menu-item') && (ingredientsMenu.style.display = isStaff ? 'none' : '');
+  if(costingMenu) costingMenu.closest('.menu-item') && (costingMenu.style.display = isStaff ? 'none' : '');
 
   // Update greeting
   const greetEl = document.getElementById('home-greeting');
