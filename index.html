@@ -534,6 +534,10 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <label class="form-lbl">Logged by</label>
           <input class="inp" id="wast-by" type="text" placeholder="Staff name"/>
         </div>
+        <div class="form-row" style="margin-bottom:0;margin-top:0.9rem;">
+          <label class="form-lbl">Wasted by <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
+          <input class="inp" id="wast-who" type="text" placeholder="Who caused the wastage"/>
+        </div>
         <button class="submit-btn" id="wast-btn" onclick="saveWastage()" style="background:var(--rose);">Log wastage</button>
       </div>
       <div class="card">
@@ -1751,7 +1755,10 @@ async function loadWastage() {
   } else {
     list.innerHTML = data.map(function(w){
       return '<div class="exp-row"><span class="w-tag ' + (tagClass[w.reason]||'w-other') + '">' + w.reason.split('/')[0].trim() + '</span>' +
-        '<span class="exp-name">' + w.item_name + '<br/>' + (w.logged_by ? '<span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> ' + w.logged_by + '</span>' : '<span style="color:var(--border);font-size:11px;">No name logged</span>') + '</span>' +
+        '<span class="exp-name">' + w.item_name + '<br/>' +
+        (w.logged_by ? '<span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> ' + w.logged_by + '</span>' : '<span style="color:var(--border);font-size:11px;">No name logged</span>') +
+        (w.wasted_by ? ' <span style="color:var(--rose);font-size:11px;">· by ' + w.wasted_by + '</span>' : '') +
+        '</span>' +
         '<span class="exp-amt">RM ' + parseFloat(w.estimated_cost).toFixed(2) + '</span></div>';
     }).join('');
     const total = data.reduce(function(a,b){ return a + parseFloat(b.estimated_cost); }, 0);
@@ -1778,7 +1785,10 @@ async function loadWastage() {
         '<span style="font-size:11px;color:var(--ink-soft);">RM ' + dayTotal.toFixed(2) + '</span></div>' +
         items.map(function(w){
           return '<div class="exp-row" style="padding:4px 0;"><span class="w-tag ' + (tagClass[w.reason]||'w-other') + '">' + w.reason.split('/')[0].trim() + '</span>' +
-            '<span class="exp-name">' + w.item_name + (w.logged_by ? '<br/><span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> '+w.logged_by+'</span>' : '') + '</span>' +
+            '<span class="exp-name">' + w.item_name + 
+            (w.logged_by ? '<br/><span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> '+w.logged_by+'</span>' : '') +
+            (w.wasted_by ? ' <span style="color:var(--rose);font-size:11px;">· by '+w.wasted_by+'</span>' : '') +
+            '</span>' +
             '<span class="exp-amt">RM ' + parseFloat(w.estimated_cost).toFixed(2) + '</span></div>';
         }).join('') + '</div>';
     }).join('');
@@ -1793,14 +1803,15 @@ async function saveWastage() {
   const cost = parseFloat(document.getElementById('wast-cost').value) || 0;
   const reason = document.getElementById('wast-reason').value;
   const by = document.getElementById('wast-by').value.trim();
+  const who = document.getElementById('wast-who').value.trim();
   if(!item) { showToast('Please enter an item name!'); return; }
   const btn = document.getElementById('wast-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
-  const result = await sb.from('wastage').insert({outlet_id:currentOutlet.id,date:getToday(),item_name:item,estimated_cost:cost,reason:reason,logged_by:by});
+  const result = await sb.from('wastage').insert({outlet_id:currentOutlet.id,date:getToday(),item_name:item,estimated_cost:cost,reason:reason,logged_by:by,wasted_by:who});
   btn.disabled = false; btn.textContent = 'Log wastage';
   if(result.error) { showToast('Error: ' + result.error.message); return; }
   showToast('Wastage logged!');
-  ['wast-item','wast-cost','wast-by'].forEach(function(id){ document.getElementById(id).value = ''; });
+  ['wast-item','wast-cost','wast-by','wast-who'].forEach(function(id){ document.getElementById(id).value = ''; });
   loadWastage();
 }
 
