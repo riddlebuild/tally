@@ -603,6 +603,23 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div style="margin-top:1rem;">
         <button onclick="logout()" style="width:100%;padding:12px;background:none;border:1px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--ink-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="ti ti-logout" style="font-size:15px"></i> Sign out</button>
       </div>
+      <div class="section-lbl" style="margin-top:1.25rem;">Custom options</div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-head"><i class="ti ti-tag" style="font-size:14px"></i> Expense categories</div>
+        <div id="exp-categories-list" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:8px;">
+          <input class="inp" id="new-exp-cat" type="text" placeholder="e.g. Transport, Utilities" style="flex:1;"/>
+          <button onclick="addCustomOption('expense_category')" style="padding:9px 14px;background:var(--amber);border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-head"><i class="ti ti-flame" style="font-size:14px"></i> Wastage reasons</div>
+        <div id="wast-reasons-list" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:8px;">
+          <input class="inp" id="new-wast-reason" type="text" placeholder="e.g. Over-portioned, Wrong order" style="flex:1;"/>
+          <button onclick="addCustomOption('wastage_reason')" style="padding:9px 14px;background:var(--rose);border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
+        </div>
+      </div>
       <div class="section-lbl" style="margin-top:1.25rem;">Staff management</div>
       <div class="menu-card" id="staff-list"></div>
       <button class="add-btn" onclick="go('s-add-staff')" style="margin-bottom:0.85rem;"><i class="ti ti-plus" style="font-size:14px"></i> Add staff member</button>
@@ -1206,13 +1223,25 @@ function go(id) {
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
   if(id === 's-home') loadHomeStats();
-  if(id === 's-expenses') loadExpenses();
-  if(id === 's-wastage') loadWastage();
+  if(id === 's-expenses') {
+    loadExpenses(); loadExpenseCategoryOptions();
+    if(currentUser) { const el = document.getElementById('exp-by'); if(el && !el.value) el.value = currentUser.name; }
+  }
+  if(id === 's-wastage') {
+    loadWastage(); loadWastageReasonOptions();
+    if(currentUser) { const el = document.getElementById('wast-by'); if(el && !el.value) el.value = currentUser.name; }
+  }
   if(id === 's-insights') loadInsights();
   if(id === 's-outlets') renderOutletsList();
-  if(id === 's-sales') { loadSalesHistory(); loadSalesExpensesNote(); loadDynamicChannels(); }
+  if(id === 's-sales') {
+    loadSalesHistory(); loadSalesExpensesNote(); loadDynamicChannels();
+    if(currentUser) { const el = document.getElementById('sales-staff'); if(el && !el.value) el.value = currentUser.name; }
+  }
   if(id === 's-add-staff') populateOutletSelects();
-  if(id === 's-cashcount') loadCashCountHistory();
+  if(id === 's-cashcount') {
+    loadCashCountHistory();
+    if(currentUser) { const el = document.getElementById('cc-by'); if(el && !el.value) el.value = currentUser.name; }
+  }
   if(id === 's-ingredients') loadIngredients();
   if(id === 's-costing') loadProducts();
   if(id === 's-add-product') { prodIngredients = []; renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); }
@@ -2562,6 +2591,8 @@ function openSettings() {
   document.getElementById('set-biz').value = localStorage.getItem('tally_biz') || '';
   document.getElementById('set-name').value = localStorage.getItem('tally_owner') || '';
   renderSettingsOutlets();
+  renderCustomOptionsList('expense_category');
+  renderCustomOptionsList('wastage_reason');
   const staffSection = document.getElementById('staff-list');
   const addStaffBtn = document.querySelector('[onclick="go(\'s-add-staff\')"]');
   const isOwner = currentUser.role === 'owner';
@@ -2765,6 +2796,83 @@ async function removeStaff() {
   showToast(name + ' removed');
   go('s-settings');
   loadStaffList();
+}
+
+// CUSTOM OPTIONS
+const DEFAULT_EXP_CATS = ['Supplies','Cleaning','Packaging','Maintenance','Other'];
+const DEFAULT_WAST_REASONS = ['Burnt / rejected','Spilled','Staff consumption','Expired / spoiled','Other'];
+
+async function loadCustomOptions(type) {
+  const result = await sb.from('custom_options').select('*').eq('type', type).order('created_at');
+  return result.data || [];
+}
+
+async function renderCustomOptionsList(type) {
+  const listId = type === 'expense_category' ? 'exp-categories-list' : 'wast-reasons-list';
+  const defaults = type === 'expense_category' ? DEFAULT_EXP_CATS : DEFAULT_WAST_REASONS;
+  const list = document.getElementById(listId);
+  if(!list) return;
+  const custom = await loadCustomOptions(type);
+  let html = '';
+  // Show defaults as non-removable
+  defaults.forEach(function(d){
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);">' +
+      '<span style="font-size:13px;color:var(--ink-mid);">' + d + '</span>' +
+      '<span style="font-size:10px;color:var(--ink-soft);padding:2px 6px;background:var(--cream-dark);border-radius:4px;">default</span>' +
+      '</div>';
+  });
+  // Show custom as removable
+  custom.forEach(function(c){
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);">' +
+      '<span style="font-size:13px;color:var(--ink);">' + c.value + '</span>' +
+      '<button onclick="removeCustomOption(\'' + c.id + '\',\'' + type + '\')" style="background:none;border:none;color:var(--vermillion);cursor:pointer;font-size:12px;padding:2px 6px;">Remove</button>' +
+      '</div>';
+  });
+  list.innerHTML = html || '<div style="font-size:12px;color:var(--ink-soft);">No custom options yet.</div>';
+}
+
+async function addCustomOption(type) {
+  const inputId = type === 'expense_category' ? 'new-exp-cat' : 'new-wast-reason';
+  const value = document.getElementById(inputId).value.trim();
+  if(!value) { showToast('Please enter a value!'); return; }
+  await sb.from('custom_options').insert({type: type, value: value});
+  document.getElementById(inputId).value = '';
+  renderCustomOptionsList(type);
+  showToast('Added!');
+  // Reload the dropdown in the form
+  if(type === 'expense_category') loadExpenseCategoryOptions();
+  else loadWastageReasonOptions();
+}
+
+async function removeCustomOption(id, type) {
+  await fetch(SUPABASE_URL + '/rest/v1/custom_options?id=eq.' + id, {
+    method: 'DELETE',
+    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal'}
+  });
+  renderCustomOptionsList(type);
+  showToast('Removed');
+  if(type === 'expense_category') loadExpenseCategoryOptions();
+  else loadWastageReasonOptions();
+}
+
+async function loadExpenseCategoryOptions() {
+  const select = document.getElementById('exp-cat');
+  if(!select) return;
+  const custom = await loadCustomOptions('expense_category');
+  const all = DEFAULT_EXP_CATS.concat(custom.map(function(c){ return c.value; }));
+  const current = select.value;
+  select.innerHTML = all.map(function(c){ return '<option value="' + c + '">' + c + '</option>'; }).join('');
+  if(current) select.value = current;
+}
+
+async function loadWastageReasonOptions() {
+  const select = document.getElementById('wast-reason');
+  if(!select) return;
+  const custom = await loadCustomOptions('wastage_reason');
+  const all = DEFAULT_WAST_REASONS.concat(custom.map(function(c){ return c.value; }));
+  const current = select.value;
+  select.innerHTML = all.map(function(r){ return '<option value="' + r + '">' + r + '</option>'; }).join('');
+  if(current) select.value = current;
 }
 
 function resetApp() {
