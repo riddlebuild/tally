@@ -155,6 +155,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .pin-dot.filled{background:var(--matcha);animation:dotPop 0.15s ease;}
 .role-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;border-radius:20px;padding:3px 10px;font-weight:500;}
 .role-admin{background:var(--matcha-light);color:var(--matcha);}
+.role-owner{background:var(--wood-light);color:var(--wood);}
 .role-staff{background:var(--cream-dark);color:var(--ink-mid);}
 .staff-row{display:flex;align-items:center;gap:10px;padding:0.75rem 0;border-bottom:1px solid var(--border);}
 .staff-row:last-child{border-bottom:none;}
@@ -365,10 +366,25 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     <div style="padding:0 1.1rem;">
       <div class="section-lbl">Reports</div>
     </div>
-    <div class="menu-card" style="margin-bottom:2rem;">
+    <div class="menu-card" style="margin-bottom:1.25rem;">
       <div class="menu-item" onclick="go('s-insights')">
         <div class="menu-icon mi-ink"><i class="ti ti-chart-bar"></i></div>
         <div class="menu-text"><strong>Insights</strong><span>Trends, patterns, all outlets</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+    </div>
+    <div style="padding:0 1.1rem;">
+      <div class="section-lbl">Costing</div>
+    </div>
+    <div class="menu-card" style="margin-bottom:2rem;">
+      <div class="menu-item" onclick="go('s-ingredients')">
+        <div class="menu-icon" style="background:#f0edf8;color:#6b4fa0;"><i class="ti ti-package"></i></div>
+        <div class="menu-text"><strong>Ingredients</strong><span>Raw material price library</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+      <div class="menu-item" onclick="go('s-costing')">
+        <div class="menu-icon" style="background:#f0edf8;color:#6b4fa0;"><i class="ti ti-calculator"></i></div>
+        <div class="menu-text"><strong>Products</strong><span>Menu item costing & margins</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
     </div>
@@ -617,6 +633,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <select class="inp" id="new-staff-role">
             <option value="staff">Staff</option>
             <option value="admin">Admin</option>
+            <option value="owner">Owner</option>
           </select>
         </div>
         <div class="form-row" style="margin-bottom:0;">
@@ -653,6 +670,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <select class="inp" id="edit-staff-role">
             <option value="staff">Staff</option>
             <option value="admin">Admin</option>
+            <option value="owner">Owner</option>
           </select>
         </div>
         <div class="form-row" style="margin-bottom:0;">
@@ -762,6 +780,217 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="card">
         <div class="card-head" style="color:#2d6bc4;"><i class="ti ti-history" style="font-size:14px"></i> Last 8 days <span class="badge badge-neutral" id="cc-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
         <div id="cc-history"><div class="empty-state">No cash counts yet.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INGREDIENTS -->
+<div class="screen" id="s-ingredients">
+  <div class="topbar" style="border-bottom-color:#f0edf8;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Ingredients</span>
+    <button onclick="go('s-add-ingredient')" style="background:#6b4fa0;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">+ Add</button>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div id="ingredients-list"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD INGREDIENT -->
+<div class="screen" id="s-add-ingredient">
+  <div class="topbar" style="border-bottom-color:#f0edf8;">
+    <div class="back-btn" onclick="go('s-ingredients')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Add ingredient</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> Ingredient details</div>
+        <div class="form-row">
+          <label class="form-lbl">Ingredient name</label>
+          <input class="inp" id="ing-name" type="text" placeholder="e.g. Flour, Matcha powder, Milk"/>
+        </div>
+        <div class="form-row-2">
+          <div>
+            <label class="form-lbl">Pack size</label>
+            <input class="inp" id="ing-size" type="number" inputmode="decimal" placeholder="e.g. 25"/>
+          </div>
+          <div>
+            <label class="form-lbl">Unit</label>
+            <select class="inp" id="ing-unit">
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="L">L</option>
+              <option value="ml">ml</option>
+              <option value="pcs">pcs</option>
+              <option value="pack">pack</option>
+              <option value="box">box</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Pack price (RM)</label>
+          <input class="inp" id="ing-price" type="number" inputmode="decimal" placeholder="e.g. 229.00"/>
+        </div>
+        <div id="ing-preview" style="display:none;margin-top:0.85rem;padding:0.75rem;background:#f0edf8;border-radius:8px;">
+          <div style="font-size:12px;color:#6b4fa0;font-weight:500;" id="ing-preview-text"></div>
+        </div>
+      </div>
+      <button class="submit-btn" id="add-ing-btn" onclick="saveIngredient()" style="background:#6b4fa0;">Save ingredient</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT INGREDIENT -->
+<div class="screen" id="s-edit-ingredient">
+  <div class="topbar" style="border-bottom-color:#f0edf8;">
+    <div class="back-btn" onclick="go('s-ingredients')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Edit ingredient</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <input type="hidden" id="edit-ing-id"/>
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> Ingredient details</div>
+        <div class="form-row">
+          <label class="form-lbl">Ingredient name</label>
+          <input class="inp" id="edit-ing-name" type="text" placeholder="e.g. Flour"/>
+        </div>
+        <div class="form-row-2">
+          <div>
+            <label class="form-lbl">Pack size</label>
+            <input class="inp" id="edit-ing-size" type="number" inputmode="decimal" placeholder="e.g. 25"/>
+          </div>
+          <div>
+            <label class="form-lbl">Unit</label>
+            <select class="inp" id="edit-ing-unit">
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="L">L</option>
+              <option value="ml">ml</option>
+              <option value="pcs">pcs</option>
+              <option value="pack">pack</option>
+              <option value="box">box</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Pack price (RM)</label>
+          <input class="inp" id="edit-ing-price" type="number" inputmode="decimal" placeholder="e.g. 229.00"/>
+        </div>
+      </div>
+      <button class="submit-btn" id="edit-ing-btn" onclick="updateIngredient()" style="background:#6b4fa0;">Save changes</button>
+      <div style="margin-top:1rem;">
+        <div class="card" style="border-color:var(--vermillion-light);">
+          <div class="card-head" style="color:var(--vermillion);"><i class="ti ti-alert-triangle" style="font-size:14px"></i> Delete</div>
+          <button onclick="deleteIngredient()" style="width:100%;padding:11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Delete ingredient</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COSTING / PRODUCTS -->
+<div class="screen" id="s-costing">
+  <div class="topbar" style="border-bottom-color:#f0edf8;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Products</span>
+    <button onclick="go('s-add-product')" style="background:#6b4fa0;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">+ Add</button>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div id="products-list"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PRODUCT -->
+<div class="screen" id="s-add-product">
+  <div class="topbar" style="border-bottom-color:#f0edf8;">
+    <div class="back-btn" onclick="go('s-costing')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Add product</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-calculator" style="font-size:14px"></i> Product details</div>
+        <div class="form-row">
+          <label class="form-lbl">Product name</label>
+          <input class="inp" id="prod-name" type="text" placeholder="e.g. Matcha Latte (M)"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Category</label>
+          <select class="inp" id="prod-cat">
+            <option value="Drink">Drink</option>
+            <option value="Food">Food</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Total cost to make (RM)</label>
+          <input class="inp" id="prod-cost" type="number" inputmode="decimal" placeholder="0.00" oninput="calcProductMargin()"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Selling price (RM)</label>
+          <input class="inp" id="prod-price" type="number" inputmode="decimal" placeholder="0.00" oninput="calcProductMargin()"/>
+        </div>
+        <div id="prod-margin-preview" style="display:none;margin-top:0.5rem;"></div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Notes <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
+          <input class="inp" id="prod-notes" type="text" placeholder="e.g. includes packaging"/>
+        </div>
+      </div>
+      <button class="submit-btn" id="add-prod-btn" onclick="saveProduct()" style="background:#6b4fa0;">Save product</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PRODUCT -->
+<div class="screen" id="s-edit-product">
+  <div class="topbar" style="border-bottom-color:#f0edf8;">
+    <div class="back-btn" onclick="go('s-costing')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Edit product</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <input type="hidden" id="edit-prod-id"/>
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-calculator" style="font-size:14px"></i> Product details</div>
+        <div class="form-row">
+          <label class="form-lbl">Product name</label>
+          <input class="inp" id="edit-prod-name" type="text" placeholder="e.g. Matcha Latte (M)"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Category</label>
+          <select class="inp" id="edit-prod-cat">
+            <option value="Drink">Drink</option>
+            <option value="Food">Food</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Total cost to make (RM)</label>
+          <input class="inp" id="edit-prod-cost" type="number" inputmode="decimal" placeholder="0.00" oninput="calcEditProductMargin()"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Selling price (RM)</label>
+          <input class="inp" id="edit-prod-price" type="number" inputmode="decimal" placeholder="0.00" oninput="calcEditProductMargin()"/>
+        </div>
+        <div id="edit-prod-margin-preview" style="display:none;margin-top:0.5rem;"></div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Notes <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
+          <input class="inp" id="edit-prod-notes" type="text" placeholder="e.g. includes packaging"/>
+        </div>
+      </div>
+      <button class="submit-btn" id="edit-prod-btn" onclick="updateProduct()" style="background:#6b4fa0;">Save changes</button>
+      <div style="margin-top:1rem;">
+        <div class="card" style="border-color:var(--vermillion-light);">
+          <div class="card-head" style="color:var(--vermillion);"><i class="ti ti-alert-triangle" style="font-size:14px"></i> Delete</div>
+          <button onclick="deleteProduct()" style="width:100%;padding:11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Delete product</button>
+        </div>
       </div>
     </div>
   </div>
@@ -889,9 +1118,16 @@ function go(id) {
     go('s-login'); return;
   }
   // Staff guard - restricted screens
-  if(currentUser && currentUser.role === 'staff') {
-    const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet'];
-    if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
+  if(currentUser) {
+    const role = currentUser.role;
+    if(role === 'staff') {
+      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff'];
+      if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
+    }
+    if(role === 'admin') {
+      const restricted = ['s-add-staff','s-edit-staff'];
+      if(restricted.indexOf(id) > -1) { showToast('Owner access only'); return; }
+    }
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -904,6 +1140,8 @@ function go(id) {
   if(id === 's-sales') loadSalesHistory();
   if(id === 's-add-staff') populateOutletSelects();
   if(id === 's-cashcount') loadCashCountHistory();
+  if(id === 's-ingredients') loadIngredients();
+  if(id === 's-costing') loadProducts();
 }
 
 // PIN functions
@@ -1015,19 +1253,24 @@ async function doLogin() {
 
 function applyRoleUI() {
   if(!currentUser) return;
-  const isStaff = currentUser.role === 'staff';
-  // Hide insights and outlet switcher for staff
+  const role = currentUser.role;
+  const isStaff = role === 'staff';
+
+  // Insights - hidden for staff
   const insightsMenu = document.querySelector('[onclick="go(\'s-insights\')"]');
-  const outletChip = document.querySelector('.outlet-chip');
-  const settingsBtn = document.querySelector('[onclick="openSettings()"]');
   if(insightsMenu) insightsMenu.style.display = isStaff ? 'none' : '';
+
+  // Outlet switcher - disabled for staff
+  const outletChip = document.querySelector('.outlet-chip');
   if(outletChip) outletChip.style.pointerEvents = isStaff ? 'none' : '';
+
+  // Settings - hidden for staff only
+  const settingsBtn = document.querySelector('[onclick="openSettings()"]');
   if(settingsBtn) settingsBtn.style.display = isStaff ? 'none' : '';
-  // Update greeting with role badge
+
+  // Update greeting
   const greetEl = document.getElementById('home-greeting');
-  if(greetEl) {
-    greetEl.textContent = greeting() + ', ' + currentUser.name;
-  }
+  if(greetEl) greetEl.textContent = greeting() + ', ' + currentUser.name;
 }
 
 function logout() {
@@ -1615,6 +1858,268 @@ async function loadCashCountHistory() {
   countEl.textContent = data.length + ' count' + (data.length !== 1 ? 's' : '');
 }
 
+// COSTING MODULE
+function marginColor(pct) {
+  if(pct >= 60) return '#1a7a4a';
+  if(pct >= 40) return '#c47a1e';
+  return '#c0392b';
+}
+
+function marginBg(pct) {
+  if(pct >= 60) return '#e8f0e9';
+  if(pct >= 40) return '#faeeda';
+  return '#fcecea';
+}
+
+function marginLabel(pct) {
+  if(pct >= 60) return 'Healthy';
+  if(pct >= 40) return 'Moderate';
+  if(pct > 0) return 'Tight';
+  return 'Loss';
+}
+
+function renderMarginBar(pct, containerId) {
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  const color = marginColor(pct);
+  const bg = marginBg(pct);
+  const label = marginLabel(pct);
+  const barW = Math.min(Math.max(pct, 0), 100);
+  el.style.display = 'block';
+  el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+    '<span style="font-size:12px;color:var(--ink-mid);">Margin</span>' +
+    '<span style="font-size:13px;font-weight:500;color:' + color + ';">' + pct.toFixed(1) + '% · ' + label + '</span></div>' +
+    '<div style="height:8px;background:var(--cream-dark);border-radius:4px;overflow:hidden;">' +
+    '<div style="height:100%;width:' + barW + '%;background:' + color + ';border-radius:4px;transition:width 0.4s ease;"></div></div>';
+}
+
+function calcProductMargin() {
+  const cost = parseFloat(document.getElementById('prod-cost').value) || 0;
+  const price = parseFloat(document.getElementById('prod-price').value) || 0;
+  if(cost === 0 && price === 0) { document.getElementById('prod-margin-preview').style.display='none'; return; }
+  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+  const profit = price - cost;
+  renderMarginBar(margin, 'prod-margin-preview');
+  const el = document.getElementById('prod-margin-preview');
+  el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
+    '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
+    '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
+}
+
+function calcEditProductMargin() {
+  const cost = parseFloat(document.getElementById('edit-prod-cost').value) || 0;
+  const price = parseFloat(document.getElementById('edit-prod-price').value) || 0;
+  if(cost === 0 && price === 0) { document.getElementById('edit-prod-margin-preview').style.display='none'; return; }
+  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+  const profit = price - cost;
+  renderMarginBar(margin, 'edit-prod-margin-preview');
+  const el = document.getElementById('edit-prod-margin-preview');
+  el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
+    '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
+    '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
+}
+
+// INGREDIENTS
+async function loadIngredients() {
+  const result = await sb.from('ingredients').select('*').order('name');
+  const data = result.data || [];
+  const el = document.getElementById('ingredients-list');
+  if(!el) return;
+  if(data.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:2rem;">No ingredients yet.<br/><span style="font-size:12px;">Add your raw materials and their prices.</span></div>'; return;
+  }
+  el.innerHTML = data.map(function(i) {
+    const cpu = parseFloat(i.cost_per_unit);
+    return '<div onclick="openEditIngredient(\'' + i.id + '\')" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:0.65rem;cursor:pointer;display:flex;align-items:center;gap:12px;">' +
+      '<div style="width:40px;height:40px;border-radius:10px;background:#f0edf8;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ti-package" style="color:#6b4fa0;font-size:18px;"></i></div>' +
+      '<div style="flex:1;">' +
+      '<div style="font-size:14px;font-weight:500;color:var(--ink);">' + i.name + '</div>' +
+      '<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">' + i.pack_size + ' ' + i.pack_unit + ' · RM ' + parseFloat(i.pack_price).toFixed(2) + '</div>' +
+      '</div>' +
+      '<div style="text-align:right;">' +
+      '<div style="font-size:13px;font-weight:500;color:#6b4fa0;">RM ' + cpu.toFixed(4).replace(/\.?0+$/, '') + '</div>' +
+      '<div style="font-size:10px;color:var(--ink-soft);">per ' + i.pack_unit + '</div>' +
+      '</div></div>';
+  }).join('');
+}
+
+async function saveIngredient() {
+  const name = document.getElementById('ing-name').value.trim();
+  const size = parseFloat(document.getElementById('ing-size').value);
+  const unit = document.getElementById('ing-unit').value;
+  const price = parseFloat(document.getElementById('ing-price').value);
+  if(!name) { showToast('Please enter ingredient name!'); return; }
+  if(!size || size <= 0) { showToast('Please enter pack size!'); return; }
+  if(!price || price <= 0) { showToast('Please enter pack price!'); return; }
+  const btn = document.getElementById('add-ing-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const result = await sb.from('ingredients').insert({name:name,pack_size:size,pack_unit:unit,pack_price:price});
+  btn.disabled = false; btn.textContent = 'Save ingredient';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  showToast(name + ' saved!');
+  ['ing-name','ing-size','ing-price'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('ing-preview').style.display='none';
+  go('s-ingredients');
+}
+
+function openEditIngredient(id) {
+  sb.from('ingredients').select('*').eq('id', id).then(function(result) {
+    const i = result.data && result.data[0];
+    if(!i) return;
+    document.getElementById('edit-ing-id').value = i.id;
+    document.getElementById('edit-ing-name').value = i.name;
+    document.getElementById('edit-ing-size').value = i.pack_size;
+    document.getElementById('edit-ing-unit').value = i.pack_unit;
+    document.getElementById('edit-ing-price').value = i.pack_price;
+    go('s-edit-ingredient');
+  });
+}
+
+async function updateIngredient() {
+  const id = document.getElementById('edit-ing-id').value;
+  const name = document.getElementById('edit-ing-name').value.trim();
+  const size = parseFloat(document.getElementById('edit-ing-size').value);
+  const unit = document.getElementById('edit-ing-unit').value;
+  const price = parseFloat(document.getElementById('edit-ing-price').value);
+  if(!name || !size || !price) { showToast('Please fill all fields!'); return; }
+  const btn = document.getElementById('edit-ing-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const result = await sb.from('ingredients').update({name:name,pack_size:size,pack_unit:unit,pack_price:price}).eq('id', id);
+  btn.disabled = false; btn.textContent = 'Save changes';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  showToast('Updated!');
+  go('s-ingredients');
+}
+
+async function deleteIngredient() {
+  const id = document.getElementById('edit-ing-id').value;
+  const name = document.getElementById('edit-ing-name').value;
+  if(!confirm('Delete ' + name + '?')) return;
+  const result = await fetch(SUPABASE_URL + '/rest/v1/ingredients?id=eq.' + id, {
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+  });
+  if(!result.ok) { showToast('Error deleting'); return; }
+  showToast(name + ' deleted');
+  go('s-ingredients');
+}
+
+// PRODUCTS
+async function loadProducts() {
+  const result = await sb.from('costing').select('*').order('name');
+  const data = result.data || [];
+  const el = document.getElementById('products-list');
+  if(!el) return;
+  if(data.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:2rem;">No products yet.<br/><span style="font-size:12px;">Add your menu items to calculate margins.</span></div>'; return;
+  }
+  // Summary card
+  const totalItems = data.length;
+  const avgMargin = data.reduce(function(a,p) {
+    const cost = parseFloat(p.cost) || 0;
+    const price = parseFloat(p.selling_price) || 0;
+    return a + (price > 0 ? ((price-cost)/price)*100 : 0);
+  }, 0) / totalItems;
+
+  let html = '<div style="background:linear-gradient(135deg,#6b4fa0,#9b6fd4);border-radius:14px;padding:1.1rem 1.25rem;margin-bottom:1rem;color:#fff;">' +
+    '<div style="font-size:11px;opacity:0.8;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Average margin</div>' +
+    '<div style="font-size:32px;font-weight:500;letter-spacing:-0.5px;">' + avgMargin.toFixed(1) + '%</div>' +
+    '<div style="font-size:12px;opacity:0.75;margin-top:4px;">' + totalItems + ' product' + (totalItems !== 1 ? 's' : '') + ' · ' + marginLabel(avgMargin) + '</div>' +
+    '</div>';
+
+  // Group by category
+  const categories = {};
+  data.forEach(function(p){ if(!categories[p.category]) categories[p.category]=[]; categories[p.category].push(p); });
+
+  Object.keys(categories).forEach(function(cat) {
+    html += '<div style="font-size:11px;color:var(--ink-soft);letter-spacing:0.08em;text-transform:uppercase;margin:0.75rem 0 0.5rem;">' + cat + '</div>';
+    categories[cat].forEach(function(p) {
+      const cost = parseFloat(p.cost) || 0;
+      const price = parseFloat(p.selling_price) || 0;
+      const margin = price > 0 ? ((price-cost)/price)*100 : 0;
+      const profit = price - cost;
+      const color = marginColor(margin);
+      const bg = marginBg(margin);
+      const barW = Math.min(Math.max(margin, 0), 100);
+      html += '<div onclick="openEditProduct(\'' + p.id + '\')" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:0.65rem;cursor:pointer;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
+        '<div style="font-size:14px;font-weight:500;color:var(--ink);">' + p.name + '</div>' +
+        '<div style="text-align:right;">' +
+        '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + price.toFixed(2) + '</div>' +
+        '<div style="font-size:11px;color:var(--ink-soft);">cost RM ' + cost.toFixed(2) + '</div></div></div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">' +
+        '<span style="font-size:11px;color:var(--ink-soft);">Margin</span>' +
+        '<span style="font-size:12px;font-weight:500;color:' + color + ';">' + margin.toFixed(1) + '% · RM ' + profit.toFixed(2) + ' profit</span></div>' +
+        '<div style="height:6px;background:var(--cream-dark);border-radius:3px;overflow:hidden;">' +
+        '<div style="height:100%;width:' + barW + '%;background:' + color + ';border-radius:3px;"></div></div>' +
+        '</div>';
+    });
+  });
+  el.innerHTML = html;
+}
+
+async function saveProduct() {
+  const name = document.getElementById('prod-name').value.trim();
+  const cat = document.getElementById('prod-cat').value;
+  const cost = parseFloat(document.getElementById('prod-cost').value) || 0;
+  const price = parseFloat(document.getElementById('prod-price').value) || 0;
+  const notes = document.getElementById('prod-notes').value.trim();
+  if(!name) { showToast('Please enter product name!'); return; }
+  const btn = document.getElementById('add-prod-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const result = await sb.from('costing').insert({name:name,category:cat,cost:cost,selling_price:price,notes:notes});
+  btn.disabled = false; btn.textContent = 'Save product';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  showToast(name + ' saved!');
+  ['prod-name','prod-cost','prod-price','prod-notes'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('prod-margin-preview').style.display='none';
+  go('s-costing');
+}
+
+function openEditProduct(id) {
+  sb.from('costing').select('*').eq('id', id).then(function(result) {
+    const p = result.data && result.data[0];
+    if(!p) return;
+    document.getElementById('edit-prod-id').value = p.id;
+    document.getElementById('edit-prod-name').value = p.name;
+    document.getElementById('edit-prod-cat').value = p.category;
+    document.getElementById('edit-prod-cost').value = p.cost || '';
+    document.getElementById('edit-prod-price').value = p.selling_price || '';
+    document.getElementById('edit-prod-notes').value = p.notes || '';
+    document.getElementById('edit-prod-margin-preview').style.display = 'none';
+    go('s-edit-product');
+    setTimeout(calcEditProductMargin, 100);
+  });
+}
+
+async function updateProduct() {
+  const id = document.getElementById('edit-prod-id').value;
+  const name = document.getElementById('edit-prod-name').value.trim();
+  const cat = document.getElementById('edit-prod-cat').value;
+  const cost = parseFloat(document.getElementById('edit-prod-cost').value) || 0;
+  const price = parseFloat(document.getElementById('edit-prod-price').value) || 0;
+  const notes = document.getElementById('edit-prod-notes').value.trim();
+  if(!name) { showToast('Please enter product name!'); return; }
+  const btn = document.getElementById('edit-prod-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const result = await sb.from('costing').update({name:name,category:cat,cost:cost,selling_price:price,notes:notes}).eq('id', id);
+  btn.disabled = false; btn.textContent = 'Save changes';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  showToast('Updated!');
+  go('s-costing');
+}
+
+async function deleteProduct() {
+  const id = document.getElementById('edit-prod-id').value;
+  const name = document.getElementById('edit-prod-name').value;
+  if(!confirm('Delete ' + name + '?')) return;
+  const result = await fetch(SUPABASE_URL + '/rest/v1/costing?id=eq.' + id, {
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+  });
+  if(!result.ok) { showToast('Error deleting'); return; }
+  showToast(name + ' deleted');
+  go('s-costing');
+}
+
 function setInsightTab(el, period) {
   document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('on'); });
   el.classList.add('on');
@@ -1701,12 +2206,21 @@ async function loadInsights() {
 
 // SETTINGS
 function openSettings() {
-  if(!currentUser || currentUser.role !== 'admin') { showToast('Admin access only'); return; }
+  if(!currentUser || currentUser.role === 'staff') { showToast('Access restricted'); return; }
   document.getElementById('set-biz').value = localStorage.getItem('tally_biz') || '';
   document.getElementById('set-name').value = localStorage.getItem('tally_owner') || '';
   renderSettingsOutlets();
-  loadStaffList();
-  populateOutletSelects();
+  // Only owner can see staff management
+  const staffSection = document.getElementById('staff-list');
+  const addStaffBtn = document.querySelector('[onclick="go(\'s-add-staff\')"]');
+  const staffLabel = document.querySelector('#s-settings .section-lbl:last-of-type');
+  const isOwner = currentUser.role === 'owner';
+  if(staffSection) staffSection.closest('.menu-card') && (staffSection.closest('.menu-card').style.display = isOwner ? '' : 'none');
+  if(addStaffBtn) addStaffBtn.style.display = isOwner ? '' : 'none';
+  if(isOwner) { loadStaffList(); populateOutletSelects(); }
+  // Only owner can see danger zone
+  const dangerZone = document.querySelector('#s-settings [style*="vermillion-light"]');
+  if(dangerZone) dangerZone.style.display = isOwner ? '' : 'none';
   go('s-settings');
 }
 
@@ -1821,7 +2335,7 @@ async function loadStaffList() {
     return '<div class="menu-item" onclick="openEditStaff(\'' + s.id + '\')">' +
       '<div class="menu-icon mi-ink"><i class="ti ti-user"></i></div>' +
       '<div class="menu-text"><strong>' + s.name + '</strong><span>' + outletName + '</span></div>' +
-      '<span class="role-badge ' + (s.role === 'admin' ? 'role-admin' : 'role-staff') + '">' + s.role + '</span>' +
+      '<span class="role-badge ' + (s.role === 'owner' ? 'role-owner' : s.role === 'admin' ? 'role-admin' : 'role-staff') + '">' + s.role + '</span>' +
       '</div>';
   }).join('');
 }
