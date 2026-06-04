@@ -76,8 +76,8 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .stat-label{font-size:11px;color:var(--ink-soft);margin-bottom:6px;letter-spacing:0.02em;}
 .stat-val{font-size:21px;font-weight:500;color:var(--ink);}
 .stat-sub{font-size:11px;margin-top:4px;}
-.section-lbl{font-size:11px;color:var(--ink-soft);letter-spacing:0.1em;text-transform:uppercase;margin:0 0 0.6rem;}
-.menu-card{background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:1.25rem;}
+.section-lbl{font-size:11px;color:var(--ink-soft);letter-spacing:0.1em;text-transform:uppercase;margin:0 1.1rem 0.6rem;}
+.menu-card{background:var(--white);border:1px solid var(--border);border-radius:12px;margin:0 1.1rem 1.25rem;overflow:hidden;}
 .menu-item{display:flex;align-items:center;gap:12px;padding:0.85rem 1.1rem;border-bottom:1px solid var(--border);cursor:pointer;}
 .menu-item:last-child{border-bottom:none;}
 .menu-item:active{background:var(--cream-dark);}
@@ -125,6 +125,39 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--white);padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;}
 .loading{text-align:center;padding:1.5rem;color:var(--ink-soft);font-size:13px;}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:0.6rem 0;}
+.pin-btn{
+  padding:10px;font-size:16px;font-weight:500;font-family:'DM Sans',sans-serif;
+  background:var(--white);border:1px solid var(--border);border-radius:10px;
+  cursor:pointer;color:var(--ink);
+  transition:transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  position:relative;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+.pin-btn:hover{background:var(--cream);box-shadow:0 2px 6px rgba(0,0,0,0.08);}
+.pin-btn:active{
+  transform:scale(0.94);
+  background:var(--cream-dark);
+  box-shadow:0 0px 2px rgba(0,0,0,0.08);
+}
+.pin-btn.pressed{
+  transform:scale(0.94);
+  background:var(--matcha-light);
+  border-color:var(--matcha-mid);
+  color:var(--matcha);
+  box-shadow:0 0px 2px rgba(74,124,89,0.15);
+}
+.pin-display{display:flex;justify-content:center;gap:10px;margin:1rem 0;}
+.pin-dot{width:11px;height:11px;border-radius:50%;background:var(--border);transition:background 0.15s, transform 0.15s;}
+.pin-dot.filled{background:var(--matcha);transform:scale(1.2);}
+@keyframes dotPop{0%{transform:scale(1)}50%{transform:scale(1.4)}100%{transform:scale(1.2)}}
+.pin-dot.filled{background:var(--matcha);animation:dotPop 0.15s ease;}
+.role-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;border-radius:20px;padding:3px 10px;font-weight:500;}
+.role-admin{background:var(--matcha-light);color:var(--matcha);}
+.role-staff{background:var(--cream-dark);color:var(--ink-mid);}
+.staff-row{display:flex;align-items:center;gap:10px;padding:0.75rem 0;border-bottom:1px solid var(--border);}
+.staff-row:last-child{border-bottom:none;}
 .onboard-hero{padding:2.5rem 1.4rem 1.5rem;text-align:center;}
 .onboard-logo{font-size:32px;font-weight:400;color:var(--matcha);letter-spacing:0.04em;font-family:'DM Serif Display',serif;margin-bottom:4px;}
 .onboard-sub{font-size:11px;color:var(--ink-soft);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:1.5rem;}
@@ -145,6 +178,70 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 <body>
 
 <div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div class="screen" id="s-login">
+  <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.4rem;">
+    <div style="text-align:center;margin-bottom:1.25rem;">
+      <svg width="40" height="40" viewBox="0 0 96 96" fill="none" style="margin-bottom:8px;">
+        <rect width="96" height="96" rx="22" fill="#e8f0e9"/>
+        <line x1="33" y1="22" x2="33" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
+        <line x1="43" y1="22" x2="43" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
+        <line x1="53" y1="22" x2="53" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
+        <line x1="63" y1="22" x2="63" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
+        <line x1="25" y1="48" x2="71" y2="48" stroke="#8b5e3c" stroke-width="3.5" stroke-linecap="round"/>
+      </svg>
+      <div style="font-size:22px;font-weight:400;color:var(--matcha);font-family:'DM Serif Display',serif;letter-spacing:0.04em;">Tally</div>
+      <div style="font-size:10px;color:var(--ink-soft);letter-spacing:0.14em;text-transform:uppercase;margin-top:3px;">by Harulabs</div>
+    </div>
+    <div style="width:100%;max-width:320px;">
+      <!-- Step 1: Name selector -->
+      <div id="login-step-1">
+        <div class="card">
+          <div class="card-head"><i class="ti ti-user" style="font-size:14px"></i> Who are you?</div>
+          <div id="staff-name-list"><div class="loading">Loading...</div></div>
+        </div>
+      </div>
+      <!-- Step 2: PIN entry -->
+      <div id="login-step-2" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;cursor:pointer;" onclick="backToNames()">
+          <i class="ti ti-arrow-left" style="font-size:14px;color:var(--ink-soft)"></i>
+          <span style="font-size:13px;color:var(--ink-soft);">Change</span>
+          <span id="selected-name-display" style="font-size:14px;font-weight:500;color:var(--ink);"></span>
+        </div>
+        <div class="card">
+          <div style="margin-bottom:0;">
+            <label class="form-lbl">Enter PIN</label>
+            <div class="pin-display" id="pin-display">
+              <div class="pin-dot" id="pd-0"></div>
+              <div class="pin-dot" id="pd-1"></div>
+              <div class="pin-dot" id="pd-2"></div>
+              <div class="pin-dot" id="pd-3"></div>
+              <div class="pin-dot" id="pd-4"></div>
+              <div class="pin-dot" id="pd-5"></div>
+            </div>
+            <div class="pin-grid">
+              <button class="pin-btn" onclick="pinPress('1')">1</button>
+              <button class="pin-btn" onclick="pinPress('2')">2</button>
+              <button class="pin-btn" onclick="pinPress('3')">3</button>
+              <button class="pin-btn" onclick="pinPress('4')">4</button>
+              <button class="pin-btn" onclick="pinPress('5')">5</button>
+              <button class="pin-btn" onclick="pinPress('6')">6</button>
+              <button class="pin-btn" onclick="pinPress('7')">7</button>
+              <button class="pin-btn" onclick="pinPress('8')">8</button>
+              <button class="pin-btn" onclick="pinPress('9')">9</button>
+              <button class="pin-btn" onclick="pinClear()" style="font-size:12px;color:var(--ink-soft);">Clear</button>
+              <button class="pin-btn" onclick="pinPress('0')">0</button>
+              <button class="pin-btn" onclick="pinBack()" style="font-size:16px;color:var(--ink-soft);">⌫</button>
+            </div>
+          </div>
+          <button class="submit-btn" id="login-btn" onclick="doLogin()">Sign in</button>
+          <div id="login-error" style="color:var(--vermillion);font-size:12px;text-align:center;margin-top:0.75rem;display:none;">Incorrect PIN. Please try again.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- LOADING -->
 <div class="screen active" id="s-loading" style="align-items:center;justify-content:center;background:var(--cream);">
@@ -205,6 +302,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <i class="ti ti-chevron-down" style="font-size:11px"></i>
     </div>
     <div class="back-btn" onclick="openSettings()" style="margin-left:4px;" title="Settings"><i class="ti ti-settings" style="font-size:16px"></i></div>
+    <div class="back-btn" onclick="logout()" style="margin-left:4px;" title="Sign out"><i class="ti ti-logout" style="font-size:16px"></i></div>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="hero">
@@ -449,6 +547,12 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="menu-card" id="settings-outlets-list"></div>
       <button class="add-btn" onclick="go('s-add-outlet')" style="margin-bottom:0.85rem;"><i class="ti ti-plus" style="font-size:14px"></i> Add new outlet</button>
       <button class="submit-btn" onclick="saveSettings()">Save changes</button>
+      <div style="margin-top:1rem;">
+        <button onclick="logout()" style="width:100%;padding:12px;background:none;border:1px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--ink-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="ti ti-logout" style="font-size:15px"></i> Sign out</button>
+      </div>
+      <div class="section-lbl" style="margin-top:1.25rem;">Staff management</div>
+      <div class="menu-card" id="staff-list"></div>
+      <button class="add-btn" onclick="go('s-add-staff')" style="margin-bottom:0.85rem;"><i class="ti ti-plus" style="font-size:14px"></i> Add staff member</button>
       <div style="margin-top:1.5rem;">
         <div class="card" style="border-color:var(--vermillion-light);">
           <div class="card-head" style="color:var(--vermillion);"><i class="ti ti-alert-triangle" style="font-size:14px"></i> Danger zone</div>
@@ -476,6 +580,84 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
       <div class="hint" style="margin-top:1rem;">Tally v1.0 · by Harulabs</div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD STAFF -->
+<div class="screen" id="s-add-staff">
+  <div class="topbar">
+    <div class="back-btn" onclick="go('s-settings')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Add staff member</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head"><i class="ti ti-user" style="font-size:14px"></i> Staff details</div>
+        <div class="form-row">
+          <label class="form-lbl">Full name</label>
+          <input class="inp" id="new-staff-name" type="text" placeholder="e.g. Amirah"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">6 digit PIN</label>
+          <input class="inp" id="new-staff-pin" type="number" inputmode="numeric" placeholder="e.g. 123456" maxlength="6"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Role</label>
+          <select class="inp" id="new-staff-role">
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Assigned outlet</label>
+          <select class="inp" id="new-staff-outlet"></select>
+        </div>
+      </div>
+      <button class="submit-btn" id="add-staff-btn" onclick="addStaff()">Add staff member</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT STAFF -->
+<div class="screen" id="s-edit-staff">
+  <div class="topbar">
+    <div class="back-btn" onclick="go('s-settings')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Edit staff member</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <input type="hidden" id="edit-staff-id"/>
+      <div class="card">
+        <div class="card-head"><i class="ti ti-user" style="font-size:14px"></i> Staff details</div>
+        <div class="form-row">
+          <label class="form-lbl">Full name</label>
+          <input class="inp" id="edit-staff-name" type="text" placeholder="e.g. Amirah"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">New PIN <span style="color:var(--ink-soft);font-weight:400;">(leave blank to keep current)</span></label>
+          <input class="inp" id="edit-staff-pin" type="number" inputmode="numeric" placeholder="Enter new 6 digit PIN"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Role</label>
+          <select class="inp" id="edit-staff-role">
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Assigned outlet</label>
+          <select class="inp" id="edit-staff-outlet"></select>
+        </div>
+      </div>
+      <button class="submit-btn" id="edit-staff-btn" onclick="saveStaff()">Save changes</button>
+      <div style="margin-top:1rem;">
+        <div class="card" style="border-color:var(--vermillion-light);">
+          <div class="card-head" style="color:var(--vermillion);"><i class="ti ti-alert-triangle" style="font-size:14px"></i> Remove staff</div>
+          <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.85rem;line-height:1.6;">This removes the staff member's access to Tally. Their logged data is not deleted.</div>
+          <button onclick="removeStaff()" style="width:100%;padding:11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;"><i class="ti ti-user-off" style="font-size:13px"></i> Remove staff member</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -621,7 +803,6 @@ const sb = {
           opts.method = 'GET';
           delete opts.headers['Content-Type'];
         }
-        console.log('DB QUERY:', opts.method || 'GET', url.substring(0, 120));
         try {
           const res = await fetch(url, opts);
           const text = await res.text();
@@ -629,14 +810,11 @@ const sb = {
           try { data = JSON.parse(text); } catch(e) {}
           if(!res.ok) {
             const msg = (data && data.message) ? data.message : (data && data.hint) ? data.hint : text;
-            console.log('DB ERROR:', res.status, msg);
             return { data: null, error: { message: msg } };
           }
           if(!Array.isArray(data)) data = data ? [data] : [];
-          console.log('DB OK:', Array.isArray(data) ? data.length + ' rows' : 'done');
           return { data: data, error: null };
         } catch(e) {
-          console.log('DB FETCH ERROR:', e.message, url.substring(0, 120));
           return { data: null, error: { message: e.message } };
         }
       },
@@ -653,8 +831,19 @@ let outlets = [];
 let ownerName = '';
 let insightPeriod = 'today';
 let outletFields = 1;
+let currentUser = null;
+let pinValue = '';
 
 function go(id) {
+  // Auth guard - non-login screens require a logged in user
+  if(id !== 's-login' && id !== 's-loading' && !currentUser) {
+    go('s-login'); return;
+  }
+  // Staff guard - restricted screens
+  if(currentUser && currentUser.role === 'staff') {
+    const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet'];
+    if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
+  }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
@@ -664,6 +853,145 @@ function go(id) {
   if(id === 's-insights') loadInsights();
   if(id === 's-outlets') renderOutletsList();
   if(id === 's-sales') loadSalesHistory();
+  if(id === 's-add-staff') populateOutletSelects();
+}
+
+// PIN functions
+let selectedStaffId = null;
+
+async function loadStaffNameList() {
+  const result = await sb.from('staff').select('*').order('name');
+  const data = result.data || [];
+  const list = document.getElementById('staff-name-list');
+  if(!list) return;
+  if(data.length === 0) { list.innerHTML = '<div class="empty-state">No staff found.</div>'; return; }
+  // Build items using DOM to avoid quote escaping issues
+  list.innerHTML = '';
+  data.forEach(function(s) {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:0.75rem 0;border-bottom:1px solid var(--border);cursor:pointer;';
+    div.innerHTML = '<div style="width:36px;height:36px;border-radius:50%;background:var(--matcha-light);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:var(--matcha);flex-shrink:0;">' + s.name.charAt(0).toUpperCase() + '</div>' +
+      '<span style="font-size:14px;font-weight:500;color:var(--ink);flex:1;">' + s.name + '</span>' +
+      '<i class="ti ti-chevron-right" style="color:var(--ink-soft);font-size:14px;"></i>';
+    div.addEventListener('click', function() { selectName(s.id, s.name); });
+    list.appendChild(div);
+  });
+  // Remove border from last item
+  const items = list.querySelectorAll('div');
+  if(items.length > 0) items[items.length-1].style.borderBottom = 'none';
+}
+function selectName(id, name) {
+  selectedStaffId = id;
+  document.getElementById('selected-name-display').textContent = name;
+  document.getElementById('login-step-1').style.display = 'none';
+  document.getElementById('login-step-2').style.display = 'block';
+  pinValue = ''; updatePinDisplay();
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function backToNames() {
+  selectedStaffId = null;
+  pinValue = ''; updatePinDisplay();
+  document.getElementById('login-step-1').style.display = 'block';
+  document.getElementById('login-step-2').style.display = 'none';
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function pinPress(num) {
+  if(pinValue.length >= 6) return;
+  // Flash the button that was pressed
+  const btns = document.querySelectorAll('.pin-btn');
+  btns.forEach(function(b) {
+    if(b.textContent.trim() === num) {
+      b.classList.add('pressed');
+      setTimeout(function(){ b.classList.remove('pressed'); }, 150);
+    }
+  });
+  pinValue += num;
+  updatePinDisplay();
+  if(pinValue.length === 6) setTimeout(function(){ doLogin(); }, 100);
+}
+
+function pinBack() {
+  pinValue = pinValue.slice(0,-1);
+  updatePinDisplay();
+}
+
+function pinClear() {
+  pinValue = '';
+  updatePinDisplay();
+}
+
+function updatePinDisplay() {
+  for(let i=0;i<6;i++){
+    const dot = document.getElementById('pd-'+i);
+    if(dot) dot.className = 'pin-dot' + (i < pinValue.length ? ' filled' : '');
+  }
+}
+
+async function doLogin() {
+  if(!selectedStaffId) { showToast('Please select your name!'); return; }
+  if(pinValue.length < 6) { showToast('Please enter your 6 digit PIN!'); return; }
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  errEl.style.display = 'none';
+  const result = await sb.from('staff').select('*').eq('id', selectedStaffId).eq('pin', pinValue);
+  btn.disabled = false; btn.textContent = 'Sign in';
+  if(result.error || !result.data || result.data.length === 0) {
+    errEl.style.display = 'block';
+    pinValue = ''; updatePinDisplay(); return;
+  }
+  currentUser = result.data[0];
+  localStorage.setItem('tally_user_id', currentUser.id);
+  localStorage.setItem('tally_user_name', currentUser.name);
+  localStorage.setItem('tally_user_role', currentUser.role);
+  pinValue = ''; updatePinDisplay();
+  errEl.style.display = 'none';
+  selectedStaffId = null;
+  await loadOutlets();
+  ownerName = currentUser.name;
+  if(currentUser.role === 'staff' && currentUser.outlet_id) {
+    currentOutlet = outlets.find(function(o){ return o.id === currentUser.outlet_id; }) || outlets[0];
+  } else {
+    const savedId = localStorage.getItem('tally_outlet_id');
+    if(savedId === 'all') currentOutlet = {id:'all',name:'All outlets'};
+    else currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+  }
+  initHome();
+  go('s-home');
+  applyRoleUI();
+}
+
+function applyRoleUI() {
+  if(!currentUser) return;
+  const isStaff = currentUser.role === 'staff';
+  // Hide insights and outlet switcher for staff
+  const insightsMenu = document.querySelector('[onclick="go(\'s-insights\')"]');
+  const outletChip = document.querySelector('.outlet-chip');
+  const settingsBtn = document.querySelector('[onclick="openSettings()"]');
+  if(insightsMenu) insightsMenu.style.display = isStaff ? 'none' : '';
+  if(outletChip) outletChip.style.pointerEvents = isStaff ? 'none' : '';
+  if(settingsBtn) settingsBtn.style.display = isStaff ? 'none' : '';
+  // Update greeting with role badge
+  const greetEl = document.getElementById('home-greeting');
+  if(greetEl) {
+    greetEl.textContent = greeting() + ', ' + currentUser.name;
+  }
+}
+
+function logout() {
+  currentUser = null;
+  selectedStaffId = null;
+  pinValue = '';
+  localStorage.removeItem('tally_user_id');
+  localStorage.removeItem('tally_user_name');
+  localStorage.removeItem('tally_user_role');
+  document.getElementById('login-step-1').style.display = 'block';
+  document.getElementById('login-step-2').style.display = 'none';
+  loadStaffNameList();
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-login').classList.add('active');
 }
 
 function showToast(msg, duration) {
@@ -784,6 +1112,25 @@ function initHome() {
 
 async function loadHomeStats() {
   if(!currentOutlet) return;
+
+  // Reset all stats first
+  document.getElementById('stat-sales').textContent = 'RM 0';
+  document.getElementById('stat-sales').style.color = 'var(--ink)';
+  document.getElementById('stat-sales-sub').className = 'badge badge-neutral';
+  document.getElementById('stat-sales-sub').textContent = 'No entries';
+  document.getElementById('stat-variance').textContent = '—';
+  document.getElementById('stat-variance').style.color = 'var(--ink)';
+  document.getElementById('stat-variance-sub').className = 'badge badge-neutral';
+  document.getElementById('stat-variance-sub').textContent = 'No entry';
+  document.getElementById('stat-expenses').textContent = 'RM 0';
+  document.getElementById('stat-expenses').style.color = 'var(--amber)';
+  document.getElementById('stat-exp-sub').className = 'badge badge-neutral';
+  document.getElementById('stat-exp-sub').textContent = '0 items';
+  document.getElementById('stat-wastage').textContent = 'RM 0';
+  document.getElementById('stat-wastage').style.color = 'var(--rose)';
+  document.getElementById('stat-wast-sub').className = 'badge badge-neutral';
+  document.getElementById('stat-wast-sub').textContent = '0 items';
+
   const today = getToday();
   let salesData = [], expData = [], wastData = [];
   if(currentOutlet.id === 'all') {
@@ -1217,9 +1564,12 @@ async function loadInsights() {
 
 // SETTINGS
 function openSettings() {
+  if(!currentUser || currentUser.role !== 'admin') { showToast('Admin access only'); return; }
   document.getElementById('set-biz').value = localStorage.getItem('tally_biz') || '';
   document.getElementById('set-name').value = localStorage.getItem('tally_owner') || '';
   renderSettingsOutlets();
+  loadStaffList();
+  populateOutletSelects();
   go('s-settings');
 }
 
@@ -1322,6 +1672,100 @@ async function addNewOutlet() {
   renderSettingsOutlets();
 }
 
+// STAFF MANAGEMENT
+async function loadStaffList() {
+  const result = await sb.from('staff').select('*').order('created_at');
+  const data = result.data || [];
+  const list = document.getElementById('staff-list');
+  if(!list) return;
+  if(data.length === 0) { list.innerHTML = '<div class="empty-state">No staff added yet.</div>'; return; }
+  list.innerHTML = data.map(function(s){
+    const outletName = s.outlet_id ? (outlets.find(function(o){ return o.id === s.outlet_id; }) || {name:'Unknown'}).name : 'All outlets';
+    return '<div class="menu-item" onclick="openEditStaff(\'' + s.id + '\')">' +
+      '<div class="menu-icon mi-ink"><i class="ti ti-user"></i></div>' +
+      '<div class="menu-text"><strong>' + s.name + '</strong><span>' + outletName + '</span></div>' +
+      '<span class="role-badge ' + (s.role === 'admin' ? 'role-admin' : 'role-staff') + '">' + s.role + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+function populateOutletSelects() {
+  const selects = ['new-staff-outlet','edit-staff-outlet'];
+  selects.forEach(function(id) {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = '<option value="">All outlets (admin)</option>' +
+      outlets.map(function(o){ return '<option value="' + o.id + '">' + o.name + '</option>'; }).join('');
+  });
+}
+
+async function addStaff() {
+  const name = document.getElementById('new-staff-name').value.trim();
+  const pin = document.getElementById('new-staff-pin').value.trim();
+  const role = document.getElementById('new-staff-role').value;
+  const outletId = document.getElementById('new-staff-outlet').value || null;
+  if(!name) { showToast('Please enter a name!'); return; }
+  if(pin.length !== 6 || isNaN(pin)) { showToast('PIN must be exactly 6 digits!'); return; }
+  const btn = document.getElementById('add-staff-btn');
+  btn.disabled = true; btn.textContent = 'Adding...';
+  const result = await sb.from('staff').insert({name:name,pin:pin,role:role,outlet_id:outletId}).select();
+  btn.disabled = false; btn.textContent = 'Add staff member';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  ['new-staff-name','new-staff-pin'].forEach(function(id){ document.getElementById(id).value=''; });
+  showToast(name + ' added!');
+  go('s-settings');
+  loadStaffList();
+}
+
+function openEditStaff(id) {
+  const staffMember = null;
+  sb.from('staff').select('*').eq('id', id).then(function(result) {
+    const s = result.data && result.data[0];
+    if(!s) return;
+    document.getElementById('edit-staff-id').value = s.id;
+    document.getElementById('edit-staff-name').value = s.name;
+    document.getElementById('edit-staff-pin').value = '';
+    document.getElementById('edit-staff-role').value = s.role;
+    populateOutletSelects();
+    document.getElementById('edit-staff-outlet').value = s.outlet_id || '';
+    go('s-edit-staff');
+  });
+}
+
+async function saveStaff() {
+  const id = document.getElementById('edit-staff-id').value;
+  const name = document.getElementById('edit-staff-name').value.trim();
+  const pin = document.getElementById('edit-staff-pin').value.trim();
+  const role = document.getElementById('edit-staff-role').value;
+  const outletId = document.getElementById('edit-staff-outlet').value || null;
+  if(!name) { showToast('Please enter a name!'); return; }
+  if(pin && (pin.length !== 6 || isNaN(pin))) { showToast('PIN must be exactly 6 digits!'); return; }
+  const btn = document.getElementById('edit-staff-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const updateData = {name:name, role:role, outlet_id:outletId};
+  if(pin) updateData.pin = pin;
+  const result = await sb.from('staff').update(updateData).eq('id', id);
+  btn.disabled = false; btn.textContent = 'Save changes';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  showToast('Staff updated!');
+  go('s-settings');
+  loadStaffList();
+}
+
+async function removeStaff() {
+  const id = document.getElementById('edit-staff-id').value;
+  const name = document.getElementById('edit-staff-name').value;
+  if(!confirm('Remove ' + name + '? They will lose access to Tally.')) return;
+  const result = await fetch(SUPABASE_URL + '/rest/v1/staff?id=eq.' + id, {
+    method: 'DELETE',
+    headers: {'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+  });
+  if(!result.ok) { showToast('Error removing staff'); return; }
+  showToast(name + ' removed');
+  go('s-settings');
+  loadStaffList();
+}
+
 function resetApp() {
   if(confirm('This will reset your onboarding on this device. Your saved data in Supabase is safe. Continue?')) {
     localStorage.clear();
@@ -1392,34 +1836,34 @@ async function factoryReset() {
 
 async function init() {
   initOnboarding();
-  await loadOutlets();
-  const savedOwner = localStorage.getItem('tally_owner');
-  const savedBiz = localStorage.getItem('tally_biz');
-  if(outlets.length > 0 && savedOwner && savedBiz) {
-    // Returning user with full setup - go straight home
-    ownerName = savedOwner;
-    const savedId = localStorage.getItem('tally_outlet_id');
-    if(savedId === 'all') {
-      currentOutlet = {id:'all', name:'All outlets'};
-    } else {
-      currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+  // Check for saved login session
+  const savedUserId = localStorage.getItem('tally_user_id');
+  if(savedUserId) {
+    const userResult = await sb.from('staff').select('*').eq('id', savedUserId);
+    if(userResult.data && userResult.data.length > 0) {
+      currentUser = userResult.data[0];
+      await loadOutlets();
+      if(outlets.length === 0) { go('s-login'); return; }
+      ownerName = currentUser.name;
+      if(currentUser.role === 'staff' && currentUser.outlet_id) {
+        currentOutlet = outlets.find(function(o){ return o.id === currentUser.outlet_id; }) || outlets[0];
+      } else {
+        const savedId = localStorage.getItem('tally_outlet_id');
+        if(savedId === 'all') currentOutlet = {id:'all', name:'All outlets'};
+        else currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+      }
+      initHome();
+      go('s-home');
+      applyRoleUI();
+      return;
     }
-    initHome();
-    go('s-home');
-  } else if(outlets.length > 0 && (!savedOwner || !savedBiz)) {
-    // Outlets exist but name missing - show onboarding pre-filled
-    // Hide the outlets section since they already exist
-    document.getElementById('ob-biz').value = savedBiz || '';
-    document.getElementById('ob-name').value = savedOwner || '';
-    var outletSection = document.getElementById('outlets-setup');
-    var addBtn = document.querySelector('#s-onboard .add-btn');
-    var sectionLbl = document.querySelector('#s-onboard .section-lbl');
-    if(outletSection) outletSection.style.display = 'none';
-    if(addBtn) addBtn.style.display = 'none';
-    if(sectionLbl) sectionLbl.style.display = 'none';
-    go('s-onboard');
+  }
+  // No saved session - check if app is set up
+  await loadOutlets();
+  if(outlets.length > 0) {
+    loadStaffNameList();
+    go('s-login');
   } else {
-    // Brand new user
     go('s-onboard');
   }
 }
