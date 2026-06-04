@@ -921,7 +921,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <label class="form-lbl">Product name</label>
           <input class="inp" id="prod-name" type="text" placeholder="e.g. Matcha Latte (M)"/>
         </div>
-        <div class="form-row">
+        <div class="form-row" style="margin-bottom:0;">
           <label class="form-lbl">Category</label>
           <select class="inp" id="prod-cat">
             <option value="Drink">Drink</option>
@@ -929,10 +929,22 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
             <option value="Other">Other</option>
           </select>
         </div>
-        <div class="form-row">
-          <label class="form-lbl">Total cost to make (RM)</label>
-          <input class="inp" id="prod-cost" type="number" inputmode="decimal" placeholder="0.00" oninput="calcProductMargin()"/>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> Ingredients used</div>
+        <div id="prod-ingredients-list"></div>
+        <div style="display:flex;gap:8px;margin-top:0.75rem;">
+          <select class="inp" id="prod-ing-select" style="flex:1;"></select>
+          <input class="inp" id="prod-ing-qty" type="number" inputmode="decimal" placeholder="Qty" style="width:80px;"/>
+          <button onclick="addProductIngredient()" style="padding:9px 12px;background:#6b4fa0;border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
         </div>
+        <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13px;color:var(--ink-mid);">Total cost</span>
+          <span style="font-size:16px;font-weight:500;color:#6b4fa0;" id="prod-total-cost">RM 0.00</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-tag" style="font-size:14px"></i> Pricing</div>
         <div class="form-row">
           <label class="form-lbl">Selling price (RM)</label>
           <input class="inp" id="prod-price" type="number" inputmode="decimal" placeholder="0.00" oninput="calcProductMargin()"/>
@@ -963,7 +975,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <label class="form-lbl">Product name</label>
           <input class="inp" id="edit-prod-name" type="text" placeholder="e.g. Matcha Latte (M)"/>
         </div>
-        <div class="form-row">
+        <div class="form-row" style="margin-bottom:0;">
           <label class="form-lbl">Category</label>
           <select class="inp" id="edit-prod-cat">
             <option value="Drink">Drink</option>
@@ -971,10 +983,22 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
             <option value="Other">Other</option>
           </select>
         </div>
-        <div class="form-row">
-          <label class="form-lbl">Total cost to make (RM)</label>
-          <input class="inp" id="edit-prod-cost" type="number" inputmode="decimal" placeholder="0.00" oninput="calcEditProductMargin()"/>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> Ingredients used</div>
+        <div id="edit-prod-ingredients-list"></div>
+        <div style="display:flex;gap:8px;margin-top:0.75rem;">
+          <select class="inp" id="edit-prod-ing-select" style="flex:1;"></select>
+          <input class="inp" id="edit-prod-ing-qty" type="number" inputmode="decimal" placeholder="Qty" style="width:80px;"/>
+          <button onclick="addEditProductIngredient()" style="padding:9px 12px;background:#6b4fa0;border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
         </div>
+        <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13px;color:var(--ink-mid);">Total cost</span>
+          <span style="font-size:16px;font-weight:500;color:#6b4fa0;" id="edit-prod-total-cost">RM 0.00</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-tag" style="font-size:14px"></i> Pricing</div>
         <div class="form-row">
           <label class="form-lbl">Selling price (RM)</label>
           <input class="inp" id="edit-prod-price" type="number" inputmode="decimal" placeholder="0.00" oninput="calcEditProductMargin()"/>
@@ -1142,6 +1166,7 @@ function go(id) {
   if(id === 's-cashcount') loadCashCountHistory();
   if(id === 's-ingredients') loadIngredients();
   if(id === 's-costing') loadProducts();
+  if(id === 's-add-product') { prodIngredients = []; renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); }
 }
 
 // PIN functions
@@ -2004,6 +2029,121 @@ async function deleteIngredient() {
 }
 
 // PRODUCTS
+// Product ingredient state
+let prodIngredients = []; // [{ingredient_id, name, unit, cost_per_unit, quantity}]
+let editProdIngredients = [];
+let allIngredients = [];
+
+async function populateIngredientSelect(selectId) {
+  const result = await sb.from('ingredients').select('*').order('name');
+  allIngredients = result.data || [];
+  const el = document.getElementById(selectId);
+  if(!el) return;
+  el.innerHTML = '<option value="">Select ingredient...</option>' +
+    allIngredients.map(function(i){
+      return '<option value="' + i.id + '" data-cpu="' + i.cost_per_unit + '" data-unit="' + i.pack_unit + '">' + i.name + ' (' + i.pack_size + i.pack_unit + ' · RM' + parseFloat(i.pack_price).toFixed(2) + ')</option>';
+    }).join('');
+}
+
+function renderIngredientsList(ingredients, listId, totalId, isEdit) {
+  const list = document.getElementById(listId);
+  const totalEl = document.getElementById(totalId);
+  if(!list) return;
+  let total = 0;
+  if(ingredients.length === 0) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);padding:0.5rem 0;">No ingredients added yet.</div>';
+  } else {
+    list.innerHTML = ingredients.map(function(ing, idx){
+      const lineCost = ing.cost_per_unit * ing.quantity;
+      total += lineCost;
+      return '<div style="display:flex;align-items:center;gap:8px;padding:0.5rem 0;border-bottom:1px solid var(--border);">' +
+        '<div style="flex:1;">' +
+        '<div style="font-size:13px;font-weight:500;color:var(--ink);">' + ing.name + '</div>' +
+        '<div style="font-size:11px;color:var(--ink-soft);">' + ing.quantity + ing.unit + ' × RM' + parseFloat(ing.cost_per_unit).toFixed(4) + '/' + ing.unit + '</div></div>' +
+        '<div style="text-align:right;margin-right:8px;">' +
+        '<div style="font-size:13px;font-weight:500;color:#6b4fa0;">RM ' + lineCost.toFixed(4).replace(/0+$/, '').replace(/\.$/, '') + '</div></div>' +
+        '<button onclick="removeIngredientLine(' + idx + ',' + (isEdit?'true':'false') + ')" style="background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:16px;padding:0;">×</button>' +
+        '</div>';
+    }).join('');
+  }
+  if(totalEl) totalEl.textContent = 'RM ' + total.toFixed(4).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+  // Update margin calc
+  if(isEdit) {
+    document.getElementById('edit-prod-price') && calcEditProductMargin();
+  } else {
+    document.getElementById('prod-price') && calcProductMargin();
+  }
+  return total;
+}
+
+function removeIngredientLine(idx, isEdit) {
+  if(isEdit) {
+    editProdIngredients.splice(idx, 1);
+    renderIngredientsList(editProdIngredients, 'edit-prod-ingredients-list', 'edit-prod-total-cost', true);
+  } else {
+    prodIngredients.splice(idx, 1);
+    renderIngredientsList(prodIngredients, 'prod-ingredients-list', 'prod-total-cost', false);
+  }
+}
+
+function addProductIngredient() {
+  const sel = document.getElementById('prod-ing-select');
+  const qty = parseFloat(document.getElementById('prod-ing-qty').value);
+  if(!sel.value) { showToast('Please select an ingredient!'); return; }
+  if(!qty || qty <= 0) { showToast('Please enter quantity!'); return; }
+  const opt = sel.options[sel.selectedIndex];
+  const cpu = parseFloat(opt.getAttribute('data-cpu'));
+  const unit = opt.getAttribute('data-unit');
+  const ing = allIngredients.find(function(i){ return i.id === sel.value; });
+  prodIngredients.push({ingredient_id:sel.value, name:ing.name, unit:unit, cost_per_unit:cpu, quantity:qty});
+  document.getElementById('prod-ing-qty').value = '';
+  sel.value = '';
+  renderIngredientsList(prodIngredients, 'prod-ingredients-list', 'prod-total-cost', false);
+}
+
+function addEditProductIngredient() {
+  const sel = document.getElementById('edit-prod-ing-select');
+  const qty = parseFloat(document.getElementById('edit-prod-ing-qty').value);
+  if(!sel.value) { showToast('Please select an ingredient!'); return; }
+  if(!qty || qty <= 0) { showToast('Please enter quantity!'); return; }
+  const opt = sel.options[sel.selectedIndex];
+  const cpu = parseFloat(opt.getAttribute('data-cpu'));
+  const unit = opt.getAttribute('data-unit');
+  const ing = allIngredients.find(function(i){ return i.id === sel.value; });
+  editProdIngredients.push({ingredient_id:sel.value, name:ing.name, unit:unit, cost_per_unit:cpu, quantity:qty});
+  document.getElementById('edit-prod-ing-qty').value = '';
+  sel.value = '';
+  renderIngredientsList(editProdIngredients, 'edit-prod-ingredients-list', 'edit-prod-total-cost', true);
+}
+
+function calcProductMargin() {
+  const cost = prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const price = parseFloat(document.getElementById('prod-price').value) || 0;
+  const el = document.getElementById('prod-margin-preview');
+  if(!el) return;
+  if(cost === 0 && price === 0) { el.style.display='none'; return; }
+  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+  const profit = price - cost;
+  renderMarginBar(margin, 'prod-margin-preview');
+  el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
+    '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
+    '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
+}
+
+function calcEditProductMargin() {
+  const cost = editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const price = parseFloat(document.getElementById('edit-prod-price').value) || 0;
+  const el = document.getElementById('edit-prod-margin-preview');
+  if(!el) return;
+  if(cost === 0 && price === 0) { el.style.display='none'; return; }
+  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+  const profit = price - cost;
+  renderMarginBar(margin, 'edit-prod-margin-preview');
+  el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
+    '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
+    '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
+}
+
 async function loadProducts() {
   const result = await sb.from('costing').select('*').order('name');
   const data = result.data || [];
@@ -2012,7 +2152,6 @@ async function loadProducts() {
   if(data.length === 0) {
     el.innerHTML = '<div class="empty-state" style="padding:2rem;">No products yet.<br/><span style="font-size:12px;">Add your menu items to calculate margins.</span></div>'; return;
   }
-  // Summary card
   const totalItems = data.length;
   const avgMargin = data.reduce(function(a,p) {
     const cost = parseFloat(p.cost) || 0;
@@ -2026,10 +2165,8 @@ async function loadProducts() {
     '<div style="font-size:12px;opacity:0.75;margin-top:4px;">' + totalItems + ' product' + (totalItems !== 1 ? 's' : '') + ' · ' + marginLabel(avgMargin) + '</div>' +
     '</div>';
 
-  // Group by category
   const categories = {};
   data.forEach(function(p){ if(!categories[p.category]) categories[p.category]=[]; categories[p.category].push(p); });
-
   Object.keys(categories).forEach(function(cat) {
     html += '<div style="font-size:11px;color:var(--ink-soft);letter-spacing:0.08em;text-transform:uppercase;margin:0.75rem 0 0.5rem;">' + cat + '</div>';
     categories[cat].forEach(function(p) {
@@ -2038,7 +2175,6 @@ async function loadProducts() {
       const margin = price > 0 ? ((price-cost)/price)*100 : 0;
       const profit = price - cost;
       const color = marginColor(margin);
-      const bg = marginBg(margin);
       const barW = Math.min(Math.max(margin, 0), 100);
       html += '<div onclick="openEditProduct(\'' + p.id + '\')" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:0.65rem;cursor:pointer;">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
@@ -2060,50 +2196,84 @@ async function loadProducts() {
 async function saveProduct() {
   const name = document.getElementById('prod-name').value.trim();
   const cat = document.getElementById('prod-cat').value;
-  const cost = parseFloat(document.getElementById('prod-cost').value) || 0;
   const price = parseFloat(document.getElementById('prod-price').value) || 0;
   const notes = document.getElementById('prod-notes').value.trim();
   if(!name) { showToast('Please enter product name!'); return; }
+  const cost = prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
   const btn = document.getElementById('add-prod-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
-  const result = await sb.from('costing').insert({name:name,category:cat,cost:cost,selling_price:price,notes:notes});
+  const result = await sb.from('costing').insert({name:name,category:cat,cost:cost,selling_price:price,notes:notes}).select();
+  if(result.error) { showToast('Error: ' + result.error.message); btn.disabled=false; btn.textContent='Save product'; return; }
+  const prodId = result.data[0].id;
+  // Save ingredients
+  if(prodIngredients.length > 0) {
+    const ingData = prodIngredients.map(function(i){
+      return {costing_id:prodId, ingredient_id:i.ingredient_id, quantity:i.quantity, selling_price:price};
+    });
+    await sb.from('costing_ingredients').insert(ingData);
+  }
   btn.disabled = false; btn.textContent = 'Save product';
-  if(result.error) { showToast('Error: ' + result.error.message); return; }
   showToast(name + ' saved!');
-  ['prod-name','prod-cost','prod-price','prod-notes'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['prod-name','prod-price','prod-notes'].forEach(function(id){ document.getElementById(id).value=''; });
+  prodIngredients = [];
+  renderIngredientsList(prodIngredients, 'prod-ingredients-list', 'prod-total-cost', false);
   document.getElementById('prod-margin-preview').style.display='none';
   go('s-costing');
 }
 
-function openEditProduct(id) {
-  sb.from('costing').select('*').eq('id', id).then(function(result) {
-    const p = result.data && result.data[0];
-    if(!p) return;
-    document.getElementById('edit-prod-id').value = p.id;
-    document.getElementById('edit-prod-name').value = p.name;
-    document.getElementById('edit-prod-cat').value = p.category;
-    document.getElementById('edit-prod-cost').value = p.cost || '';
-    document.getElementById('edit-prod-price').value = p.selling_price || '';
-    document.getElementById('edit-prod-notes').value = p.notes || '';
-    document.getElementById('edit-prod-margin-preview').style.display = 'none';
-    go('s-edit-product');
-    setTimeout(calcEditProductMargin, 100);
-  });
+async function openEditProduct(id) {
+  const result = await sb.from('costing').select('*').eq('id', id);
+  const p = result.data && result.data[0];
+  if(!p) return;
+  document.getElementById('edit-prod-id').value = p.id;
+  document.getElementById('edit-prod-name').value = p.name;
+  document.getElementById('edit-prod-cat').value = p.category;
+  document.getElementById('edit-prod-price').value = p.selling_price || '';
+  document.getElementById('edit-prod-notes').value = p.notes || '';
+  document.getElementById('edit-prod-margin-preview').style.display = 'none';
+  // Load existing ingredients
+  const ingResult = await sb.from('costing_ingredients').select('*').eq('costing_id', id);
+  const ingData = ingResult.data || [];
+  editProdIngredients = [];
+  if(ingData.length > 0) {
+    await populateIngredientSelect('edit-prod-ing-select');
+    ingData.forEach(function(ci) {
+      const ing = allIngredients.find(function(i){ return i.id === ci.ingredient_id; });
+      if(ing) editProdIngredients.push({
+        ingredient_id: ing.id, name: ing.name, unit: ing.pack_unit,
+        cost_per_unit: parseFloat(ing.cost_per_unit), quantity: parseFloat(ci.quantity)
+      });
+    });
+  }
+  renderIngredientsList(editProdIngredients, 'edit-prod-ingredients-list', 'edit-prod-total-cost', true);
+  await populateIngredientSelect('edit-prod-ing-select');
+  go('s-edit-product');
+  setTimeout(calcEditProductMargin, 100);
 }
 
 async function updateProduct() {
   const id = document.getElementById('edit-prod-id').value;
   const name = document.getElementById('edit-prod-name').value.trim();
   const cat = document.getElementById('edit-prod-cat').value;
-  const cost = parseFloat(document.getElementById('edit-prod-cost').value) || 0;
   const price = parseFloat(document.getElementById('edit-prod-price').value) || 0;
   const notes = document.getElementById('edit-prod-notes').value.trim();
   if(!name) { showToast('Please enter product name!'); return; }
+  const cost = editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
   const btn = document.getElementById('edit-prod-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
   const result = await sb.from('costing').update({name:name,category:cat,cost:cost,selling_price:price,notes:notes}).eq('id', id);
+  if(result.error) { showToast('Error: ' + result.error.message); btn.disabled=false; btn.textContent='Save changes'; return; }
+  // Replace ingredients - delete old, insert new
+  await fetch(SUPABASE_URL + '/rest/v1/costing_ingredients?costing_id=eq.' + id, {
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+  });
+  if(editProdIngredients.length > 0) {
+    const ingData = editProdIngredients.map(function(i){
+      return {costing_id:id, ingredient_id:i.ingredient_id, quantity:i.quantity, selling_price:price};
+    });
+    await sb.from('costing_ingredients').insert(ingData);
+  }
   btn.disabled = false; btn.textContent = 'Save changes';
-  if(result.error) { showToast('Error: ' + result.error.message); return; }
   showToast('Updated!');
   go('s-costing');
 }
@@ -2112,6 +2282,9 @@ async function deleteProduct() {
   const id = document.getElementById('edit-prod-id').value;
   const name = document.getElementById('edit-prod-name').value;
   if(!confirm('Delete ' + name + '?')) return;
+  await fetch(SUPABASE_URL + '/rest/v1/costing_ingredients?costing_id=eq.' + id, {
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+  });
   const result = await fetch(SUPABASE_URL + '/rest/v1/costing?id=eq.' + id, {
     method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
   });
@@ -2119,6 +2292,7 @@ async function deleteProduct() {
   showToast(name + ' deleted');
   go('s-costing');
 }
+
 
 function setInsightTab(el, period) {
   document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('on'); });
