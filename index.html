@@ -76,8 +76,8 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .stat-label{font-size:11px;color:var(--ink-soft);margin-bottom:6px;letter-spacing:0.02em;}
 .stat-val{font-size:21px;font-weight:500;color:var(--ink);}
 .stat-sub{font-size:11px;margin-top:4px;}
-.section-lbl{font-size:11px;color:var(--ink-soft);letter-spacing:0.1em;text-transform:uppercase;margin:0 0 0.6rem;}
-.menu-card{background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:1.25rem;}
+.section-lbl{font-size:11px;color:var(--ink-soft);letter-spacing:0.1em;text-transform:uppercase;margin:0 1.1rem 0.6rem;}
+.menu-card{background:var(--white);border:1px solid var(--border);border-radius:12px;margin:0 1.1rem 1.25rem;overflow:hidden;}
 .menu-item{display:flex;align-items:center;gap:12px;padding:0.85rem 1.1rem;border-bottom:1px solid var(--border);cursor:pointer;}
 .menu-item:last-child{border-bottom:none;}
 .menu-item:active{background:var(--cream-dark);}
@@ -125,6 +125,40 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--white);padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;}
 .loading{text-align:center;padding:1.5rem;color:var(--ink-soft);font-size:13px;}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:0.6rem 0;}
+.pin-btn{
+  padding:10px;font-size:16px;font-weight:500;font-family:'DM Sans',sans-serif;
+  background:var(--white);border:1px solid var(--border);border-radius:10px;
+  cursor:pointer;color:var(--ink);
+  transition:transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  position:relative;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+.pin-btn:hover{background:var(--cream);box-shadow:0 2px 6px rgba(0,0,0,0.08);}
+.pin-btn:active{
+  transform:scale(0.94);
+  background:var(--cream-dark);
+  box-shadow:0 0px 2px rgba(0,0,0,0.08);
+}
+.pin-btn.pressed{
+  transform:scale(0.94);
+  background:var(--matcha-light);
+  border-color:var(--matcha-mid);
+  color:var(--matcha);
+  box-shadow:0 0px 2px rgba(74,124,89,0.15);
+}
+.pin-display{display:flex;justify-content:center;gap:10px;margin:1rem 0;}
+.pin-dot{width:11px;height:11px;border-radius:50%;background:var(--border);transition:background 0.15s, transform 0.15s;}
+.pin-dot.filled{background:var(--matcha);transform:scale(1.2);}
+@keyframes dotPop{0%{transform:scale(1)}50%{transform:scale(1.4)}100%{transform:scale(1.2)}}
+.pin-dot.filled{background:var(--matcha);animation:dotPop 0.15s ease;}
+.role-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;border-radius:20px;padding:3px 10px;font-weight:500;}
+.role-admin{background:var(--matcha-light);color:var(--matcha);}
+.role-owner{background:var(--wood-light);color:var(--wood);}
+.role-staff{background:var(--cream-dark);color:var(--ink-mid);}
+.staff-row{display:flex;align-items:center;gap:10px;padding:0.75rem 0;border-bottom:1px solid var(--border);}
+.staff-row:last-child{border-bottom:none;}
 .onboard-hero{padding:2.5rem 1.4rem 1.5rem;text-align:center;}
 .onboard-logo{font-size:32px;font-weight:400;color:var(--matcha);letter-spacing:0.04em;font-family:'DM Serif Display',serif;margin-bottom:4px;}
 .onboard-sub{font-size:11px;color:var(--ink-soft);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:1.5rem;}
@@ -145,6 +179,70 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 <body>
 
 <div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div class="screen" id="s-login">
+  <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.4rem;">
+    <div style="text-align:center;margin-bottom:1.25rem;">
+      <svg width="40" height="40" viewBox="0 0 96 96" fill="none" style="margin-bottom:8px;">
+        <rect width="96" height="96" rx="22" fill="#e8f0e9"/>
+        <line x1="33" y1="22" x2="33" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
+        <line x1="43" y1="22" x2="43" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
+        <line x1="53" y1="22" x2="53" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
+        <line x1="63" y1="22" x2="63" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
+        <line x1="25" y1="48" x2="71" y2="48" stroke="#8b5e3c" stroke-width="3.5" stroke-linecap="round"/>
+      </svg>
+      <div style="font-size:22px;font-weight:400;color:var(--matcha);font-family:'DM Serif Display',serif;letter-spacing:0.04em;">Tally</div>
+      <div style="font-size:10px;color:var(--ink-soft);letter-spacing:0.14em;text-transform:uppercase;margin-top:3px;">by Harulabs</div>
+    </div>
+    <div style="width:100%;max-width:320px;">
+      <!-- Step 1: Name selector -->
+      <div id="login-step-1">
+        <div class="card">
+          <div class="card-head"><i class="ti ti-user" style="font-size:14px"></i> Who are you?</div>
+          <div id="staff-name-list"><div class="loading">Loading...</div></div>
+        </div>
+      </div>
+      <!-- Step 2: PIN entry -->
+      <div id="login-step-2" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;cursor:pointer;" onclick="backToNames()">
+          <i class="ti ti-arrow-left" style="font-size:14px;color:var(--ink-soft)"></i>
+          <span style="font-size:13px;color:var(--ink-soft);">Change</span>
+          <span id="selected-name-display" style="font-size:14px;font-weight:500;color:var(--ink);"></span>
+        </div>
+        <div class="card">
+          <div style="margin-bottom:0;">
+            <label class="form-lbl">Enter PIN</label>
+            <div class="pin-display" id="pin-display">
+              <div class="pin-dot" id="pd-0"></div>
+              <div class="pin-dot" id="pd-1"></div>
+              <div class="pin-dot" id="pd-2"></div>
+              <div class="pin-dot" id="pd-3"></div>
+              <div class="pin-dot" id="pd-4"></div>
+              <div class="pin-dot" id="pd-5"></div>
+            </div>
+            <div class="pin-grid">
+              <button class="pin-btn" onclick="pinPress('1')">1</button>
+              <button class="pin-btn" onclick="pinPress('2')">2</button>
+              <button class="pin-btn" onclick="pinPress('3')">3</button>
+              <button class="pin-btn" onclick="pinPress('4')">4</button>
+              <button class="pin-btn" onclick="pinPress('5')">5</button>
+              <button class="pin-btn" onclick="pinPress('6')">6</button>
+              <button class="pin-btn" onclick="pinPress('7')">7</button>
+              <button class="pin-btn" onclick="pinPress('8')">8</button>
+              <button class="pin-btn" onclick="pinPress('9')">9</button>
+              <button class="pin-btn" onclick="pinClear()" style="font-size:12px;color:var(--ink-soft);">Clear</button>
+              <button class="pin-btn" onclick="pinPress('0')">0</button>
+              <button class="pin-btn" onclick="pinBack()" style="font-size:16px;color:var(--ink-soft);">⌫</button>
+            </div>
+          </div>
+          <button class="submit-btn" id="login-btn" onclick="doLogin()">Sign in</button>
+          <div id="login-error" style="color:var(--vermillion);font-size:12px;text-align:center;margin-top:0.75rem;display:none;">Incorrect PIN. Please try again.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- LOADING -->
 <div class="screen active" id="s-loading" style="align-items:center;justify-content:center;background:var(--cream);">
@@ -205,6 +303,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <i class="ti ti-chevron-down" style="font-size:11px"></i>
     </div>
     <div class="back-btn" onclick="openSettings()" style="margin-left:4px;" title="Settings"><i class="ti ti-settings" style="font-size:16px"></i></div>
+    <div class="back-btn" onclick="logout()" style="margin-left:4px;" title="Sign out"><i class="ti ti-logout" style="font-size:16px"></i></div>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="hero">
@@ -255,12 +354,37 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       </div>
     </div>
     <div style="padding:0 1.1rem;">
+      <div class="section-lbl">Shift</div>
+    </div>
+    <div class="menu-card" style="margin-bottom:1.25rem;">
+      <div class="menu-item" onclick="go('s-cashcount')">
+        <div class="menu-icon" style="background:#e8f0fb;color:#2d6bc4;"><i class="ti ti-cash"></i></div>
+        <div class="menu-text"><strong>Cash count</strong><span>Mid-shift cash tally</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+    </div>
+    <div style="padding:0 1.1rem;">
       <div class="section-lbl">Reports</div>
     </div>
-    <div class="menu-card" style="margin-bottom:2rem;">
+    <div class="menu-card" style="margin-bottom:1.25rem;">
       <div class="menu-item" onclick="go('s-insights')">
         <div class="menu-icon mi-ink"><i class="ti ti-chart-bar"></i></div>
         <div class="menu-text"><strong>Insights</strong><span>Trends, patterns, all outlets</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+    </div>
+    <div style="padding:0 1.1rem;">
+      <div class="section-lbl">Costing</div>
+    </div>
+    <div class="menu-card" style="margin-bottom:2rem;">
+      <div class="menu-item" onclick="go('s-ingredients')">
+        <div class="menu-icon" style="background:#f0edf8;color:#6b4fa0;"><i class="ti ti-package"></i></div>
+        <div class="menu-text"><strong>Ingredients</strong><span>Raw material price library</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+      <div class="menu-item" onclick="go('s-costing')">
+        <div class="menu-icon" style="background:#f0edf8;color:#6b4fa0;"><i class="ti ti-calculator"></i></div>
+        <div class="menu-text"><strong>Products</strong><span>Menu item costing & margins</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
     </div>
@@ -449,6 +573,12 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="menu-card" id="settings-outlets-list"></div>
       <button class="add-btn" onclick="go('s-add-outlet')" style="margin-bottom:0.85rem;"><i class="ti ti-plus" style="font-size:14px"></i> Add new outlet</button>
       <button class="submit-btn" onclick="saveSettings()">Save changes</button>
+      <div style="margin-top:1rem;">
+        <button onclick="logout()" style="width:100%;padding:12px;background:none;border:1px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--ink-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="ti ti-logout" style="font-size:15px"></i> Sign out</button>
+      </div>
+      <div class="section-lbl" style="margin-top:1.25rem;">Staff management</div>
+      <div class="menu-card" id="staff-list"></div>
+      <button class="add-btn" onclick="go('s-add-staff')" style="margin-bottom:0.85rem;"><i class="ti ti-plus" style="font-size:14px"></i> Add staff member</button>
       <div style="margin-top:1.5rem;">
         <div class="card" style="border-color:var(--vermillion-light);">
           <div class="card-head" style="color:var(--vermillion);"><i class="ti ti-alert-triangle" style="font-size:14px"></i> Danger zone</div>
@@ -476,6 +606,86 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
       <div class="hint" style="margin-top:1rem;">Tally v1.0 · by Harulabs</div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD STAFF -->
+<div class="screen" id="s-add-staff">
+  <div class="topbar">
+    <div class="back-btn" onclick="go('s-settings')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Add staff member</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head"><i class="ti ti-user" style="font-size:14px"></i> Staff details</div>
+        <div class="form-row">
+          <label class="form-lbl">Full name</label>
+          <input class="inp" id="new-staff-name" type="text" placeholder="e.g. Amirah"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">6 digit PIN</label>
+          <input class="inp" id="new-staff-pin" type="number" inputmode="numeric" placeholder="e.g. 123456" maxlength="6"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Role</label>
+          <select class="inp" id="new-staff-role">
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+            <option value="owner">Owner</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Assigned outlet</label>
+          <select class="inp" id="new-staff-outlet"></select>
+        </div>
+      </div>
+      <button class="submit-btn" id="add-staff-btn" onclick="addStaff()">Add staff member</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT STAFF -->
+<div class="screen" id="s-edit-staff">
+  <div class="topbar">
+    <div class="back-btn" onclick="go('s-settings')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Edit staff member</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <input type="hidden" id="edit-staff-id"/>
+      <div class="card">
+        <div class="card-head"><i class="ti ti-user" style="font-size:14px"></i> Staff details</div>
+        <div class="form-row">
+          <label class="form-lbl">Full name</label>
+          <input class="inp" id="edit-staff-name" type="text" placeholder="e.g. Amirah"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">New PIN <span style="color:var(--ink-soft);font-weight:400;">(leave blank to keep current)</span></label>
+          <input class="inp" id="edit-staff-pin" type="number" inputmode="numeric" placeholder="Enter new 6 digit PIN"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Role</label>
+          <select class="inp" id="edit-staff-role">
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+            <option value="owner">Owner</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Assigned outlet</label>
+          <select class="inp" id="edit-staff-outlet"></select>
+        </div>
+      </div>
+      <button class="submit-btn" id="edit-staff-btn" onclick="saveStaff()">Save changes</button>
+      <div style="margin-top:1rem;">
+        <div class="card" style="border-color:var(--vermillion-light);">
+          <div class="card-head" style="color:var(--vermillion);"><i class="ti ti-alert-triangle" style="font-size:14px"></i> Remove staff</div>
+          <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.85rem;line-height:1.6;">This removes the staff member's access to Tally. Their logged data is not deleted.</div>
+          <button onclick="removeStaff()" style="width:100%;padding:11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;"><i class="ti ti-user-off" style="font-size:13px"></i> Remove staff member</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -530,6 +740,280 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <div class="card-head" style="color:var(--vermillion);"><i class="ti ti-alert-triangle" style="font-size:14px"></i> Danger zone</div>
           <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.85rem;line-height:1.6;">Deleting an outlet is permanent. All sales, expense and wastage data for this outlet will remain in the database but the outlet will be removed.</div>
           <button id="delete-outlet-btn" onclick="deleteOutlet()" style="width:100%;padding:11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;"><i class="ti ti-trash" style="font-size:14px"></i> Delete this outlet</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CASH COUNT -->
+<div class="screen" id="s-cashcount">
+  <div class="topbar" style="border-bottom-color:#e8f0fb;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Cash count</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head" style="color:#2d6bc4;"><i class="ti ti-cash" style="font-size:14px"></i> New cash count</div>
+        <div class="form-row-2">
+          <div>
+            <label class="form-lbl">Cash in drawer (RM)</label>
+            <input class="inp" id="cc-actual" type="number" inputmode="decimal" placeholder="0.00" oninput="calcCashVariance()"/>
+          </div>
+          <div>
+            <label class="form-lbl">Cash in system (RM)</label>
+            <input class="inp" id="cc-system" type="number" inputmode="decimal" placeholder="0.00" oninput="calcCashVariance()"/>
+          </div>
+        </div>
+        <div class="var-box" id="cc-var-box"><span id="cc-var-txt"></span></div>
+        <div class="form-row" style="margin-top:0.9rem;">
+          <label class="form-lbl">Counted by</label>
+          <input class="inp" id="cc-by" type="text" placeholder="Staff name"/>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Notes <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
+          <input class="inp" id="cc-notes" type="text" placeholder="e.g. 5:30pm handover"/>
+        </div>
+        <button class="submit-btn" id="cc-btn" onclick="saveCashCount()" style="background:#2d6bc4;">Save cash count</button>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#2d6bc4;"><i class="ti ti-history" style="font-size:14px"></i> Last 8 days <span class="badge badge-neutral" id="cc-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
+        <div id="cc-history"><div class="empty-state">No cash counts yet.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INGREDIENTS -->
+<div class="screen" id="s-ingredients">
+  <div class="topbar" style="border-bottom-color:#f0edf8;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Ingredients</span>
+    <button onclick="go('s-add-ingredient')" style="background:#6b4fa0;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">+ Add</button>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div id="ingredients-list"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD INGREDIENT -->
+<div class="screen" id="s-add-ingredient">
+  <div class="topbar" style="border-bottom-color:#f0edf8;">
+    <div class="back-btn" onclick="go('s-ingredients')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Add ingredient</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> Ingredient details</div>
+        <div class="form-row">
+          <label class="form-lbl">Ingredient name</label>
+          <input class="inp" id="ing-name" type="text" placeholder="e.g. Flour, Matcha powder, Milk"/>
+        </div>
+        <div class="form-row-2">
+          <div>
+            <label class="form-lbl">Pack size</label>
+            <input class="inp" id="ing-size" type="number" inputmode="decimal" placeholder="e.g. 25"/>
+          </div>
+          <div>
+            <label class="form-lbl">Unit</label>
+            <select class="inp" id="ing-unit">
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="L">L</option>
+              <option value="ml">ml</option>
+              <option value="pcs">pcs</option>
+              <option value="pack">pack</option>
+              <option value="box">box</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Pack price (RM)</label>
+          <input class="inp" id="ing-price" type="number" inputmode="decimal" placeholder="e.g. 229.00"/>
+        </div>
+        <div id="ing-preview" style="display:none;margin-top:0.85rem;padding:0.75rem;background:#f0edf8;border-radius:8px;">
+          <div style="font-size:12px;color:#6b4fa0;font-weight:500;" id="ing-preview-text"></div>
+        </div>
+      </div>
+      <button class="submit-btn" id="add-ing-btn" onclick="saveIngredient()" style="background:#6b4fa0;">Save ingredient</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT INGREDIENT -->
+<div class="screen" id="s-edit-ingredient">
+  <div class="topbar" style="border-bottom-color:#f0edf8;">
+    <div class="back-btn" onclick="go('s-ingredients')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Edit ingredient</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <input type="hidden" id="edit-ing-id"/>
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> Ingredient details</div>
+        <div class="form-row">
+          <label class="form-lbl">Ingredient name</label>
+          <input class="inp" id="edit-ing-name" type="text" placeholder="e.g. Flour"/>
+        </div>
+        <div class="form-row-2">
+          <div>
+            <label class="form-lbl">Pack size</label>
+            <input class="inp" id="edit-ing-size" type="number" inputmode="decimal" placeholder="e.g. 25"/>
+          </div>
+          <div>
+            <label class="form-lbl">Unit</label>
+            <select class="inp" id="edit-ing-unit">
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="L">L</option>
+              <option value="ml">ml</option>
+              <option value="pcs">pcs</option>
+              <option value="pack">pack</option>
+              <option value="box">box</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Pack price (RM)</label>
+          <input class="inp" id="edit-ing-price" type="number" inputmode="decimal" placeholder="e.g. 229.00"/>
+        </div>
+      </div>
+      <button class="submit-btn" id="edit-ing-btn" onclick="updateIngredient()" style="background:#6b4fa0;">Save changes</button>
+      <div style="margin-top:1rem;">
+        <div class="card" style="border-color:var(--vermillion-light);">
+          <div class="card-head" style="color:var(--vermillion);"><i class="ti ti-alert-triangle" style="font-size:14px"></i> Delete</div>
+          <button onclick="deleteIngredient()" style="width:100%;padding:11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Delete ingredient</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COSTING / PRODUCTS -->
+<div class="screen" id="s-costing">
+  <div class="topbar" style="border-bottom-color:#f0edf8;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Products</span>
+    <button onclick="go('s-add-product')" style="background:#6b4fa0;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">+ Add</button>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div id="products-list"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PRODUCT -->
+<div class="screen" id="s-add-product">
+  <div class="topbar" style="border-bottom-color:#f0edf8;">
+    <div class="back-btn" onclick="go('s-costing')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Add product</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-calculator" style="font-size:14px"></i> Product details</div>
+        <div class="form-row">
+          <label class="form-lbl">Product name</label>
+          <input class="inp" id="prod-name" type="text" placeholder="e.g. Matcha Latte (M)"/>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Category</label>
+          <select class="inp" id="prod-cat">
+            <option value="Drink">Drink</option>
+            <option value="Food">Food</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> Ingredients used</div>
+        <div id="prod-ingredients-list"></div>
+        <div style="display:flex;gap:8px;margin-top:0.75rem;">
+          <select class="inp" id="prod-ing-select" style="flex:1;"></select>
+          <input class="inp" id="prod-ing-qty" type="number" inputmode="decimal" placeholder="Qty" style="width:80px;"/>
+          <button onclick="addProductIngredient()" style="padding:9px 12px;background:#6b4fa0;border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
+        </div>
+        <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13px;color:var(--ink-mid);">Total cost</span>
+          <span style="font-size:16px;font-weight:500;color:#6b4fa0;" id="prod-total-cost">RM 0.00</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-tag" style="font-size:14px"></i> Pricing</div>
+        <div class="form-row">
+          <label class="form-lbl">Selling price (RM)</label>
+          <input class="inp" id="prod-price" type="number" inputmode="decimal" placeholder="0.00" oninput="calcProductMargin()"/>
+        </div>
+        <div id="prod-margin-preview" style="display:none;margin-top:0.5rem;"></div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Notes <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
+          <input class="inp" id="prod-notes" type="text" placeholder="e.g. includes packaging"/>
+        </div>
+      </div>
+      <button class="submit-btn" id="add-prod-btn" onclick="saveProduct()" style="background:#6b4fa0;">Save product</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PRODUCT -->
+<div class="screen" id="s-edit-product">
+  <div class="topbar" style="border-bottom-color:#f0edf8;">
+    <div class="back-btn" onclick="go('s-costing')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Edit product</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <input type="hidden" id="edit-prod-id"/>
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-calculator" style="font-size:14px"></i> Product details</div>
+        <div class="form-row">
+          <label class="form-lbl">Product name</label>
+          <input class="inp" id="edit-prod-name" type="text" placeholder="e.g. Matcha Latte (M)"/>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Category</label>
+          <select class="inp" id="edit-prod-cat">
+            <option value="Drink">Drink</option>
+            <option value="Food">Food</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> Ingredients used</div>
+        <div id="edit-prod-ingredients-list"></div>
+        <div style="display:flex;gap:8px;margin-top:0.75rem;">
+          <select class="inp" id="edit-prod-ing-select" style="flex:1;"></select>
+          <input class="inp" id="edit-prod-ing-qty" type="number" inputmode="decimal" placeholder="Qty" style="width:80px;"/>
+          <button onclick="addEditProductIngredient()" style="padding:9px 12px;background:#6b4fa0;border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
+        </div>
+        <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13px;color:var(--ink-mid);">Total cost</span>
+          <span style="font-size:16px;font-weight:500;color:#6b4fa0;" id="edit-prod-total-cost">RM 0.00</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-tag" style="font-size:14px"></i> Pricing</div>
+        <div class="form-row">
+          <label class="form-lbl">Selling price (RM)</label>
+          <input class="inp" id="edit-prod-price" type="number" inputmode="decimal" placeholder="0.00" oninput="calcEditProductMargin()"/>
+        </div>
+        <div id="edit-prod-margin-preview" style="display:none;margin-top:0.5rem;"></div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Notes <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
+          <input class="inp" id="edit-prod-notes" type="text" placeholder="e.g. includes packaging"/>
+        </div>
+      </div>
+      <button class="submit-btn" id="edit-prod-btn" onclick="updateProduct()" style="background:#6b4fa0;">Save changes</button>
+      <div style="margin-top:1rem;">
+        <div class="card" style="border-color:var(--vermillion-light);">
+          <div class="card-head" style="color:var(--vermillion);"><i class="ti ti-alert-triangle" style="font-size:14px"></i> Delete</div>
+          <button onclick="deleteProduct()" style="width:100%;padding:11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Delete product</button>
         </div>
       </div>
     </div>
@@ -621,7 +1105,6 @@ const sb = {
           opts.method = 'GET';
           delete opts.headers['Content-Type'];
         }
-        console.log('DB QUERY:', opts.method || 'GET', url.substring(0, 120));
         try {
           const res = await fetch(url, opts);
           const text = await res.text();
@@ -629,14 +1112,11 @@ const sb = {
           try { data = JSON.parse(text); } catch(e) {}
           if(!res.ok) {
             const msg = (data && data.message) ? data.message : (data && data.hint) ? data.hint : text;
-            console.log('DB ERROR:', res.status, msg);
             return { data: null, error: { message: msg } };
           }
           if(!Array.isArray(data)) data = data ? [data] : [];
-          console.log('DB OK:', Array.isArray(data) ? data.length + ' rows' : 'done');
           return { data: data, error: null };
         } catch(e) {
-          console.log('DB FETCH ERROR:', e.message, url.substring(0, 120));
           return { data: null, error: { message: e.message } };
         }
       },
@@ -653,8 +1133,26 @@ let outlets = [];
 let ownerName = '';
 let insightPeriod = 'today';
 let outletFields = 1;
+let currentUser = null;
+let pinValue = '';
 
 function go(id) {
+  // Auth guard - non-login screens require a logged in user
+  if(id !== 's-login' && id !== 's-loading' && !currentUser) {
+    go('s-login'); return;
+  }
+  // Staff guard - restricted screens
+  if(currentUser) {
+    const role = currentUser.role;
+    if(role === 'staff') {
+      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff'];
+      if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
+    }
+    if(role === 'admin') {
+      const restricted = ['s-add-staff','s-edit-staff'];
+      if(restricted.indexOf(id) > -1) { showToast('Owner access only'); return; }
+    }
+  }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
@@ -664,6 +1162,154 @@ function go(id) {
   if(id === 's-insights') loadInsights();
   if(id === 's-outlets') renderOutletsList();
   if(id === 's-sales') loadSalesHistory();
+  if(id === 's-add-staff') populateOutletSelects();
+  if(id === 's-cashcount') loadCashCountHistory();
+  if(id === 's-ingredients') loadIngredients();
+  if(id === 's-costing') loadProducts();
+  if(id === 's-add-product') { prodIngredients = []; renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); }
+}
+
+// PIN functions
+let selectedStaffId = null;
+
+async function loadStaffNameList() {
+  const result = await sb.from('staff').select('*').order('name');
+  const data = result.data || [];
+  const list = document.getElementById('staff-name-list');
+  if(!list) return;
+  if(data.length === 0) { list.innerHTML = '<div class="empty-state">No staff found.</div>'; return; }
+  // Build items using DOM to avoid quote escaping issues
+  list.innerHTML = '';
+  data.forEach(function(s) {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:0.75rem 0;border-bottom:1px solid var(--border);cursor:pointer;';
+    div.innerHTML = '<div style="width:36px;height:36px;border-radius:50%;background:var(--matcha-light);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:var(--matcha);flex-shrink:0;">' + s.name.charAt(0).toUpperCase() + '</div>' +
+      '<span style="font-size:14px;font-weight:500;color:var(--ink);flex:1;">' + s.name + '</span>' +
+      '<i class="ti ti-chevron-right" style="color:var(--ink-soft);font-size:14px;"></i>';
+    div.addEventListener('click', function() { selectName(s.id, s.name); });
+    list.appendChild(div);
+  });
+  // Remove border from last item
+  const items = list.querySelectorAll('div');
+  if(items.length > 0) items[items.length-1].style.borderBottom = 'none';
+}
+function selectName(id, name) {
+  selectedStaffId = id;
+  document.getElementById('selected-name-display').textContent = name;
+  document.getElementById('login-step-1').style.display = 'none';
+  document.getElementById('login-step-2').style.display = 'block';
+  pinValue = ''; updatePinDisplay();
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function backToNames() {
+  selectedStaffId = null;
+  pinValue = ''; updatePinDisplay();
+  document.getElementById('login-step-1').style.display = 'block';
+  document.getElementById('login-step-2').style.display = 'none';
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function pinPress(num) {
+  if(pinValue.length >= 6) return;
+  // Flash the button that was pressed
+  const btns = document.querySelectorAll('.pin-btn');
+  btns.forEach(function(b) {
+    if(b.textContent.trim() === num) {
+      b.classList.add('pressed');
+      setTimeout(function(){ b.classList.remove('pressed'); }, 150);
+    }
+  });
+  pinValue += num;
+  updatePinDisplay();
+  if(pinValue.length === 6) setTimeout(function(){ doLogin(); }, 100);
+}
+
+function pinBack() {
+  pinValue = pinValue.slice(0,-1);
+  updatePinDisplay();
+}
+
+function pinClear() {
+  pinValue = '';
+  updatePinDisplay();
+}
+
+function updatePinDisplay() {
+  for(let i=0;i<6;i++){
+    const dot = document.getElementById('pd-'+i);
+    if(dot) dot.className = 'pin-dot' + (i < pinValue.length ? ' filled' : '');
+  }
+}
+
+async function doLogin() {
+  if(!selectedStaffId) { showToast('Please select your name!'); return; }
+  if(pinValue.length < 6) { showToast('Please enter your 6 digit PIN!'); return; }
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  errEl.style.display = 'none';
+  const result = await sb.from('staff').select('*').eq('id', selectedStaffId).eq('pin', pinValue);
+  btn.disabled = false; btn.textContent = 'Sign in';
+  if(result.error || !result.data || result.data.length === 0) {
+    errEl.style.display = 'block';
+    pinValue = ''; updatePinDisplay(); return;
+  }
+  currentUser = result.data[0];
+  localStorage.setItem('tally_user_id', currentUser.id);
+  localStorage.setItem('tally_user_name', currentUser.name);
+  localStorage.setItem('tally_user_role', currentUser.role);
+  pinValue = ''; updatePinDisplay();
+  errEl.style.display = 'none';
+  selectedStaffId = null;
+  await loadOutlets();
+  ownerName = currentUser.name;
+  if(currentUser.role === 'staff' && currentUser.outlet_id) {
+    currentOutlet = outlets.find(function(o){ return o.id === currentUser.outlet_id; }) || outlets[0];
+  } else {
+    const savedId = localStorage.getItem('tally_outlet_id');
+    if(savedId === 'all') currentOutlet = {id:'all',name:'All outlets'};
+    else currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+  }
+  initHome();
+  go('s-home');
+  applyRoleUI();
+}
+
+function applyRoleUI() {
+  if(!currentUser) return;
+  const role = currentUser.role;
+  const isStaff = role === 'staff';
+
+  // Insights - hidden for staff
+  const insightsMenu = document.querySelector('[onclick="go(\'s-insights\')"]');
+  if(insightsMenu) insightsMenu.style.display = isStaff ? 'none' : '';
+
+  // Outlet switcher - disabled for staff
+  const outletChip = document.querySelector('.outlet-chip');
+  if(outletChip) outletChip.style.pointerEvents = isStaff ? 'none' : '';
+
+  // Settings - hidden for staff only
+  const settingsBtn = document.querySelector('[onclick="openSettings()"]');
+  if(settingsBtn) settingsBtn.style.display = isStaff ? 'none' : '';
+
+  // Update greeting
+  const greetEl = document.getElementById('home-greeting');
+  if(greetEl) greetEl.textContent = greeting() + ', ' + currentUser.name;
+}
+
+function logout() {
+  currentUser = null;
+  selectedStaffId = null;
+  pinValue = '';
+  localStorage.removeItem('tally_user_id');
+  localStorage.removeItem('tally_user_name');
+  localStorage.removeItem('tally_user_role');
+  document.getElementById('login-step-1').style.display = 'block';
+  document.getElementById('login-step-2').style.display = 'none';
+  loadStaffNameList();
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-login').classList.add('active');
 }
 
 function showToast(msg, duration) {
@@ -784,6 +1430,25 @@ function initHome() {
 
 async function loadHomeStats() {
   if(!currentOutlet) return;
+
+  // Reset all stats first
+  document.getElementById('stat-sales').textContent = 'RM 0';
+  document.getElementById('stat-sales').style.color = 'var(--ink)';
+  document.getElementById('stat-sales-sub').className = 'badge badge-neutral';
+  document.getElementById('stat-sales-sub').textContent = 'No entries';
+  document.getElementById('stat-variance').textContent = '—';
+  document.getElementById('stat-variance').style.color = 'var(--ink)';
+  document.getElementById('stat-variance-sub').className = 'badge badge-neutral';
+  document.getElementById('stat-variance-sub').textContent = 'No entry';
+  document.getElementById('stat-expenses').textContent = 'RM 0';
+  document.getElementById('stat-expenses').style.color = 'var(--amber)';
+  document.getElementById('stat-exp-sub').className = 'badge badge-neutral';
+  document.getElementById('stat-exp-sub').textContent = '0 items';
+  document.getElementById('stat-wastage').textContent = 'RM 0';
+  document.getElementById('stat-wastage').style.color = 'var(--rose)';
+  document.getElementById('stat-wast-sub').className = 'badge badge-neutral';
+  document.getElementById('stat-wast-sub').textContent = '0 items';
+
   const today = getToday();
   let salesData = [], expData = [], wastData = [];
   if(currentOutlet.id === 'all') {
@@ -1131,6 +1796,504 @@ async function saveWastage() {
   loadWastage();
 }
 
+// CASH COUNT
+function calcCashVariance() {
+  const actual = parseFloat(document.getElementById('cc-actual').value) || 0;
+  const system = parseFloat(document.getElementById('cc-system').value) || 0;
+  const box = document.getElementById('cc-var-box');
+  const txt = document.getElementById('cc-var-txt');
+  if(actual === 0 && system === 0) { box.style.display='none'; return; }
+  box.style.display = 'block';
+  const diff = actual - system;
+  if(Math.abs(diff) < 0.01) {
+    box.className = 'var-box var-ok';
+    txt.textContent = 'All good — cash matches system exactly.';
+  } else if(diff < 0) {
+    box.className = 'var-box var-short';
+    txt.textContent = 'Short by RM ' + Math.abs(diff).toFixed(2) + ' vs system.';
+  } else {
+    box.className = 'var-box var-ok';
+    txt.textContent = 'Over by RM ' + diff.toFixed(2) + ' vs system.';
+  }
+}
+
+async function saveCashCount() {
+  if(!currentOutlet || currentOutlet.id === 'all') { showToast('Please select a specific outlet!'); return; }
+  const actual = parseFloat(document.getElementById('cc-actual').value) || 0;
+  const system = parseFloat(document.getElementById('cc-system').value) || 0;
+  const by = document.getElementById('cc-by').value.trim();
+  const notes = document.getElementById('cc-notes').value.trim();
+  if(!by) { showToast('Please enter who counted!'); return; }
+  const variance = actual - system;
+  const now = new Date();
+  const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':00';
+  const btn = document.getElementById('cc-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const result = await sb.from('cash_counts').insert({
+    outlet_id: currentOutlet.id,
+    date: getToday(),
+    time_of_count: timeStr,
+    cash_actual: actual,
+    cash_system: system,
+    variance: variance,
+    counted_by: by,
+    notes: notes
+  });
+  btn.disabled = false; btn.textContent = 'Save cash count';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  showToast('Cash count saved!');
+  ['cc-actual','cc-system','cc-by','cc-notes'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('cc-var-box').style.display = 'none';
+  loadCashCountHistory();
+}
+
+async function loadCashCountHistory() {
+  if(!currentOutlet) return;
+  const d8 = new Date(); d8.setDate(d8.getDate() - 7);
+  const from8 = d8.toISOString().split('T')[0];
+  const today = getToday();
+  let q = sb.from('cash_counts').select('*').gte('date', from8).lte('date', today).order('created_at', {ascending:false});
+  if(currentOutlet.id !== 'all') q = q.eq('outlet_id', currentOutlet.id);
+  const result = await q;
+  const data = result.data || [];
+  const histEl = document.getElementById('cc-history');
+  const countEl = document.getElementById('cc-hist-count');
+  if(!histEl) return;
+  if(data.length === 0) {
+    histEl.innerHTML = '<div class="empty-state">No cash counts yet.</div>';
+    countEl.textContent = ''; return;
+  }
+  histEl.innerHTML = data.map(function(c){
+    const isToday = c.date === today;
+    const dateLabel = isToday ? 'Today' : new Date(c.date+'T00:00:00').toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short'});
+    const timeLabel = c.time_of_count ? c.time_of_count.substring(0,5) : '';
+    const variance = parseFloat(c.variance);
+    const varColor = Math.abs(variance) < 0.01 ? 'var(--matcha)' : variance < 0 ? 'var(--vermillion)' : 'var(--matcha)';
+    const varText = Math.abs(variance) < 0.01 ? 'Balanced' : variance < 0 ? '−RM '+Math.abs(variance).toFixed(2) : '+RM '+variance.toFixed(2);
+    return '<div style="display:flex;align-items:center;gap:8px;padding:0.65rem 0;border-bottom:1px solid var(--border);">' +
+      '<div style="flex:1;">' +
+      '<div style="font-size:12px;font-weight:500;color:' + (isToday ? '#2d6bc4' : 'var(--ink-mid)') + ';">' + dateLabel + ' · ' + timeLabel + (c.counted_by ? ' · <span style="font-weight:400;color:var(--ink-soft);">' + c.counted_by + '</span>' : '') + '</div>' +
+      (c.notes ? '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">' + c.notes + '</div>' : '') +
+      '</div>' +
+      '<div style="text-align:right;">' +
+      '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + parseFloat(c.cash_actual).toFixed(2) + '</div>' +
+      '<div style="font-size:10px;color:' + varColor + ';">' + varText + '</div>' +
+      '</div></div>';
+  }).join('');
+  countEl.textContent = data.length + ' count' + (data.length !== 1 ? 's' : '');
+}
+
+// COSTING MODULE
+function marginColor(pct) {
+  if(pct >= 60) return '#1a7a4a';
+  if(pct >= 40) return '#c47a1e';
+  return '#c0392b';
+}
+
+function marginBg(pct) {
+  if(pct >= 60) return '#e8f0e9';
+  if(pct >= 40) return '#faeeda';
+  return '#fcecea';
+}
+
+function marginLabel(pct) {
+  if(pct >= 60) return 'Healthy';
+  if(pct >= 40) return 'Moderate';
+  if(pct > 0) return 'Tight';
+  return 'Loss';
+}
+
+function renderMarginBar(pct, containerId) {
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  const color = marginColor(pct);
+  const bg = marginBg(pct);
+  const label = marginLabel(pct);
+  const barW = Math.min(Math.max(pct, 0), 100);
+  el.style.display = 'block';
+  el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+    '<span style="font-size:12px;color:var(--ink-mid);">Margin</span>' +
+    '<span style="font-size:13px;font-weight:500;color:' + color + ';">' + pct.toFixed(1) + '% · ' + label + '</span></div>' +
+    '<div style="height:8px;background:var(--cream-dark);border-radius:4px;overflow:hidden;">' +
+    '<div style="height:100%;width:' + barW + '%;background:' + color + ';border-radius:4px;transition:width 0.4s ease;"></div></div>';
+}
+
+function calcProductMargin() {
+  const cost = parseFloat(document.getElementById('prod-cost').value) || 0;
+  const price = parseFloat(document.getElementById('prod-price').value) || 0;
+  if(cost === 0 && price === 0) { document.getElementById('prod-margin-preview').style.display='none'; return; }
+  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+  const profit = price - cost;
+  renderMarginBar(margin, 'prod-margin-preview');
+  const el = document.getElementById('prod-margin-preview');
+  el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
+    '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
+    '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
+}
+
+function calcEditProductMargin() {
+  const cost = parseFloat(document.getElementById('edit-prod-cost').value) || 0;
+  const price = parseFloat(document.getElementById('edit-prod-price').value) || 0;
+  if(cost === 0 && price === 0) { document.getElementById('edit-prod-margin-preview').style.display='none'; return; }
+  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+  const profit = price - cost;
+  renderMarginBar(margin, 'edit-prod-margin-preview');
+  const el = document.getElementById('edit-prod-margin-preview');
+  el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
+    '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
+    '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
+}
+
+// INGREDIENTS
+async function loadIngredients() {
+  const result = await sb.from('ingredients').select('*').order('name');
+  const data = result.data || [];
+  const el = document.getElementById('ingredients-list');
+  if(!el) return;
+  if(data.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:2rem;">No ingredients yet.<br/><span style="font-size:12px;">Add your raw materials and their prices.</span></div>'; return;
+  }
+  el.innerHTML = data.map(function(i) {
+    const cpu = parseFloat(i.cost_per_unit);
+    return '<div onclick="openEditIngredient(\'' + i.id + '\')" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:0.65rem;cursor:pointer;display:flex;align-items:center;gap:12px;">' +
+      '<div style="width:40px;height:40px;border-radius:10px;background:#f0edf8;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ti-package" style="color:#6b4fa0;font-size:18px;"></i></div>' +
+      '<div style="flex:1;">' +
+      '<div style="font-size:14px;font-weight:500;color:var(--ink);">' + i.name + '</div>' +
+      '<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">' + i.pack_size + ' ' + i.pack_unit + ' · RM ' + parseFloat(i.pack_price).toFixed(2) + '</div>' +
+      '</div>' +
+      '<div style="text-align:right;">' +
+      '<div style="font-size:13px;font-weight:500;color:#6b4fa0;">RM ' + cpu.toFixed(4).replace(/\.?0+$/, '') + '</div>' +
+      '<div style="font-size:10px;color:var(--ink-soft);">per ' + i.pack_unit + '</div>' +
+      '</div></div>';
+  }).join('');
+}
+
+async function saveIngredient() {
+  const name = document.getElementById('ing-name').value.trim();
+  const size = parseFloat(document.getElementById('ing-size').value);
+  const unit = document.getElementById('ing-unit').value;
+  const price = parseFloat(document.getElementById('ing-price').value);
+  if(!name) { showToast('Please enter ingredient name!'); return; }
+  if(!size || size <= 0) { showToast('Please enter pack size!'); return; }
+  if(!price || price <= 0) { showToast('Please enter pack price!'); return; }
+  const btn = document.getElementById('add-ing-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const result = await sb.from('ingredients').insert({name:name,pack_size:size,pack_unit:unit,pack_price:price});
+  btn.disabled = false; btn.textContent = 'Save ingredient';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  showToast(name + ' saved!');
+  ['ing-name','ing-size','ing-price'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('ing-preview').style.display='none';
+  go('s-ingredients');
+}
+
+function openEditIngredient(id) {
+  sb.from('ingredients').select('*').eq('id', id).then(function(result) {
+    const i = result.data && result.data[0];
+    if(!i) return;
+    document.getElementById('edit-ing-id').value = i.id;
+    document.getElementById('edit-ing-name').value = i.name;
+    document.getElementById('edit-ing-size').value = i.pack_size;
+    document.getElementById('edit-ing-unit').value = i.pack_unit;
+    document.getElementById('edit-ing-price').value = i.pack_price;
+    go('s-edit-ingredient');
+  });
+}
+
+async function updateIngredient() {
+  const id = document.getElementById('edit-ing-id').value;
+  const name = document.getElementById('edit-ing-name').value.trim();
+  const size = parseFloat(document.getElementById('edit-ing-size').value);
+  const unit = document.getElementById('edit-ing-unit').value;
+  const price = parseFloat(document.getElementById('edit-ing-price').value);
+  if(!name || !size || !price) { showToast('Please fill all fields!'); return; }
+  const btn = document.getElementById('edit-ing-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const result = await sb.from('ingredients').update({name:name,pack_size:size,pack_unit:unit,pack_price:price}).eq('id', id);
+  btn.disabled = false; btn.textContent = 'Save changes';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  showToast('Updated!');
+  go('s-ingredients');
+}
+
+async function deleteIngredient() {
+  const id = document.getElementById('edit-ing-id').value;
+  const name = document.getElementById('edit-ing-name').value;
+  if(!confirm('Delete ' + name + '?')) return;
+  const result = await fetch(SUPABASE_URL + '/rest/v1/ingredients?id=eq.' + id, {
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+  });
+  if(!result.ok) { showToast('Error deleting'); return; }
+  showToast(name + ' deleted');
+  go('s-ingredients');
+}
+
+// PRODUCTS
+// Product ingredient state
+let prodIngredients = []; // [{ingredient_id, name, unit, cost_per_unit, quantity}]
+let editProdIngredients = [];
+let allIngredients = [];
+
+async function populateIngredientSelect(selectId) {
+  const result = await sb.from('ingredients').select('*').order('name');
+  allIngredients = result.data || [];
+  const el = document.getElementById(selectId);
+  if(!el) return;
+  el.innerHTML = '<option value="">Select ingredient...</option>' +
+    allIngredients.map(function(i){
+      return '<option value="' + i.id + '" data-cpu="' + i.cost_per_unit + '" data-unit="' + i.pack_unit + '">' + i.name + ' (' + i.pack_size + i.pack_unit + ' · RM' + parseFloat(i.pack_price).toFixed(2) + ')</option>';
+    }).join('');
+}
+
+function renderIngredientsList(ingredients, listId, totalId, isEdit) {
+  const list = document.getElementById(listId);
+  const totalEl = document.getElementById(totalId);
+  if(!list) return;
+  let total = 0;
+  if(ingredients.length === 0) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);padding:0.5rem 0;">No ingredients added yet.</div>';
+  } else {
+    list.innerHTML = ingredients.map(function(ing, idx){
+      const lineCost = ing.cost_per_unit * ing.quantity;
+      total += lineCost;
+      return '<div style="display:flex;align-items:center;gap:8px;padding:0.5rem 0;border-bottom:1px solid var(--border);">' +
+        '<div style="flex:1;">' +
+        '<div style="font-size:13px;font-weight:500;color:var(--ink);">' + ing.name + '</div>' +
+        '<div style="font-size:11px;color:var(--ink-soft);">' + ing.quantity + ing.unit + ' × RM' + parseFloat(ing.cost_per_unit).toFixed(4) + '/' + ing.unit + '</div></div>' +
+        '<div style="text-align:right;margin-right:8px;">' +
+        '<div style="font-size:13px;font-weight:500;color:#6b4fa0;">RM ' + lineCost.toFixed(4).replace(/0+$/, '').replace(/\.$/, '') + '</div></div>' +
+        '<button onclick="removeIngredientLine(' + idx + ',' + (isEdit?'true':'false') + ')" style="background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:16px;padding:0;">×</button>' +
+        '</div>';
+    }).join('');
+  }
+  if(totalEl) totalEl.textContent = 'RM ' + total.toFixed(4).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+  // Update margin calc
+  if(isEdit) {
+    document.getElementById('edit-prod-price') && calcEditProductMargin();
+  } else {
+    document.getElementById('prod-price') && calcProductMargin();
+  }
+  return total;
+}
+
+function removeIngredientLine(idx, isEdit) {
+  if(isEdit) {
+    editProdIngredients.splice(idx, 1);
+    renderIngredientsList(editProdIngredients, 'edit-prod-ingredients-list', 'edit-prod-total-cost', true);
+  } else {
+    prodIngredients.splice(idx, 1);
+    renderIngredientsList(prodIngredients, 'prod-ingredients-list', 'prod-total-cost', false);
+  }
+}
+
+function addProductIngredient() {
+  const sel = document.getElementById('prod-ing-select');
+  const qty = parseFloat(document.getElementById('prod-ing-qty').value);
+  if(!sel.value) { showToast('Please select an ingredient!'); return; }
+  if(!qty || qty <= 0) { showToast('Please enter quantity!'); return; }
+  const opt = sel.options[sel.selectedIndex];
+  const cpu = parseFloat(opt.getAttribute('data-cpu'));
+  const unit = opt.getAttribute('data-unit');
+  const ing = allIngredients.find(function(i){ return i.id === sel.value; });
+  prodIngredients.push({ingredient_id:sel.value, name:ing.name, unit:unit, cost_per_unit:cpu, quantity:qty});
+  document.getElementById('prod-ing-qty').value = '';
+  sel.value = '';
+  renderIngredientsList(prodIngredients, 'prod-ingredients-list', 'prod-total-cost', false);
+}
+
+function addEditProductIngredient() {
+  const sel = document.getElementById('edit-prod-ing-select');
+  const qty = parseFloat(document.getElementById('edit-prod-ing-qty').value);
+  if(!sel.value) { showToast('Please select an ingredient!'); return; }
+  if(!qty || qty <= 0) { showToast('Please enter quantity!'); return; }
+  const opt = sel.options[sel.selectedIndex];
+  const cpu = parseFloat(opt.getAttribute('data-cpu'));
+  const unit = opt.getAttribute('data-unit');
+  const ing = allIngredients.find(function(i){ return i.id === sel.value; });
+  editProdIngredients.push({ingredient_id:sel.value, name:ing.name, unit:unit, cost_per_unit:cpu, quantity:qty});
+  document.getElementById('edit-prod-ing-qty').value = '';
+  sel.value = '';
+  renderIngredientsList(editProdIngredients, 'edit-prod-ingredients-list', 'edit-prod-total-cost', true);
+}
+
+function calcProductMargin() {
+  const cost = prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const price = parseFloat(document.getElementById('prod-price').value) || 0;
+  const el = document.getElementById('prod-margin-preview');
+  if(!el) return;
+  if(cost === 0 && price === 0) { el.style.display='none'; return; }
+  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+  const profit = price - cost;
+  renderMarginBar(margin, 'prod-margin-preview');
+  el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
+    '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
+    '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
+}
+
+function calcEditProductMargin() {
+  const cost = editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const price = parseFloat(document.getElementById('edit-prod-price').value) || 0;
+  const el = document.getElementById('edit-prod-margin-preview');
+  if(!el) return;
+  if(cost === 0 && price === 0) { el.style.display='none'; return; }
+  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+  const profit = price - cost;
+  renderMarginBar(margin, 'edit-prod-margin-preview');
+  el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
+    '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
+    '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
+}
+
+async function loadProducts() {
+  const result = await sb.from('costing').select('*').order('name');
+  const data = result.data || [];
+  const el = document.getElementById('products-list');
+  if(!el) return;
+  if(data.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:2rem;">No products yet.<br/><span style="font-size:12px;">Add your menu items to calculate margins.</span></div>'; return;
+  }
+  const totalItems = data.length;
+  const avgMargin = data.reduce(function(a,p) {
+    const cost = parseFloat(p.cost) || 0;
+    const price = parseFloat(p.selling_price) || 0;
+    return a + (price > 0 ? ((price-cost)/price)*100 : 0);
+  }, 0) / totalItems;
+
+  let html = '<div style="background:linear-gradient(135deg,#6b4fa0,#9b6fd4);border-radius:14px;padding:1.1rem 1.25rem;margin-bottom:1rem;color:#fff;">' +
+    '<div style="font-size:11px;opacity:0.8;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Average margin</div>' +
+    '<div style="font-size:32px;font-weight:500;letter-spacing:-0.5px;">' + avgMargin.toFixed(1) + '%</div>' +
+    '<div style="font-size:12px;opacity:0.75;margin-top:4px;">' + totalItems + ' product' + (totalItems !== 1 ? 's' : '') + ' · ' + marginLabel(avgMargin) + '</div>' +
+    '</div>';
+
+  const categories = {};
+  data.forEach(function(p){ if(!categories[p.category]) categories[p.category]=[]; categories[p.category].push(p); });
+  Object.keys(categories).forEach(function(cat) {
+    html += '<div style="font-size:11px;color:var(--ink-soft);letter-spacing:0.08em;text-transform:uppercase;margin:0.75rem 0 0.5rem;">' + cat + '</div>';
+    categories[cat].forEach(function(p) {
+      const cost = parseFloat(p.cost) || 0;
+      const price = parseFloat(p.selling_price) || 0;
+      const margin = price > 0 ? ((price-cost)/price)*100 : 0;
+      const profit = price - cost;
+      const color = marginColor(margin);
+      const barW = Math.min(Math.max(margin, 0), 100);
+      html += '<div onclick="openEditProduct(\'' + p.id + '\')" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:0.65rem;cursor:pointer;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
+        '<div style="font-size:14px;font-weight:500;color:var(--ink);">' + p.name + '</div>' +
+        '<div style="text-align:right;">' +
+        '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + price.toFixed(2) + '</div>' +
+        '<div style="font-size:11px;color:var(--ink-soft);">cost RM ' + cost.toFixed(2) + '</div></div></div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">' +
+        '<span style="font-size:11px;color:var(--ink-soft);">Margin</span>' +
+        '<span style="font-size:12px;font-weight:500;color:' + color + ';">' + margin.toFixed(1) + '% · RM ' + profit.toFixed(2) + ' profit</span></div>' +
+        '<div style="height:6px;background:var(--cream-dark);border-radius:3px;overflow:hidden;">' +
+        '<div style="height:100%;width:' + barW + '%;background:' + color + ';border-radius:3px;"></div></div>' +
+        '</div>';
+    });
+  });
+  el.innerHTML = html;
+}
+
+async function saveProduct() {
+  const name = document.getElementById('prod-name').value.trim();
+  const cat = document.getElementById('prod-cat').value;
+  const price = parseFloat(document.getElementById('prod-price').value) || 0;
+  const notes = document.getElementById('prod-notes').value.trim();
+  if(!name) { showToast('Please enter product name!'); return; }
+  const cost = prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const btn = document.getElementById('add-prod-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const result = await sb.from('costing').insert({name:name,category:cat,cost:cost,selling_price:price,notes:notes}).select();
+  if(result.error) { showToast('Error: ' + result.error.message); btn.disabled=false; btn.textContent='Save product'; return; }
+  const prodId = result.data[0].id;
+  // Save ingredients
+  if(prodIngredients.length > 0) {
+    const ingData = prodIngredients.map(function(i){
+      return {costing_id:prodId, ingredient_id:i.ingredient_id, quantity:i.quantity, selling_price:price};
+    });
+    await sb.from('costing_ingredients').insert(ingData);
+  }
+  btn.disabled = false; btn.textContent = 'Save product';
+  showToast(name + ' saved!');
+  ['prod-name','prod-price','prod-notes'].forEach(function(id){ document.getElementById(id).value=''; });
+  prodIngredients = [];
+  renderIngredientsList(prodIngredients, 'prod-ingredients-list', 'prod-total-cost', false);
+  document.getElementById('prod-margin-preview').style.display='none';
+  go('s-costing');
+}
+
+async function openEditProduct(id) {
+  const result = await sb.from('costing').select('*').eq('id', id);
+  const p = result.data && result.data[0];
+  if(!p) return;
+  document.getElementById('edit-prod-id').value = p.id;
+  document.getElementById('edit-prod-name').value = p.name;
+  document.getElementById('edit-prod-cat').value = p.category;
+  document.getElementById('edit-prod-price').value = p.selling_price || '';
+  document.getElementById('edit-prod-notes').value = p.notes || '';
+  document.getElementById('edit-prod-margin-preview').style.display = 'none';
+  // Load existing ingredients
+  const ingResult = await sb.from('costing_ingredients').select('*').eq('costing_id', id);
+  const ingData = ingResult.data || [];
+  editProdIngredients = [];
+  if(ingData.length > 0) {
+    await populateIngredientSelect('edit-prod-ing-select');
+    ingData.forEach(function(ci) {
+      const ing = allIngredients.find(function(i){ return i.id === ci.ingredient_id; });
+      if(ing) editProdIngredients.push({
+        ingredient_id: ing.id, name: ing.name, unit: ing.pack_unit,
+        cost_per_unit: parseFloat(ing.cost_per_unit), quantity: parseFloat(ci.quantity)
+      });
+    });
+  }
+  renderIngredientsList(editProdIngredients, 'edit-prod-ingredients-list', 'edit-prod-total-cost', true);
+  await populateIngredientSelect('edit-prod-ing-select');
+  go('s-edit-product');
+  setTimeout(calcEditProductMargin, 100);
+}
+
+async function updateProduct() {
+  const id = document.getElementById('edit-prod-id').value;
+  const name = document.getElementById('edit-prod-name').value.trim();
+  const cat = document.getElementById('edit-prod-cat').value;
+  const price = parseFloat(document.getElementById('edit-prod-price').value) || 0;
+  const notes = document.getElementById('edit-prod-notes').value.trim();
+  if(!name) { showToast('Please enter product name!'); return; }
+  const cost = editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const btn = document.getElementById('edit-prod-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const result = await sb.from('costing').update({name:name,category:cat,cost:cost,selling_price:price,notes:notes}).eq('id', id);
+  if(result.error) { showToast('Error: ' + result.error.message); btn.disabled=false; btn.textContent='Save changes'; return; }
+  // Replace ingredients - delete old, insert new
+  await fetch(SUPABASE_URL + '/rest/v1/costing_ingredients?costing_id=eq.' + id, {
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+  });
+  if(editProdIngredients.length > 0) {
+    const ingData = editProdIngredients.map(function(i){
+      return {costing_id:id, ingredient_id:i.ingredient_id, quantity:i.quantity, selling_price:price};
+    });
+    await sb.from('costing_ingredients').insert(ingData);
+  }
+  btn.disabled = false; btn.textContent = 'Save changes';
+  showToast('Updated!');
+  go('s-costing');
+}
+
+async function deleteProduct() {
+  const id = document.getElementById('edit-prod-id').value;
+  const name = document.getElementById('edit-prod-name').value;
+  if(!confirm('Delete ' + name + '?')) return;
+  await fetch(SUPABASE_URL + '/rest/v1/costing_ingredients?costing_id=eq.' + id, {
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+  });
+  const result = await fetch(SUPABASE_URL + '/rest/v1/costing?id=eq.' + id, {
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+  });
+  if(!result.ok) { showToast('Error deleting'); return; }
+  showToast(name + ' deleted');
+  go('s-costing');
+}
+
+
 function setInsightTab(el, period) {
   document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('on'); });
   el.classList.add('on');
@@ -1217,9 +2380,21 @@ async function loadInsights() {
 
 // SETTINGS
 function openSettings() {
+  if(!currentUser || currentUser.role === 'staff') { showToast('Access restricted'); return; }
   document.getElementById('set-biz').value = localStorage.getItem('tally_biz') || '';
   document.getElementById('set-name').value = localStorage.getItem('tally_owner') || '';
   renderSettingsOutlets();
+  // Only owner can see staff management
+  const staffSection = document.getElementById('staff-list');
+  const addStaffBtn = document.querySelector('[onclick="go(\'s-add-staff\')"]');
+  const staffLabel = document.querySelector('#s-settings .section-lbl:last-of-type');
+  const isOwner = currentUser.role === 'owner';
+  if(staffSection) staffSection.closest('.menu-card') && (staffSection.closest('.menu-card').style.display = isOwner ? '' : 'none');
+  if(addStaffBtn) addStaffBtn.style.display = isOwner ? '' : 'none';
+  if(isOwner) { loadStaffList(); populateOutletSelects(); }
+  // Only owner can see danger zone
+  const dangerZone = document.querySelector('#s-settings [style*="vermillion-light"]');
+  if(dangerZone) dangerZone.style.display = isOwner ? '' : 'none';
   go('s-settings');
 }
 
@@ -1322,6 +2497,100 @@ async function addNewOutlet() {
   renderSettingsOutlets();
 }
 
+// STAFF MANAGEMENT
+async function loadStaffList() {
+  const result = await sb.from('staff').select('*').order('created_at');
+  const data = result.data || [];
+  const list = document.getElementById('staff-list');
+  if(!list) return;
+  if(data.length === 0) { list.innerHTML = '<div class="empty-state">No staff added yet.</div>'; return; }
+  list.innerHTML = data.map(function(s){
+    const outletName = s.outlet_id ? (outlets.find(function(o){ return o.id === s.outlet_id; }) || {name:'Unknown'}).name : 'All outlets';
+    return '<div class="menu-item" onclick="openEditStaff(\'' + s.id + '\')">' +
+      '<div class="menu-icon mi-ink"><i class="ti ti-user"></i></div>' +
+      '<div class="menu-text"><strong>' + s.name + '</strong><span>' + outletName + '</span></div>' +
+      '<span class="role-badge ' + (s.role === 'owner' ? 'role-owner' : s.role === 'admin' ? 'role-admin' : 'role-staff') + '">' + s.role + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+function populateOutletSelects() {
+  const selects = ['new-staff-outlet','edit-staff-outlet'];
+  selects.forEach(function(id) {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = '<option value="">All outlets (admin)</option>' +
+      outlets.map(function(o){ return '<option value="' + o.id + '">' + o.name + '</option>'; }).join('');
+  });
+}
+
+async function addStaff() {
+  const name = document.getElementById('new-staff-name').value.trim();
+  const pin = document.getElementById('new-staff-pin').value.trim();
+  const role = document.getElementById('new-staff-role').value;
+  const outletId = document.getElementById('new-staff-outlet').value || null;
+  if(!name) { showToast('Please enter a name!'); return; }
+  if(pin.length !== 6 || isNaN(pin)) { showToast('PIN must be exactly 6 digits!'); return; }
+  const btn = document.getElementById('add-staff-btn');
+  btn.disabled = true; btn.textContent = 'Adding...';
+  const result = await sb.from('staff').insert({name:name,pin:pin,role:role,outlet_id:outletId}).select();
+  btn.disabled = false; btn.textContent = 'Add staff member';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  ['new-staff-name','new-staff-pin'].forEach(function(id){ document.getElementById(id).value=''; });
+  showToast(name + ' added!');
+  go('s-settings');
+  loadStaffList();
+}
+
+function openEditStaff(id) {
+  const staffMember = null;
+  sb.from('staff').select('*').eq('id', id).then(function(result) {
+    const s = result.data && result.data[0];
+    if(!s) return;
+    document.getElementById('edit-staff-id').value = s.id;
+    document.getElementById('edit-staff-name').value = s.name;
+    document.getElementById('edit-staff-pin').value = '';
+    document.getElementById('edit-staff-role').value = s.role;
+    populateOutletSelects();
+    document.getElementById('edit-staff-outlet').value = s.outlet_id || '';
+    go('s-edit-staff');
+  });
+}
+
+async function saveStaff() {
+  const id = document.getElementById('edit-staff-id').value;
+  const name = document.getElementById('edit-staff-name').value.trim();
+  const pin = document.getElementById('edit-staff-pin').value.trim();
+  const role = document.getElementById('edit-staff-role').value;
+  const outletId = document.getElementById('edit-staff-outlet').value || null;
+  if(!name) { showToast('Please enter a name!'); return; }
+  if(pin && (pin.length !== 6 || isNaN(pin))) { showToast('PIN must be exactly 6 digits!'); return; }
+  const btn = document.getElementById('edit-staff-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const updateData = {name:name, role:role, outlet_id:outletId};
+  if(pin) updateData.pin = pin;
+  const result = await sb.from('staff').update(updateData).eq('id', id);
+  btn.disabled = false; btn.textContent = 'Save changes';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  showToast('Staff updated!');
+  go('s-settings');
+  loadStaffList();
+}
+
+async function removeStaff() {
+  const id = document.getElementById('edit-staff-id').value;
+  const name = document.getElementById('edit-staff-name').value;
+  if(!confirm('Remove ' + name + '? They will lose access to Tally.')) return;
+  const result = await fetch(SUPABASE_URL + '/rest/v1/staff?id=eq.' + id, {
+    method: 'DELETE',
+    headers: {'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+  });
+  if(!result.ok) { showToast('Error removing staff'); return; }
+  showToast(name + ' removed');
+  go('s-settings');
+  loadStaffList();
+}
+
 function resetApp() {
   if(confirm('This will reset your onboarding on this device. Your saved data in Supabase is safe. Continue?')) {
     localStorage.clear();
@@ -1392,34 +2661,34 @@ async function factoryReset() {
 
 async function init() {
   initOnboarding();
-  await loadOutlets();
-  const savedOwner = localStorage.getItem('tally_owner');
-  const savedBiz = localStorage.getItem('tally_biz');
-  if(outlets.length > 0 && savedOwner && savedBiz) {
-    // Returning user with full setup - go straight home
-    ownerName = savedOwner;
-    const savedId = localStorage.getItem('tally_outlet_id');
-    if(savedId === 'all') {
-      currentOutlet = {id:'all', name:'All outlets'};
-    } else {
-      currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+  // Check for saved login session
+  const savedUserId = localStorage.getItem('tally_user_id');
+  if(savedUserId) {
+    const userResult = await sb.from('staff').select('*').eq('id', savedUserId);
+    if(userResult.data && userResult.data.length > 0) {
+      currentUser = userResult.data[0];
+      await loadOutlets();
+      if(outlets.length === 0) { go('s-login'); return; }
+      ownerName = currentUser.name;
+      if(currentUser.role === 'staff' && currentUser.outlet_id) {
+        currentOutlet = outlets.find(function(o){ return o.id === currentUser.outlet_id; }) || outlets[0];
+      } else {
+        const savedId = localStorage.getItem('tally_outlet_id');
+        if(savedId === 'all') currentOutlet = {id:'all', name:'All outlets'};
+        else currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+      }
+      initHome();
+      go('s-home');
+      applyRoleUI();
+      return;
     }
-    initHome();
-    go('s-home');
-  } else if(outlets.length > 0 && (!savedOwner || !savedBiz)) {
-    // Outlets exist but name missing - show onboarding pre-filled
-    // Hide the outlets section since they already exist
-    document.getElementById('ob-biz').value = savedBiz || '';
-    document.getElementById('ob-name').value = savedOwner || '';
-    var outletSection = document.getElementById('outlets-setup');
-    var addBtn = document.querySelector('#s-onboard .add-btn');
-    var sectionLbl = document.querySelector('#s-onboard .section-lbl');
-    if(outletSection) outletSection.style.display = 'none';
-    if(addBtn) addBtn.style.display = 'none';
-    if(sectionLbl) sectionLbl.style.display = 'none';
-    go('s-onboard');
+  }
+  // No saved session - check if app is set up
+  await loadOutlets();
+  if(outlets.length > 0) {
+    loadStaffNameList();
+    go('s-login');
   } else {
-    // Brand new user
     go('s-onboard');
   }
 }
