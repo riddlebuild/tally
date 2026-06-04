@@ -353,6 +353,16 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       </div>
     </div>
     <div style="padding:0 1.1rem;">
+      <div class="section-lbl">Shift</div>
+    </div>
+    <div class="menu-card" style="margin-bottom:1.25rem;">
+      <div class="menu-item" onclick="go('s-cashcount')">
+        <div class="menu-icon" style="background:#e8f0fb;color:#2d6bc4;"><i class="ti ti-cash"></i></div>
+        <div class="menu-text"><strong>Cash count</strong><span>Mid-shift cash tally</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+    </div>
+    <div style="padding:0 1.1rem;">
       <div class="section-lbl">Reports</div>
     </div>
     <div class="menu-card" style="margin-bottom:2rem;">
@@ -718,6 +728,45 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
 </div>
 
+<!-- CASH COUNT -->
+<div class="screen" id="s-cashcount">
+  <div class="topbar" style="border-bottom-color:#e8f0fb;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Cash count</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head" style="color:#2d6bc4;"><i class="ti ti-cash" style="font-size:14px"></i> New cash count</div>
+        <div class="form-row-2">
+          <div>
+            <label class="form-lbl">Cash in drawer (RM)</label>
+            <input class="inp" id="cc-actual" type="number" inputmode="decimal" placeholder="0.00" oninput="calcCashVariance()"/>
+          </div>
+          <div>
+            <label class="form-lbl">Cash in system (RM)</label>
+            <input class="inp" id="cc-system" type="number" inputmode="decimal" placeholder="0.00" oninput="calcCashVariance()"/>
+          </div>
+        </div>
+        <div class="var-box" id="cc-var-box"><span id="cc-var-txt"></span></div>
+        <div class="form-row" style="margin-top:0.9rem;">
+          <label class="form-lbl">Counted by</label>
+          <input class="inp" id="cc-by" type="text" placeholder="Staff name"/>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Notes <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
+          <input class="inp" id="cc-notes" type="text" placeholder="e.g. 5:30pm handover"/>
+        </div>
+        <button class="submit-btn" id="cc-btn" onclick="saveCashCount()" style="background:#2d6bc4;">Save cash count</button>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#2d6bc4;"><i class="ti ti-history" style="font-size:14px"></i> Last 8 days <span class="badge badge-neutral" id="cc-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
+        <div id="cc-history"><div class="empty-state">No cash counts yet.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- INSIGHTS -->
 <div class="screen" id="s-insights">
   <div class="topbar">
@@ -854,6 +903,7 @@ function go(id) {
   if(id === 's-outlets') renderOutletsList();
   if(id === 's-sales') loadSalesHistory();
   if(id === 's-add-staff') populateOutletSelects();
+  if(id === 's-cashcount') loadCashCountHistory();
 }
 
 // PIN functions
@@ -1476,6 +1526,93 @@ async function saveWastage() {
   showToast('Wastage logged!');
   ['wast-item','wast-cost','wast-by'].forEach(function(id){ document.getElementById(id).value = ''; });
   loadWastage();
+}
+
+// CASH COUNT
+function calcCashVariance() {
+  const actual = parseFloat(document.getElementById('cc-actual').value) || 0;
+  const system = parseFloat(document.getElementById('cc-system').value) || 0;
+  const box = document.getElementById('cc-var-box');
+  const txt = document.getElementById('cc-var-txt');
+  if(actual === 0 && system === 0) { box.style.display='none'; return; }
+  box.style.display = 'block';
+  const diff = actual - system;
+  if(Math.abs(diff) < 0.01) {
+    box.className = 'var-box var-ok';
+    txt.textContent = 'All good — cash matches system exactly.';
+  } else if(diff < 0) {
+    box.className = 'var-box var-short';
+    txt.textContent = 'Short by RM ' + Math.abs(diff).toFixed(2) + ' vs system.';
+  } else {
+    box.className = 'var-box var-ok';
+    txt.textContent = 'Over by RM ' + diff.toFixed(2) + ' vs system.';
+  }
+}
+
+async function saveCashCount() {
+  if(!currentOutlet || currentOutlet.id === 'all') { showToast('Please select a specific outlet!'); return; }
+  const actual = parseFloat(document.getElementById('cc-actual').value) || 0;
+  const system = parseFloat(document.getElementById('cc-system').value) || 0;
+  const by = document.getElementById('cc-by').value.trim();
+  const notes = document.getElementById('cc-notes').value.trim();
+  if(!by) { showToast('Please enter who counted!'); return; }
+  const variance = actual - system;
+  const now = new Date();
+  const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':00';
+  const btn = document.getElementById('cc-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const result = await sb.from('cash_counts').insert({
+    outlet_id: currentOutlet.id,
+    date: getToday(),
+    time_of_count: timeStr,
+    cash_actual: actual,
+    cash_system: system,
+    variance: variance,
+    counted_by: by,
+    notes: notes
+  });
+  btn.disabled = false; btn.textContent = 'Save cash count';
+  if(result.error) { showToast('Error: ' + result.error.message); return; }
+  showToast('Cash count saved!');
+  ['cc-actual','cc-system','cc-by','cc-notes'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('cc-var-box').style.display = 'none';
+  loadCashCountHistory();
+}
+
+async function loadCashCountHistory() {
+  if(!currentOutlet) return;
+  const d8 = new Date(); d8.setDate(d8.getDate() - 7);
+  const from8 = d8.toISOString().split('T')[0];
+  const today = getToday();
+  let q = sb.from('cash_counts').select('*').gte('date', from8).lte('date', today).order('created_at', {ascending:false});
+  if(currentOutlet.id !== 'all') q = q.eq('outlet_id', currentOutlet.id);
+  const result = await q;
+  const data = result.data || [];
+  const histEl = document.getElementById('cc-history');
+  const countEl = document.getElementById('cc-hist-count');
+  if(!histEl) return;
+  if(data.length === 0) {
+    histEl.innerHTML = '<div class="empty-state">No cash counts yet.</div>';
+    countEl.textContent = ''; return;
+  }
+  histEl.innerHTML = data.map(function(c){
+    const isToday = c.date === today;
+    const dateLabel = isToday ? 'Today' : new Date(c.date+'T00:00:00').toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short'});
+    const timeLabel = c.time_of_count ? c.time_of_count.substring(0,5) : '';
+    const variance = parseFloat(c.variance);
+    const varColor = Math.abs(variance) < 0.01 ? 'var(--matcha)' : variance < 0 ? 'var(--vermillion)' : 'var(--matcha)';
+    const varText = Math.abs(variance) < 0.01 ? 'Balanced' : variance < 0 ? '−RM '+Math.abs(variance).toFixed(2) : '+RM '+variance.toFixed(2);
+    return '<div style="display:flex;align-items:center;gap:8px;padding:0.65rem 0;border-bottom:1px solid var(--border);">' +
+      '<div style="flex:1;">' +
+      '<div style="font-size:12px;font-weight:500;color:' + (isToday ? '#2d6bc4' : 'var(--ink-mid)') + ';">' + dateLabel + ' · ' + timeLabel + (c.counted_by ? ' · <span style="font-weight:400;color:var(--ink-soft);">' + c.counted_by + '</span>' : '') + '</div>' +
+      (c.notes ? '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">' + c.notes + '</div>' : '') +
+      '</div>' +
+      '<div style="text-align:right;">' +
+      '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + parseFloat(c.cash_actual).toFixed(2) + '</div>' +
+      '<div style="font-size:10px;color:' + varColor + ';">' + varText + '</div>' +
+      '</div></div>';
+  }).join('');
+  countEl.textContent = data.length + ' count' + (data.length !== 1 ? 's' : '');
 }
 
 function setInsightTab(el, period) {
