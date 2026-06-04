@@ -127,6 +127,11 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--white);padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;}
 .loading{text-align:center;padding:1.5rem;color:var(--ink-soft);font-size:13px;}
+.accordion-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+.accordion-head .acc-arrow{transition:transform 0.25s ease;color:var(--ink-soft);font-size:13px;}
+.accordion-head.open .acc-arrow{transform:rotate(180deg);}
+.accordion-body{overflow:hidden;max-height:0;transition:max-height 0.3s ease;}
+.accordion-body.open{max-height:9999px;}
 .pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:0.6rem 0;}
 .pin-btn{
   padding:10px;font-size:16px;font-weight:500;font-family:'DM Sans',sans-serif;
@@ -424,9 +429,10 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="card-head"><i class="ti ti-cash" style="font-size:14px"></i> Sales by channel</div>
         <div class="ch-row"><span class="ch-lbl">Cash</span><input class="ch-inp" id="ch-cash" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
         <div class="ch-row"><span class="ch-lbl">Card</span><input class="ch-inp" id="ch-card" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
-        <div class="ch-row"><span class="ch-lbl">GrabFood</span><input class="ch-inp" id="ch-grab" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
-        <div class="ch-row"><span class="ch-lbl">FoodPanda</span><input class="ch-inp" id="ch-panda" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
+        <div class="ch-row"><span class="ch-lbl">QR</span><input class="ch-inp" id="ch-qr" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
+        <div id="dynamic-channels"></div>
         <div class="var-box" id="var-box"><span id="var-txt"></span></div>
+        <div id="sales-exp-note" style="display:none;margin-top:0.5rem;padding:0.6rem 0.75rem;background:var(--amber-light);border-radius:8px;font-size:12px;color:var(--amber);"></div>
       </div>
       <div class="card">
         <div class="card-head"><i class="ti ti-user" style="font-size:14px"></i> Closing staff</div>
@@ -441,8 +447,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       </div>
       <button class="submit-btn" id="sales-btn" onclick="saveSales()">Save sales entry</button>
       <div class="card" style="margin-top:1rem;">
-        <div class="card-head"><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="sales-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
-        <div id="sales-history"><div class="empty-state">Loading history...</div></div>
+        <div class="card-head accordion-head" onclick="toggleAccordion(this,'sales-history-body')">
+          <span><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="sales-hist-count" style="text-transform:none;letter-spacing:0;"></span></span>
+          <i class="ti ti-chevron-down acc-arrow"></i>
+        </div>
+        <div class="accordion-body" id="sales-history-body">
+          <div id="sales-history"><div class="empty-state">Loading history...</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -493,8 +504,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="exp-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
-        <div id="exp-history"><div class="empty-state">Loading history...</div></div>
+        <div class="card-head accordion-head" onclick="toggleAccordion(this,'exp-history-body')">
+          <span><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="exp-hist-count" style="text-transform:none;letter-spacing:0;"></span></span>
+          <i class="ti ti-chevron-down acc-arrow"></i>
+        </div>
+        <div class="accordion-body" id="exp-history-body">
+          <div id="exp-history"><div class="empty-state">Loading history...</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -549,8 +565,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="wast-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
-        <div id="wast-history"><div class="empty-state">Loading history...</div></div>
+        <div class="card-head accordion-head" onclick="toggleAccordion(this,'wast-history-body')">
+          <span><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="wast-hist-count" style="text-transform:none;letter-spacing:0;"></span></span>
+          <i class="ti ti-chevron-down acc-arrow"></i>
+        </div>
+        <div class="accordion-body" id="wast-history-body">
+          <div id="wast-history"><div class="empty-state">Loading history...</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -740,6 +761,23 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <input class="inp" id="edit-outlet-loc" type="text" placeholder="e.g. AEON Mall Kuching"/>
         </div>
       </div>
+      <div class="card">
+        <div class="card-head"><i class="ti ti-device-mobile" style="font-size:14px"></i> Delivery channels</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:0.75rem;">Cash, Card and QR are always included. Add delivery platforms for this outlet.</div>
+        <div id="outlet-channels-list" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:8px;">
+          <select class="inp" id="new-channel-select" style="flex:1;">
+            <option value="">Select platform...</option>
+            <option value="GrabFood">GrabFood</option>
+            <option value="FoodPanda">FoodPanda</option>
+            <option value="Shopeefood">Shopeefood</option>
+            <option value="Boost">Boost</option>
+            <option value="TNG">TNG</option>
+            <option value="Others">Others</option>
+          </select>
+          <button onclick="addOutletChannel()" style="padding:9px 14px;background:var(--matcha);border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
+        </div>
+      </div>
       <button class="submit-btn" id="edit-outlet-btn" onclick="saveEditOutlet()">Save outlet</button>
       <div style="margin-top:1rem;">
         <div class="card" style="border-color:var(--vermillion-light);">
@@ -784,8 +822,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <button class="submit-btn" id="cc-btn" onclick="saveCashCount()" style="background:#2d6bc4;">Save cash count</button>
       </div>
       <div class="card">
-        <div class="card-head" style="color:#2d6bc4;"><i class="ti ti-history" style="font-size:14px"></i> Last 8 days <span class="badge badge-neutral" id="cc-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
-        <div id="cc-history"><div class="empty-state">No cash counts yet.</div></div>
+        <div class="card-head accordion-head" onclick="toggleAccordion(this,'cc-history-body')" style="color:#2d6bc4;">
+          <span><i class="ti ti-history" style="font-size:14px"></i> Last 8 days <span class="badge badge-neutral" id="cc-hist-count" style="text-transform:none;letter-spacing:0;"></span></span>
+          <i class="ti ti-chevron-down acc-arrow"></i>
+        </div>
+        <div class="accordion-body" id="cc-history-body">
+          <div id="cc-history"><div class="empty-state">No cash counts yet.</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1167,7 +1210,7 @@ function go(id) {
   if(id === 's-wastage') loadWastage();
   if(id === 's-insights') loadInsights();
   if(id === 's-outlets') renderOutletsList();
-  if(id === 's-sales') loadSalesHistory();
+  if(id === 's-sales') { loadSalesHistory(); loadSalesExpensesNote(); loadDynamicChannels(); }
   if(id === 's-add-staff') populateOutletSelects();
   if(id === 's-cashcount') loadCashCountHistory();
   if(id === 's-ingredients') loadIngredients();
@@ -1322,6 +1365,14 @@ function logout() {
   loadStaffNameList();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('s-login').classList.add('active');
+}
+
+function toggleAccordion(head, bodyId) {
+  const body = document.getElementById(bodyId);
+  if(!body) return;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  head.classList.toggle('open', !isOpen);
 }
 
 function showToast(msg, duration) {
@@ -1549,27 +1600,47 @@ function selectOutlet(id) {
   showToast('Switched to ' + currentOutlet.name);
 }
 
-function calcVar() {
+async function loadSalesExpensesNote() {
+  const noteEl = document.getElementById('sales-exp-note');
+  if(!noteEl || !currentOutlet || currentOutlet.id === 'all') return;
+  const expResult = await sb.from('expenses').select('amount').eq('outlet_id', currentOutlet.id).eq('date', getToday());
+  if(expResult.data && expResult.data.length > 0) {
+    const total = expResult.data.reduce(function(a,e){ return a + parseFloat(e.amount); }, 0);
+    noteEl.style.display = 'block';
+    noteEl.innerHTML = '<i class="ti ti-receipt" style="font-size:12px"></i> Today\'s expenses: <strong>RM ' + total.toFixed(2) + '</strong> — will be included in variance calculation.';
+  } else {
+    noteEl.style.display = 'none';
+  }
+}
+
+async function calcVar() {
   const pos = parseFloat(document.getElementById('pos-total').value) || 0;
   const cash = parseFloat(document.getElementById('ch-cash').value) || 0;
   const card = parseFloat(document.getElementById('ch-card').value) || 0;
-  const grab = parseFloat(document.getElementById('ch-grab').value) || 0;
-  const panda = parseFloat(document.getElementById('ch-panda').value) || 0;
-  const total = cash + card + grab + panda;
-  const diff = total - pos;
+  const qr = parseFloat(document.getElementById('ch-qr').value) || 0;
+  const dynTotal = getDynamicChannelValues().total;
+  const total = cash + card + qr + dynTotal;
   const box = document.getElementById('var-box');
   const txt = document.getElementById('var-txt');
   if(pos === 0 && total === 0) { box.style.display='none'; return; }
+  // Fetch today's expenses
+  let expTotal = 0;
+  if(currentOutlet && currentOutlet.id !== 'all') {
+    const expResult = await sb.from('expenses').select('amount').eq('outlet_id', currentOutlet.id).eq('date', getToday());
+    if(expResult.data) expTotal = expResult.data.reduce(function(a,e){ return a + parseFloat(e.amount); }, 0);
+  }
+  const diff = (total + expTotal) - pos;
   box.style.display = 'block';
+  const expNote = expTotal > 0 ? ' (incl. RM ' + expTotal.toFixed(2) + ' expenses)' : '';
   if(Math.abs(diff) < 0.01) {
     box.className = 'var-box var-ok';
-    txt.textContent = 'All good — sales tally matches POS exactly.';
+    txt.textContent = 'All good — sales tally matches POS' + expNote + '.';
   } else if(diff < 0) {
     box.className = 'var-box var-short';
-    txt.textContent = 'Cash shortage of RM ' + Math.abs(diff).toFixed(2) + ' vs POS total.';
+    txt.textContent = 'Cash shortage of RM ' + Math.abs(diff).toFixed(2) + ' vs POS' + expNote + '.';
   } else {
     box.className = 'var-box var-ok';
-    txt.textContent = 'Overage of RM ' + diff.toFixed(2) + ' vs POS total.';
+    txt.textContent = 'Overage of RM ' + diff.toFixed(2) + ' vs POS' + expNote + '.';
   }
 }
 
@@ -1590,7 +1661,7 @@ async function loadSalesHistory() {
     histCount.textContent = ''; return;
   }
   histEl.innerHTML = hist.map(function(s){
-    const total = (+s.cash)+(+s.card)+(+s.grabfood)+(+s.foodpanda);
+    const total = (+s.cash)+(+s.card)+(+s.qr||0)+(+s.grabfood||0)+(+s.foodpanda||0)+(+s.shopeefood||0)+(+s.boost||0)+(+s.tng||0)+(+s.others||0);
     const variance = total - (+s.pos_total);
     const isToday = s.date === today;
     const label = isToday ? 'Today' : new Date(s.date+'T00:00:00').toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short'});
@@ -1599,7 +1670,7 @@ async function loadSalesHistory() {
     return '<div style="display:flex;align-items:center;gap:8px;padding:0.65rem 0;border-bottom:1px solid var(--border);">' +
       '<div style="flex:1;">' +
       '<div style="font-size:12px;font-weight:500;color:' + (isToday ? 'var(--matcha)' : 'var(--ink-mid)') + ';">' + label + (s.staff_name ? ' · <span style="font-weight:400;color:var(--ink-soft);">' + s.staff_name + '</span>' : '') + '</div>' +
-      '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">Cash RM' + (+s.cash).toFixed(2) + ' · Card RM' + (+s.card).toFixed(2) + ' · Grab RM' + (+s.grabfood).toFixed(2) + ' · Panda RM' + (+s.foodpanda).toFixed(2) + '</div></div>' +
+      '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">Cash RM' + (+s.cash).toFixed(2) + ' · Card RM' + (+s.card).toFixed(2) + ' · QR RM' + (+s.qr||0).toFixed(2) + (s.grabfood > 0 ? ' · Grab RM'+s.grabfood.toFixed(2) : '') + (s.foodpanda > 0 ? ' · Panda RM'+s.foodpanda.toFixed(2) : '') + (s.shopeefood > 0 ? ' · Shopee RM'+s.shopeefood.toFixed(2) : '') + '</div></div>' +
       '<div style="text-align:right;">' +
       '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + total.toFixed(2) + '</div>' +
       '<div style="font-size:10px;color:' + varColor + ';">' + varText + '</div></div></div>';
@@ -1613,28 +1684,35 @@ async function saveSales() {
   const pos = parseFloat(document.getElementById('pos-total').value) || 0;
   const cash = parseFloat(document.getElementById('ch-cash').value) || 0;
   const card = parseFloat(document.getElementById('ch-card').value) || 0;
-  const grab = parseFloat(document.getElementById('ch-grab').value) || 0;
-  const panda = parseFloat(document.getElementById('ch-panda').value) || 0;
+  const qr = parseFloat(document.getElementById('ch-qr').value) || 0;
+  const dynChannels = getDynamicChannelValues();
   const staff = document.getElementById('sales-staff').value.trim();
   const notes = document.getElementById('sales-notes').value.trim();
   if(!staff) { showToast('Please enter your name!'); return; }
-  const variance = (cash + card + grab + panda) - pos;
   const btn = document.getElementById('sales-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
   const today = getToday();
+  // Fetch today's expenses to include in variance
+  let expTotal = 0;
+  const expResult = await sb.from('expenses').select('amount').eq('outlet_id', currentOutlet.id).eq('date', today);
+  if(expResult.data) expTotal = expResult.data.reduce(function(a,e){ return a + parseFloat(e.amount); }, 0);
+  const channelTotal = cash + card + qr + dynChannels.total;
+  const variance = (channelTotal + expTotal) - pos;
+  const saveData = Object.assign({outlet_id:currentOutlet.id,date:today,pos_total:pos,cash:cash,card:card,qr:qr,variance:variance,staff_name:staff,notes:notes}, dynChannels.data);
   const existing = await sb.from('sales_entries').select('id').eq('outlet_id', currentOutlet.id).eq('date', today);
   let error;
   if(existing.data && existing.data.length > 0) {
-    const r = await sb.from('sales_entries').update({pos_total:pos,cash:cash,card:card,grabfood:grab,foodpanda:panda,variance:variance,staff_name:staff,notes:notes}).eq('id', existing.data[0].id);
+    const r = await sb.from('sales_entries').update(saveData).eq('id', existing.data[0].id);
     error = r.error;
   } else {
-    const r = await sb.from('sales_entries').insert({outlet_id:currentOutlet.id,date:today,pos_total:pos,cash:cash,card:card,grabfood:grab,foodpanda:panda,variance:variance,staff_name:staff,notes:notes});
+    const r = await sb.from('sales_entries').insert(saveData);
     error = r.error;
   }
   btn.disabled = false; btn.textContent = 'Save sales entry';
   if(error) { showToast('Error: ' + error.message); return; }
   showToast('Sales entry saved!');
-  ['pos-total','ch-cash','ch-card','ch-grab','ch-panda','sales-staff','sales-notes'].forEach(function(id){ document.getElementById(id).value = ''; });
+  ['pos-total','ch-cash','ch-card','ch-qr','sales-staff','sales-notes'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('dynamic-channels').querySelectorAll('input').forEach(function(inp){ inp.value = ''; });
   document.getElementById('var-box').style.display = 'none';
   go('s-home');
 }
@@ -1938,26 +2016,28 @@ function renderMarginBar(pct, containerId) {
 }
 
 function calcProductMargin() {
-  const cost = parseFloat(document.getElementById('prod-cost').value) || 0;
+  const cost = prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
   const price = parseFloat(document.getElementById('prod-price').value) || 0;
-  if(cost === 0 && price === 0) { document.getElementById('prod-margin-preview').style.display='none'; return; }
+  const el = document.getElementById('prod-margin-preview');
+  if(!el) return;
+  if(cost === 0 && price === 0) { el.style.display='none'; return; }
   const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
   const profit = price - cost;
   renderMarginBar(margin, 'prod-margin-preview');
-  const el = document.getElementById('prod-margin-preview');
   el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
     '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
     '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
 }
 
 function calcEditProductMargin() {
-  const cost = parseFloat(document.getElementById('edit-prod-cost').value) || 0;
+  const cost = editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
   const price = parseFloat(document.getElementById('edit-prod-price').value) || 0;
-  if(cost === 0 && price === 0) { document.getElementById('edit-prod-margin-preview').style.display='none'; return; }
+  const el = document.getElementById('edit-prod-margin-preview');
+  if(!el) return;
+  if(cost === 0 && price === 0) { el.style.display='none'; return; }
   const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
   const profit = price - cost;
   renderMarginBar(margin, 'edit-prod-margin-preview');
-  const el = document.getElementById('edit-prod-margin-preview');
   el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
     '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
     '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
@@ -2398,20 +2478,96 @@ async function loadInsights() {
 }
 
 // SETTINGS
+// CHANNEL MANAGEMENT
+const CHANNEL_COLUMN_MAP = {
+  'GrabFood': 'grabfood',
+  'FoodPanda': 'foodpanda',
+  'Shopeefood': 'shopeefood',
+  'Boost': 'boost',
+  'TNG': 'tng',
+  'Others': 'others'
+};
+
+async function loadOutletChannels(outletId) {
+  const result = await sb.from('outlet_channels').select('*').eq('outlet_id', outletId).order('created_at');
+  return result.data || [];
+}
+
+async function renderOutletChannelsList(outletId) {
+  const channels = await loadOutletChannels(outletId);
+  const list = document.getElementById('outlet-channels-list');
+  if(!list) return;
+  if(channels.length === 0) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);padding:0.25rem 0;">No delivery channels added yet.</div>';
+    return;
+  }
+  list.innerHTML = channels.map(function(c){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border);">' +
+      '<span style="font-size:13px;color:var(--ink);">' + c.name + '</span>' +
+      '<button onclick="removeOutletChannel(\'' + c.id + '\',\'' + outletId + '\')" style="background:none;border:none;color:var(--vermillion);cursor:pointer;font-size:12px;padding:2px 6px;">Remove</button>' +
+      '</div>';
+  }).join('');
+}
+
+async function addOutletChannel() {
+  const outletId = document.getElementById('edit-outlet-id').value;
+  const name = document.getElementById('new-channel-select').value;
+  if(!name) { showToast('Please select a channel!'); return; }
+  // Check not already added
+  const existing = await sb.from('outlet_channels').select('id').eq('outlet_id', outletId).eq('name', name);
+  if(existing.data && existing.data.length > 0) { showToast(name + ' already added!'); return; }
+  await sb.from('outlet_channels').insert({outlet_id: outletId, name: name});
+  document.getElementById('new-channel-select').value = '';
+  renderOutletChannelsList(outletId);
+  showToast(name + ' added!');
+}
+
+async function removeOutletChannel(channelId, outletId) {
+  await fetch(SUPABASE_URL + '/rest/v1/outlet_channels?id=eq.' + channelId, {
+    method: 'DELETE',
+    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal'}
+  });
+  renderOutletChannelsList(outletId);
+  showToast('Channel removed');
+}
+
+async function loadDynamicChannels() {
+  const container = document.getElementById('dynamic-channels');
+  if(!container || !currentOutlet || currentOutlet.id === 'all') return;
+  const channels = await loadOutletChannels(currentOutlet.id);
+  container.innerHTML = channels.map(function(c){
+    const colId = 'ch-' + c.name.toLowerCase().replace(/[^a-z0-9]/g,'');
+    return '<div class="ch-row"><span class="ch-lbl">' + c.name + '</span><input class="ch-inp" id="' + colId + '" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>';
+  }).join('');
+}
+
+function getDynamicChannelValues() {
+  const container = document.getElementById('dynamic-channels');
+  if(!container) return {total: 0, data: {}};
+  let total = 0;
+  const data = {};
+  container.querySelectorAll('.ch-row').forEach(function(row) {
+    const lbl = row.querySelector('.ch-lbl').textContent;
+    const inp = row.querySelector('.ch-inp');
+    const val = parseFloat(inp.value) || 0;
+    total += val;
+    const col = CHANNEL_COLUMN_MAP[lbl];
+    if(col) data[col] = val;
+  });
+  return {total: total, data: data};
+}
+
 function openSettings() {
   if(!currentUser || currentUser.role === 'staff') { showToast('Access restricted'); return; }
   document.getElementById('set-biz').value = localStorage.getItem('tally_biz') || '';
   document.getElementById('set-name').value = localStorage.getItem('tally_owner') || '';
   renderSettingsOutlets();
-  // Only owner can see staff management
   const staffSection = document.getElementById('staff-list');
   const addStaffBtn = document.querySelector('[onclick="go(\'s-add-staff\')"]');
-  const staffLabel = document.querySelector('#s-settings .section-lbl:last-of-type');
   const isOwner = currentUser.role === 'owner';
   if(staffSection) staffSection.closest('.menu-card') && (staffSection.closest('.menu-card').style.display = isOwner ? '' : 'none');
   if(addStaffBtn) addStaffBtn.style.display = isOwner ? '' : 'none';
   if(isOwner) { loadStaffList(); populateOutletSelects(); }
-  // Only owner can see danger zone
   const dangerZone = document.querySelector('#s-settings [style*="vermillion-light"]');
   if(dangerZone) dangerZone.style.display = isOwner ? '' : 'none';
   go('s-settings');
@@ -2435,6 +2591,7 @@ function openEditOutlet(id) {
   document.getElementById('edit-outlet-name').value = outlet.name;
   document.getElementById('edit-outlet-loc').value = outlet.location || '';
   go('s-edit-outlet');
+  renderOutletChannelsList(id);
 }
 
 async function saveEditOutlet() {
