@@ -425,6 +425,18 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       </div>
     </div>
     </div>
+    <div class="staff-hide">
+    <div style="padding:0 1.1rem;">
+      <div class="section-lbl">Rankings</div>
+    </div>
+    <div class="menu-card" style="margin-bottom:2rem;">
+      <div class="menu-item" onclick="go('s-rankings')">
+        <div class="menu-icon" style="background:var(--rose-light);color:var(--rose);"><i class="ti ti-trophy"></i></div>
+        <div class="menu-text"><strong>Wastage leaderboard</strong><span>Who's wasting the most</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+    </div>
+    </div>
   </div>
 </div>
 
@@ -451,6 +463,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div id="cash-float-reminder" style="display:none;margin-bottom:1rem;padding:0.7rem 0.9rem;background:#e8f0fb;border-radius:10px;font-size:13px;color:#2d6bc4;">
         <i class="ti ti-wallet" style="font-size:14px;"></i> <strong>Today's cash float:</strong> <span id="cash-float-amt"></span>
       </div>
+      <div id="sales-edit-banner" style="display:none;margin-bottom:1rem;padding:0.7rem 0.9rem;border-radius:10px;font-size:13px;"></div>
       <div class="card">
         <div class="card-head"><i class="ti ti-device-mobile" style="font-size:14px"></i> POS system total</div>
         <div class="form-row" style="margin-bottom:0;">
@@ -904,6 +917,24 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <div id="cc-history"><div class="empty-state">No cash counts yet.</div></div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- RANKINGS -->
+<div class="screen" id="s-rankings">
+  <div class="topbar" style="border-bottom-color:var(--rose-light);">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Rankings</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="tab-row">
+        <button class="tab" onclick="setRankTab(this,'week')">This week</button>
+        <button class="tab on" onclick="setRankTab(this,'month')">This month</button>
+        <button class="tab" onclick="setRankTab(this,'all')">All time</button>
+      </div>
+      <div id="rankings-content"><div class="loading">Loading rankings...</div></div>
     </div>
   </div>
 </div>
@@ -1372,6 +1403,7 @@ let currentTenantId = null;
 let outlets = [];
 let ownerName = '';
 let insightPeriod = 'today';
+let rankPeriod = 'month';
 let outletFields = 1;
 let currentUser = null;
 let pinValue = '';
@@ -1385,7 +1417,7 @@ function go(id) {
   if(currentUser) {
     const role = currentUser.role;
     if(role === 'staff') {
-      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-add-product','s-edit-product','s-reserve'];
+      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-add-product','s-edit-product','s-reserve','s-rankings'];
       if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
     }
     if(role === 'admin') {
@@ -1408,9 +1440,10 @@ function go(id) {
   if(id === 's-insights') loadInsights();
   if(id === 's-outlets') renderOutletsList();
   if(id === 's-reserve') loadReserveFloat();
+  if(id === 's-rankings') loadRankings();
   if(id === 's-sales') {
-    loadSalesHistory(); loadSalesExpensesNote(); loadDynamicChannels(); showCashFloatReminder();
-    if(currentUser) { const el = document.getElementById('sales-staff'); if(el && !el.value) el.value = currentUser.name; }
+    loadSalesHistory(); loadSalesExpensesNote(); showCashFloatReminder();
+    enterSalesScreen();
   }
   if(id === 's-add-staff') populateOutletSelects();
   if(id === 's-cashcount') {
@@ -1986,6 +2019,98 @@ async function loadSalesHistory() {
       '<div style="font-size:10px;color:' + varColor + ';">' + varText + '</div></div></div>';
   }).join('');
   histCount.textContent = hist.length + ' entr' + (hist.length !== 1 ? 'ies' : 'y');
+}
+
+async function enterSalesScreen() {
+  await loadDynamicChannels();
+  await prepSalesScreen();
+}
+
+function canEditSales(entry) {
+  if(!currentUser) return false;
+  if(currentUser.role === 'owner' || currentUser.role === 'admin') return true;
+  return currentUser.name === entry.staff_name;
+}
+
+function fillDynamicChannelValues(s) {
+  const container = document.getElementById('dynamic-channels');
+  if(!container) return;
+  container.querySelectorAll('.ch-row').forEach(function(row){
+    const lbl = row.querySelector('.ch-lbl').textContent;
+    const inp = row.querySelector('.ch-inp');
+    const col = CHANNEL_COLUMN_MAP[lbl];
+    inp.value = (col && s[col] != null && +s[col] !== 0) ? s[col] : '';
+  });
+}
+
+function fillSalesForm(s) {
+  const set = function(id, v){ const el=document.getElementById(id); if(el) el.value = (v != null && +v !== 0) ? v : ''; };
+  set('pos-total', s.pos_total);
+  set('ch-cash', s.cash);
+  set('ch-card', s.card);
+  set('ch-qr', s.qr);
+  const sn = document.getElementById('sales-staff'); if(sn) sn.value = s.staff_name || '';
+  const nt = document.getElementById('sales-notes'); if(nt) nt.value = s.notes || '';
+  fillDynamicChannelValues(s);
+}
+
+function clearSalesForm() {
+  ['pos-total','ch-cash','ch-card','ch-qr','sales-staff','sales-notes'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+  const dc = document.getElementById('dynamic-channels');
+  if(dc) dc.querySelectorAll('input').forEach(function(inp){ inp.value=''; });
+  const vb = document.getElementById('var-box'); if(vb) vb.style.display='none';
+}
+
+function setSalesFormLocked(locked) {
+  ['pos-total','ch-cash','ch-card','ch-qr','sales-staff','sales-notes'].forEach(function(id){ const el=document.getElementById(id); if(el) el.disabled=locked; });
+  const dc = document.getElementById('dynamic-channels');
+  if(dc) dc.querySelectorAll('input').forEach(function(inp){ inp.disabled=locked; });
+  const btn = document.getElementById('sales-btn');
+  if(btn) { btn.disabled = locked; btn.style.opacity = locked ? '0.5' : '1'; }
+}
+
+async function prepSalesScreen() {
+  const banner = document.getElementById('sales-edit-banner');
+  const btn = document.getElementById('sales-btn');
+  setSalesFormLocked(false);
+  if(banner) banner.style.display = 'none';
+  if(!currentOutlet || currentOutlet.id === 'all') {
+    clearSalesForm();
+    if(currentUser) { const el = document.getElementById('sales-staff'); if(el) el.value = currentUser.name; }
+    if(btn) btn.textContent = 'Save sales entry';
+    return;
+  }
+  const today = getToday();
+  const res = await sb.from('sales_entries').select('*').eq('outlet_id', currentOutlet.id).eq('date', today);
+  const entry = (res.data && res.data.length > 0) ? res.data[0] : null;
+  if(!entry) {
+    clearSalesForm();
+    if(currentUser) { const el = document.getElementById('sales-staff'); if(el) el.value = currentUser.name; }
+    if(btn) btn.textContent = 'Save sales entry';
+    return;
+  }
+  // Existing entry for today -> edit mode
+  fillSalesForm(entry);
+  calcVar();
+  if(canEditSales(entry)) {
+    setSalesFormLocked(false);
+    if(btn) btn.textContent = 'Update sales entry';
+    if(banner) {
+      banner.style.background = '#e8f0e9';
+      banner.style.color = 'var(--matcha)';
+      banner.innerHTML = '<i class="ti ti-pencil" style="font-size:13px"></i> Editing today\u2019s entry' + (entry.staff_name ? ' (logged by ' + entry.staff_name + ')' : '') + '. Make changes and tap Update.';
+      banner.style.display = 'block';
+    }
+  } else {
+    setSalesFormLocked(true);
+    if(btn) btn.textContent = 'Update sales entry';
+    if(banner) {
+      banner.style.background = 'var(--amber-light)';
+      banner.style.color = 'var(--amber)';
+      banner.innerHTML = '<i class="ti ti-lock" style="font-size:13px"></i> Logged by ' + (entry.staff_name || 'someone else') + '. Only they, an admin, or the owner can edit this.';
+      banner.style.display = 'block';
+    }
+  }
 }
 
 async function saveSales() {
@@ -2692,10 +2817,59 @@ async function deleteProduct() {
 
 
 function setInsightTab(el, period) {
-  document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('on'); });
+  el.parentElement.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('on'); });
   el.classList.add('on');
   insightPeriod = period;
   loadInsights();
+}
+
+function setRankTab(el, period) {
+  el.parentElement.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('on'); });
+  el.classList.add('on');
+  rankPeriod = period;
+  loadRankings();
+}
+
+async function loadRankings() {
+  const c = document.getElementById('rankings-content');
+  c.innerHTML = '<div class="loading">Loading rankings...</div>';
+  if(!currentOutlet) { c.innerHTML = '<div class="empty-state">Select an outlet first.</div>'; return; }
+  const range = rankPeriod === 'all' ? {from:'2000-01-01', to:getToday()} : getDateRange(rankPeriod);
+  let q = sb.from('wastage').select('*').gte('date', range.from).lte('date', range.to);
+  if(currentOutlet.id !== 'all') q = q.eq('outlet_id', currentOutlet.id);
+  const res = await q;
+  const wd = res.data || [];
+  const periodLbl = rankPeriod === 'all' ? 'all time' : (rankPeriod === 'week' ? 'this week' : 'this month');
+  if(wd.length === 0) { c.innerHTML = '<div class="empty-state">No wastage logged ' + periodLbl + '.</div>'; return; }
+  const byPerson = {};
+  wd.forEach(function(w){
+    const who = (w.wasted_by && w.wasted_by.trim()) ? w.wasted_by.trim() : 'Unspecified';
+    if(!byPerson[who]) byPerson[who] = {cost:0, count:0};
+    byPerson[who].cost += (+w.estimated_cost||0);
+    byPerson[who].count += 1;
+  });
+  const ranked = Object.entries(byPerson).sort(function(a,b){ return b[1].cost - a[1].cost; });
+  const maxCost = ranked[0][1].cost || 1;
+  const totalCost = ranked.reduce(function(a,r){ return a + r[1].cost; }, 0);
+  let html = '<div class="card"><div class="card-head" style="color:var(--rose);"><i class="ti ti-trophy" style="font-size:14px"></i> Wastage leaderboard</div>';
+  html += '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:0.9rem;">Ranked by total estimated wastage cost \u00b7 ' + periodLbl + '</div>';
+  ranked.forEach(function(entry, i){
+    const name = entry[0]; const cost = entry[1].cost; const count = entry[1].count;
+    const pct = Math.round((cost / maxCost) * 100);
+    const rankColor = i === 0 ? 'var(--rose)' : (i === 1 ? 'var(--amber)' : 'var(--ink-soft)');
+    html += '<div style="margin-bottom:0.9rem;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">' +
+        '<span style="font-size:13px;font-weight:500;color:var(--ink);"><span style="display:inline-block;width:22px;color:' + rankColor + ';font-weight:600;">' + (i+1) + '</span>' + name + '</span>' +
+        '<span style="font-size:13px;font-weight:500;color:var(--rose);">RM ' + cost.toFixed(2) + '</span>' +
+      '</div>' +
+      '<div class="bar-bg" style="margin-left:22px;"><div class="bar-fill" style="width:' + pct + '%;background:var(--rose);"></div></div>' +
+      '<div style="font-size:11px;color:var(--ink-soft);margin-left:22px;margin-top:2px;">' + count + ' incident' + (count !== 1 ? 's' : '') + '</div>' +
+    '</div>';
+  });
+  html += '</div>';
+  html += '<div class="card"><div class="insight-metric"><span class="insight-label">Total wastage</span><span class="insight-val" style="color:var(--rose);">RM ' + totalCost.toFixed(2) + '</span></div>' +
+    '<div class="insight-metric"><span class="insight-label">People involved</span><span class="insight-val">' + ranked.length + '</span></div></div>';
+  c.innerHTML = html;
 }
 
 function getDateRange(period) {
