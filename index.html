@@ -1689,9 +1689,19 @@ async function loadSalesHistory() {
     histEl.innerHTML = '<div class="empty-state">No sales entries yet.</div>';
     histCount.textContent = ''; return;
   }
+  // Fetch expenses in window so variance matches saveSales (expenses don't count as shortage)
+  let eq = sb.from('expenses').select('outlet_id,date,amount').gte('date', from30).lte('date', today);
+  if(currentOutlet.id !== 'all') eq = eq.eq('outlet_id', currentOutlet.id);
+  const expRes = await eq;
+  const expMap = {};
+  (expRes.data || []).forEach(function(e){
+    const k = e.outlet_id + '|' + e.date;
+    expMap[k] = (expMap[k] || 0) + parseFloat(e.amount);
+  });
   histEl.innerHTML = hist.map(function(s){
     const total = (+s.cash)+(+s.card)+(+s.qr||0)+(+s.grabfood||0)+(+s.foodpanda||0)+(+s.shopeefood||0)+(+s.boost||0)+(+s.tng||0)+(+s.others||0);
-    const variance = total - (+s.pos_total);
+    const expForRow = expMap[s.outlet_id + '|' + s.date] || 0;
+    const variance = (total + expForRow) - (+s.pos_total);
     const isToday = s.date === today;
     const label = isToday ? 'Today' : new Date(s.date+'T00:00:00').toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short'});
     const varColor = Math.abs(variance) < 0.01 ? 'var(--matcha)' : variance < 0 ? 'var(--vermillion)' : 'var(--matcha)';
@@ -2042,34 +2052,6 @@ function renderMarginBar(pct, containerId) {
     '<span style="font-size:13px;font-weight:500;color:' + color + ';">' + pct.toFixed(1) + '% · ' + label + '</span></div>' +
     '<div style="height:8px;background:var(--cream-dark);border-radius:4px;overflow:hidden;">' +
     '<div style="height:100%;width:' + barW + '%;background:' + color + ';border-radius:4px;transition:width 0.4s ease;"></div></div>';
-}
-
-function calcProductMargin() {
-  const cost = prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
-  const price = parseFloat(document.getElementById('prod-price').value) || 0;
-  const el = document.getElementById('prod-margin-preview');
-  if(!el) return;
-  if(cost === 0 && price === 0) { el.style.display='none'; return; }
-  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
-  const profit = price - cost;
-  renderMarginBar(margin, 'prod-margin-preview');
-  el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
-    '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
-    '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
-}
-
-function calcEditProductMargin() {
-  const cost = editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
-  const price = parseFloat(document.getElementById('edit-prod-price').value) || 0;
-  const el = document.getElementById('edit-prod-margin-preview');
-  if(!el) return;
-  if(cost === 0 && price === 0) { el.style.display='none'; return; }
-  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
-  const profit = price - cost;
-  renderMarginBar(margin, 'edit-prod-margin-preview');
-  el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
-    '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
-    '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
 }
 
 // INGREDIENTS
