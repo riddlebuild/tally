@@ -215,7 +215,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 <div class="screen" id="s-login">
   <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.4rem;">
     <div style="text-align:center;margin-bottom:1.25rem;">
-      <svg width="40" height="40" viewBox="0 0 96 96" fill="none" style="margin-bottom:8px;cursor:pointer;" onclick="logoTap()">
+      <svg width="40" height="40" viewBox="0 0 96 96" fill="none" id="login-logo" style="margin-bottom:8px;cursor:pointer;touch-action:manipulation;">
         <rect width="96" height="96" rx="22" fill="#e8f0e9"/>
         <line x1="33" y1="22" x2="33" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
         <line x1="43" y1="22" x2="43" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
@@ -1623,7 +1623,7 @@ function logoTap() {
   _logoTaps++;
   clearTimeout(_logoTimer);
   if(_logoTaps >= 2) { _logoTaps = 0; openSecretDoor(); return; }
-  _logoTimer = setTimeout(function(){ _logoTaps = 0; }, 450);
+  _logoTimer = setTimeout(function(){ _logoTaps = 0; }, 550);
 }
 let viewerPin = '';
 function openSecretDoor() {
@@ -3839,6 +3839,8 @@ async function factoryReset() {
 
 async function init() {
   initOnboarding();
+  const _logo = document.getElementById('login-logo');
+  if(_logo) _logo.addEventListener('pointerup', logoTap);
   // Owner session (real auth) restore — try saved token, refresh if expired
   if(localStorage.getItem('tally_login_kind') === 'owner') {
     authToken = localStorage.getItem('tally_access_token');
