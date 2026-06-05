@@ -1783,6 +1783,10 @@ function initHome() {
   document.getElementById('current-outlet-name').textContent = currentOutlet ? currentOutlet.name : 'Select outlet';
 }
 
+function channelTotal(s) {
+  return (+s.cash||0)+(+s.card||0)+(+s.qr||0)+(+s.grabfood||0)+(+s.foodpanda||0)+(+s.shopeefood||0)+(+s.boost||0)+(+s.tng||0)+(+s.others||0);
+}
+
 async function loadHomeStats() {
   if(!currentOutlet) return;
 
@@ -1826,7 +1830,7 @@ async function loadHomeStats() {
     wastData = results[2].data || [];
   }
   if(salesData.length > 0) {
-    const total = salesData.reduce(function(a,s){ return a+(+s.cash)+(+s.card)+(+s.grabfood)+(+s.foodpanda); }, 0);
+    const total = salesData.reduce(function(a,s){ return a + channelTotal(s); }, 0);
     document.getElementById('stat-sales').textContent = 'RM ' + total.toFixed(2);
     document.getElementById('stat-sales-sub').className = 'badge badge-green';
     document.getElementById('stat-sales-sub').textContent = currentOutlet.id === 'all' ? salesData.length + ' outlet' + (salesData.length !== 1 ? 's' : '') : 'Logged';
@@ -2725,11 +2729,16 @@ async function loadInsights() {
   const sd = results[0].data || [];
   const ed = results[1].data || [];
   const wd = results[2].data || [];
-  const totalSales = sd.reduce(function(a,b){ return a+(+b.cash)+(+b.card)+(+b.grabfood)+(+b.foodpanda); }, 0);
-  const totalCash = sd.reduce(function(a,b){ return a+(+b.cash); }, 0);
-  const totalCard = sd.reduce(function(a,b){ return a+(+b.card); }, 0);
-  const totalGrab = sd.reduce(function(a,b){ return a+(+b.grabfood); }, 0);
-  const totalPanda = sd.reduce(function(a,b){ return a+(+b.foodpanda); }, 0);
+  const totalSales = sd.reduce(function(a,b){ return a + channelTotal(b); }, 0);
+  const totalCash = sd.reduce(function(a,b){ return a+(+b.cash||0); }, 0);
+  const totalCard = sd.reduce(function(a,b){ return a+(+b.card||0); }, 0);
+  const totalQR = sd.reduce(function(a,b){ return a+(+b.qr||0); }, 0);
+  const totalGrab = sd.reduce(function(a,b){ return a+(+b.grabfood||0); }, 0);
+  const totalPanda = sd.reduce(function(a,b){ return a+(+b.foodpanda||0); }, 0);
+  const totalShopee = sd.reduce(function(a,b){ return a+(+b.shopeefood||0); }, 0);
+  const totalBoost = sd.reduce(function(a,b){ return a+(+b.boost||0); }, 0);
+  const totalTng = sd.reduce(function(a,b){ return a+(+b.tng||0); }, 0);
+  const totalOthers = sd.reduce(function(a,b){ return a+(+b.others||0); }, 0);
   const totalExp = ed.reduce(function(a,b){ return a+(+b.amount); }, 0);
   const totalWast = wd.reduce(function(a,b){ return a+(+b.estimated_cost); }, 0);
   const shortages = sd.filter(function(s){ return (+s.variance) < -0.01; }).length;
@@ -2738,7 +2747,7 @@ async function loadInsights() {
   const topExp = Object.entries(expCats).sort(function(a,b){ return b[1]-a[1]; }).slice(0,3);
   const wastReasons = {};
   wd.forEach(function(w){ wastReasons[w.reason] = (wastReasons[w.reason]||0)+(+w.estimated_cost); });
-  const barMax = Math.max(totalCash, totalCard, totalGrab, totalPanda, 1);
+  const barMax = Math.max(totalCash, totalCard, totalQR, totalGrab, totalPanda, totalShopee, totalBoost, totalTng, totalOthers, 1);
   const tagClass = {'Burnt / rejected':'w-burnt','Spilled':'w-spill','Staff consumption':'w-staff','Expired / spoiled':'w-spoil','Other':'w-other'};
   let html = '<div class="card"><div class="card-head"><i class="ti ti-chart-bar" style="font-size:14px"></i> Sales overview</div>';
   html += '<div class="insight-metric"><span class="insight-label">Total sales</span><span class="insight-val">RM ' + totalSales.toFixed(2) + '</span></div>';
@@ -2750,10 +2759,12 @@ async function loadInsights() {
     html += '<div class="empty-state">No sales data yet.</div>';
   } else {
     const bw = function(v){ return Math.round((v/barMax)*100); };
-    html += '<div class="bar-wrap"><div class="bar-lbl"><span>Cash</span><span>RM ' + totalCash.toFixed(2) + '</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + bw(totalCash) + '%;background:var(--matcha);"></div></div></div>';
-    html += '<div class="bar-wrap"><div class="bar-lbl"><span>Card</span><span>RM ' + totalCard.toFixed(2) + '</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + bw(totalCard) + '%;background:var(--matcha-mid);"></div></div></div>';
-    html += '<div class="bar-wrap"><div class="bar-lbl"><span>GrabFood</span><span>RM ' + totalGrab.toFixed(2) + '</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + bw(totalGrab) + '%;background:var(--wood);"></div></div></div>';
-    html += '<div class="bar-wrap"><div class="bar-lbl"><span>FoodPanda</span><span>RM ' + totalPanda.toFixed(2) + '</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + bw(totalPanda) + '%;background:var(--border);"></div></div></div>';
+    const chans = [['Cash',totalCash,'var(--matcha)'],['Card',totalCard,'var(--matcha-mid)'],['QR',totalQR,'#2d6bc4'],['GrabFood',totalGrab,'var(--wood)'],['FoodPanda',totalPanda,'var(--rose)'],['Shopeefood',totalShopee,'var(--amber)'],['Boost',totalBoost,'#6b4fa0'],['TNG',totalTng,'var(--ink-soft)'],['Others',totalOthers,'var(--border)']];
+    chans.forEach(function(ch){
+      if(ch[1] > 0) {
+        html += '<div class="bar-wrap"><div class="bar-lbl"><span>' + ch[0] + '</span><span>RM ' + ch[1].toFixed(2) + '</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + bw(ch[1]) + '%;background:' + ch[2] + ';"></div></div></div>';
+      }
+    });
   }
   html += '</div>';
   if(topExp.length > 0) {
