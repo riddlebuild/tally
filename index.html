@@ -209,6 +209,9 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <div class="card-head"><i class="ti ti-user" style="font-size:14px"></i> Who are you?</div>
           <div id="staff-name-list"><div class="loading">Loading...</div></div>
         </div>
+        <div style="text-align:center;margin-top:1rem;">
+          <span onclick="showOwnerLogin()" style="font-size:12px;color:var(--matcha);cursor:pointer;border-bottom:1px solid var(--matcha);padding-bottom:1px;">Owner login</span>
+        </div>
       </div>
       <!-- Step 2: PIN entry -->
       <div id="login-step-2" style="display:none;">
@@ -245,6 +248,22 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           </div>
           <button class="submit-btn" id="login-btn" onclick="doLogin()">Sign in</button>
           <div id="login-error" style="color:var(--vermillion);font-size:12px;text-align:center;margin-top:0.75rem;display:none;">Incorrect PIN. Please try again.</div>
+        </div>
+      </div>
+      <!-- Owner email/password login -->
+      <div id="login-step-owner" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;cursor:pointer;" onclick="showStaffLogin()">
+          <i class="ti ti-arrow-left" style="font-size:14px;color:var(--ink-soft)"></i>
+          <span style="font-size:13px;color:var(--ink-soft);">Back to staff login</span>
+        </div>
+        <div class="card">
+          <div class="card-head"><i class="ti ti-lock" style="font-size:14px"></i> Owner sign in</div>
+          <label class="form-lbl">Email</label>
+          <input class="inp" id="owner-email" type="email" autocomplete="username" placeholder="you@business.com"/>
+          <label class="form-lbl" style="margin-top:0.75rem;">Password</label>
+          <input class="inp" id="owner-password" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doOwnerLogin()"/>
+          <button class="submit-btn" id="owner-login-btn" onclick="doOwnerLogin()" style="margin-top:1rem;">Sign in</button>
+          <div id="owner-login-error" style="color:var(--vermillion);font-size:12px;text-align:center;margin-top:0.75rem;display:none;"></div>
         </div>
       </div>
     </div>
@@ -1108,13 +1127,17 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 const SUPABASE_URL = 'https://gvilerrdqzwsdprobacc.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_2iBCyH3Q2lcQLE4Qj1C1Zg_4SJjlOxq';
 
+// Current Supabase auth access token (owner email/password sessions).
+// When null, requests fall back to the publishable key (current behaviour).
+let authToken = null;
+
 // Lightweight Supabase REST client - no library needed
 const sb = {
   from: function(table) {
     const base = SUPABASE_URL + '/rest/v1/' + table;
     const h = {
       'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY),
       'Content-Type': 'application/json'
     };
     const q = { filters: [], cols: '*', orderBy: null, orderAsc: true, method: 'GET', body: null, returnData: false };
@@ -1194,7 +1217,77 @@ const sb = {
   }
 };
 
+// Supabase Auth (email/password) — owner sessions only.
+// Talks to /auth/v1/* directly. apikey stays the publishable key;
+// Authorization carries the user's JWT once signed in.
+const auth = {
+  async signIn(email, password) {
+    try {
+      const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: password })
+      });
+      const data = await res.json();
+      if(!res.ok) return { data: null, error: { message: data.error_description || data.msg || data.error || 'Login failed' } };
+      auth._store(data);
+      return { data: data, error: null };
+    } catch(e) { return { data: null, error: { message: e.message } }; }
+  },
+  async refresh() {
+    const rt = localStorage.getItem('tally_refresh_token');
+    if(!rt) return { data: null, error: { message: 'No refresh token' } };
+    try {
+      const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: rt })
+      });
+      const data = await res.json();
+      if(!res.ok) return { data: null, error: { message: data.error_description || 'Refresh failed' } };
+      auth._store(data);
+      return { data: data, error: null };
+    } catch(e) { return { data: null, error: { message: e.message } }; }
+  },
+  async getUser() {
+    const t = authToken || localStorage.getItem('tally_access_token');
+    if(!t) return { data: null, error: { message: 'No token' } };
+    try {
+      const res = await fetch(SUPABASE_URL + '/auth/v1/user', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + t }
+      });
+      const data = await res.json();
+      if(!res.ok) return { data: null, error: { message: data.msg || 'Invalid session' } };
+      return { data: data, error: null };
+    } catch(e) { return { data: null, error: { message: e.message } }; }
+  },
+  _store(data) {
+    if(data.access_token) { authToken = data.access_token; localStorage.setItem('tally_access_token', data.access_token); }
+    if(data.refresh_token) localStorage.setItem('tally_refresh_token', data.refresh_token);
+    if(data.expires_at) localStorage.setItem('tally_token_expiry', String(data.expires_at));
+    if(data.user) {
+      localStorage.setItem('tally_auth_user_id', data.user.id);
+      localStorage.setItem('tally_auth_email', data.user.email || '');
+    }
+  },
+  signOut() {
+    const t = authToken || localStorage.getItem('tally_access_token');
+    authToken = null;
+    localStorage.removeItem('tally_access_token');
+    localStorage.removeItem('tally_refresh_token');
+    localStorage.removeItem('tally_token_expiry');
+    localStorage.removeItem('tally_auth_user_id');
+    localStorage.removeItem('tally_auth_email');
+    if(t) {
+      fetch(SUPABASE_URL + '/auth/v1/logout', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + t }
+      }).catch(function(){});
+    }
+  }
+};
 let currentOutlet = null;
+let currentTenantId = null;
 let outlets = [];
 let ownerName = '';
 let insightPeriod = 'today';
@@ -1354,6 +1447,63 @@ async function doLogin() {
   applyRoleUI();
 }
 
+function showOwnerLogin() {
+  document.getElementById('login-step-1').style.display = 'none';
+  document.getElementById('login-step-2').style.display = 'none';
+  document.getElementById('login-step-owner').style.display = 'block';
+  const e = document.getElementById('owner-login-error'); if(e) e.style.display = 'none';
+}
+
+function showStaffLogin() {
+  document.getElementById('login-step-owner').style.display = 'none';
+  document.getElementById('login-step-2').style.display = 'none';
+  document.getElementById('login-step-1').style.display = 'block';
+}
+
+async function doOwnerLogin() {
+  const email = (document.getElementById('owner-email').value || '').trim();
+  const pwd = document.getElementById('owner-password').value || '';
+  const btn = document.getElementById('owner-login-btn');
+  const errEl = document.getElementById('owner-login-error');
+  errEl.style.display = 'none';
+  if(!email || !pwd) { errEl.textContent = 'Enter your email and password.'; errEl.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  const res = await auth.signIn(email, pwd);
+  if(res.error || !res.data || !res.data.user) {
+    btn.disabled = false; btn.textContent = 'Sign in';
+    errEl.textContent = 'Incorrect email or password.'; errEl.style.display = 'block';
+    return;
+  }
+  // authToken is now set; tenant_users RLS returns only this user's own row
+  const memRes = await sb.from('tenant_users').select('tenant_id,role').eq('user_id', res.data.user.id);
+  if(memRes.error || !memRes.data || memRes.data.length === 0) {
+    auth.signOut();
+    btn.disabled = false; btn.textContent = 'Sign in';
+    errEl.textContent = 'This account is not linked to a business yet.'; errEl.style.display = 'block';
+    return;
+  }
+  currentTenantId = memRes.data[0].tenant_id;
+  const role = memRes.data[0].role || 'owner';
+  // Display name: prefer the owner staff row in this tenant, else email prefix
+  let displayName = email.split('@')[0];
+  const staffRes = await sb.from('staff').select('name').eq('tenant_id', currentTenantId).eq('role', 'owner');
+  if(staffRes.data && staffRes.data.length > 0) displayName = staffRes.data[0].name;
+  currentUser = { id: 'auth:' + res.data.user.id, name: displayName, role: role, outlet_id: null };
+  localStorage.setItem('tally_login_kind', 'owner');
+  localStorage.setItem('tally_user_name', displayName);
+  localStorage.setItem('tally_user_role', role);
+  document.getElementById('owner-password').value = '';
+  btn.disabled = false; btn.textContent = 'Sign in';
+  await loadOutlets();
+  ownerName = displayName;
+  const savedId = localStorage.getItem('tally_outlet_id');
+  if(savedId === 'all') currentOutlet = {id:'all', name:'All outlets'};
+  else currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+  initHome();
+  go('s-home');
+  applyRoleUI();
+}
+
 function applyRoleUI() {
   if(!currentUser) return;
   const role = currentUser.role;
@@ -1384,11 +1534,16 @@ function applyRoleUI() {
 
 function logout() {
   currentUser = null;
+  currentTenantId = null;
+  auth.signOut();
+  localStorage.removeItem('tally_login_kind');
   selectedStaffId = null;
   pinValue = '';
   localStorage.removeItem('tally_user_id');
   localStorage.removeItem('tally_user_name');
   localStorage.removeItem('tally_user_role');
+  const ownerStep = document.getElementById('login-step-owner');
+  if(ownerStep) ownerStep.style.display = 'none';
   document.getElementById('login-step-1').style.display = 'block';
   document.getElementById('login-step-2').style.display = 'none';
   loadStaffNameList();
@@ -2927,6 +3082,39 @@ async function factoryReset() {
 
 async function init() {
   initOnboarding();
+  // Owner session (real auth) restore — try saved token, refresh if expired
+  if(localStorage.getItem('tally_login_kind') === 'owner') {
+    authToken = localStorage.getItem('tally_access_token');
+    let u = await auth.getUser();
+    if(u.error) {
+      const r = await auth.refresh();
+      if(!r.error) u = await auth.getUser();
+    }
+    if(!u.error && u.data && u.data.id) {
+      const memRes = await sb.from('tenant_users').select('tenant_id,role').eq('user_id', u.data.id);
+      if(memRes.data && memRes.data.length > 0) {
+        currentTenantId = memRes.data[0].tenant_id;
+        const role = memRes.data[0].role || 'owner';
+        let displayName = (u.data.email || 'owner').split('@')[0];
+        const staffRes = await sb.from('staff').select('name').eq('tenant_id', currentTenantId).eq('role', 'owner');
+        if(staffRes.data && staffRes.data.length > 0) displayName = staffRes.data[0].name;
+        currentUser = { id: 'auth:' + u.data.id, name: displayName, role: role, outlet_id: null };
+        await loadOutlets();
+        if(outlets.length === 0) { go('s-onboard'); return; }
+        ownerName = displayName;
+        const savedId = localStorage.getItem('tally_outlet_id');
+        if(savedId === 'all') currentOutlet = {id:'all', name:'All outlets'};
+        else currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+        initHome();
+        go('s-home');
+        applyRoleUI();
+        return;
+      }
+    }
+    // Session invalid/expired — clear and fall through to normal login
+    auth.signOut();
+    localStorage.removeItem('tally_login_kind');
+  }
   // Check for saved login session
   const savedUserId = localStorage.getItem('tally_user_id');
   if(savedUserId) {
