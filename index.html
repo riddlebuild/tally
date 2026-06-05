@@ -388,6 +388,11 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="menu-text"><strong>Cash count</strong><span>Mid-shift cash tally</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
+      <div class="menu-item" onclick="go('s-reserve')">
+        <div class="menu-icon" style="background:#e8f0fb;color:#2d6bc4;"><i class="ti ti-coins"></i></div>
+        <div class="menu-text"><strong>Reserve float</strong><span>Backup cash estimate &amp; history</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
     </div>
     <div style="padding:0 1.1rem;">
       <div class="section-lbl">Reports</div>
@@ -437,6 +442,9 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
+      <div id="cash-float-reminder" style="display:none;margin-bottom:1rem;padding:0.7rem 0.9rem;background:#e8f0fb;border-radius:10px;font-size:13px;color:#2d6bc4;">
+        <i class="ti ti-wallet" style="font-size:14px;"></i> <strong>Today's cash float:</strong> <span id="cash-float-amt"></span>
+      </div>
       <div class="card">
         <div class="card-head"><i class="ti ti-device-mobile" style="font-size:14px"></i> POS system total</div>
         <div class="form-row" style="margin-bottom:0;">
@@ -651,12 +659,27 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 
           <div style="height:1px;background:var(--vermillion-light);margin:0.75rem 0;"></div>
 
-          <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.75rem;line-height:1.6;"><strong style="color:var(--vermillion);">Clear test data</strong> — deletes all sales, expenses and wastage entries. Your outlets and business setup stay intact. Use this before going live.</div>
+          <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.75rem;line-height:1.6;"><strong style="color:var(--vermillion);">Clear test data</strong> — deletes all sales, expenses, wastage, cash count and reserve float entries. Your outlets and business setup stay intact. Use this before going live.</div>
           <div class="form-row" style="margin-bottom:0.5rem;">
             <label class="form-lbl">Type <strong>CLEAR</strong> to confirm</label>
             <input class="inp" id="clear-data-confirm" type="text" placeholder="Type CLEAR here" style="border-color:var(--vermillion-light);"/>
           </div>
           <button onclick="clearTestData()" style="width:100%;padding:11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;margin-bottom:0.75rem;"><i class="ti ti-eraser" style="font-size:13px"></i> Clear test data</button>
+
+          <div style="height:1px;background:var(--vermillion-light);margin-bottom:0.75rem;"></div>
+
+          <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.5rem;line-height:1.6;"><strong style="color:var(--vermillion);">Clear one category</strong> — wipes just that type of entry if it gets messy, leaving the rest untouched. Outlets and setup stay intact.</div>
+          <div class="form-row" style="margin-bottom:0.5rem;">
+            <label class="form-lbl">Type <strong>CLEAR</strong> to unlock</label>
+            <input class="inp" id="cat-clear-confirm" type="text" placeholder="Type CLEAR here" oninput="toggleCategoryClear()" style="border-color:var(--vermillion-light);"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:0.75rem;">
+            <button class="cat-clear-btn" disabled onclick="clearCategory('sales_entries','sales')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;opacity:0.45;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear sales only</button>
+            <button class="cat-clear-btn" disabled onclick="clearCategory('expenses','expenses')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;opacity:0.45;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear expenses only</button>
+            <button class="cat-clear-btn" disabled onclick="clearCategory('wastage','wastage')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;opacity:0.45;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear wastage only</button>
+            <button class="cat-clear-btn" disabled onclick="clearCategory('cash_counts','cash counts')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;opacity:0.45;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear cash counts only</button>
+            <button class="cat-clear-btn" disabled onclick="clearCategory('reserve_float_log','reserve float')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;opacity:0.45;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear reserve float only</button>
+          </div>
 
           <div style="height:1px;background:var(--vermillion-light);margin-bottom:0.75rem;"></div>
 
@@ -771,6 +794,10 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <label class="form-lbl">Location <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
           <input class="inp" id="new-outlet-loc" type="text" placeholder="e.g. Kuching"/>
         </div>
+        <div class="form-row" style="margin-bottom:0;margin-top:0.75rem;">
+          <label class="form-lbl">Cash float — daily till (RM) <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
+          <input class="inp" id="new-outlet-float" type="number" inputmode="decimal" placeholder="e.g. 200"/>
+        </div>
       </div>
       <button class="submit-btn" id="add-outlet-btn" onclick="addNewOutlet()">Add outlet</button>
     </div>
@@ -792,9 +819,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <label class="form-lbl">Outlet name</label>
           <input class="inp" id="edit-outlet-name" type="text" placeholder="e.g. Koharu AEON"/>
         </div>
-        <div class="form-row" style="margin-bottom:0;">
+        <div class="form-row">
           <label class="form-lbl">Location <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
-          <input class="inp" id="edit-outlet-loc" type="text" placeholder="e.g. AEON Mall Kuching"/>
+          <input class="inp" id="edit-outlet-loc" type="text" placeholder=""/>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Cash float — daily till (RM) <span style="color:var(--ink-soft);font-weight:400;">(shown to staff at closing)</span></label>
+          <input class="inp" id="edit-outlet-float" type="number" inputmode="decimal" placeholder="e.g. 200"/>
         </div>
       </div>
       <div class="card">
@@ -847,6 +878,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           </div>
         </div>
         <div class="var-box" id="cc-var-box"><span id="cc-var-txt"></span></div>
+        <div id="cc-float-note" style="display:none;font-size:12px;color:#2d6bc4;margin-top:0.6rem;"><i class="ti ti-wallet" style="font-size:12px"></i> <span id="cc-float-txt"></span></div>
         <div class="form-row" style="margin-top:0.9rem;">
           <label class="form-lbl">Counted by</label>
           <input class="inp" id="cc-by" type="text" placeholder="Staff name"/>
@@ -864,6 +896,49 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
         <div class="accordion-body" id="cc-history-body">
           <div id="cc-history"><div class="empty-state">No cash counts yet.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESERVE FLOAT -->
+<div class="screen" id="s-reserve">
+  <div class="topbar" style="border-bottom-color:#e8f0fb;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Reserve float</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <div class="card-head" style="color:#2d6bc4;"><i class="ti ti-coins" style="font-size:14px"></i> Current reserve <span id="rf-outlet-name" style="font-weight:400;color:var(--ink-soft);font-size:12px;"></span></div>
+        <div id="rf-current" style="font-size:24px;font-weight:500;color:var(--ink);">—</div>
+        <div id="rf-current-meta" style="font-size:12px;color:var(--ink-soft);margin-top:2px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#2d6bc4;"><i class="ti ti-pencil" style="font-size:14px"></i> Log a reserve count</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:0.75rem;">Estimated total only — no need to count exact notes.</div>
+        <div class="form-row">
+          <label class="form-lbl">Estimated amount (RM)</label>
+          <input class="inp" id="rf-amount" type="number" inputmode="decimal" placeholder="e.g. 600"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Note <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
+          <input class="inp" id="rf-note" type="text" placeholder="e.g. topped up small notes"/>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Logged by</label>
+          <input class="inp" id="rf-by" type="text" placeholder="Your name"/>
+        </div>
+        <button class="submit-btn" id="rf-btn" onclick="saveReserveFloat()" style="background:#2d6bc4;">Save reserve count</button>
+      </div>
+      <div class="card">
+        <div class="card-head accordion-head" onclick="toggleAccordion(this,'rf-history-body')" style="color:#2d6bc4;">
+          <span><i class="ti ti-history" style="font-size:14px"></i> History <span class="badge badge-neutral" id="rf-hist-count" style="text-transform:none;letter-spacing:0;"></span></span>
+          <i class="ti ti-chevron-down acc-arrow"></i>
+        </div>
+        <div class="accordion-body" id="rf-history-body">
+          <div id="rf-history"><div class="empty-state">No reserve counts yet.</div></div>
         </div>
       </div>
     </div>
@@ -1304,7 +1379,7 @@ function go(id) {
   if(currentUser) {
     const role = currentUser.role;
     if(role === 'staff') {
-      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-add-product','s-edit-product'];
+      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-add-product','s-edit-product','s-reserve'];
       if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
     }
     if(role === 'admin') {
@@ -1326,13 +1401,14 @@ function go(id) {
   }
   if(id === 's-insights') loadInsights();
   if(id === 's-outlets') renderOutletsList();
+  if(id === 's-reserve') loadReserveFloat();
   if(id === 's-sales') {
-    loadSalesHistory(); loadSalesExpensesNote(); loadDynamicChannels();
+    loadSalesHistory(); loadSalesExpensesNote(); loadDynamicChannels(); showCashFloatReminder();
     if(currentUser) { const el = document.getElementById('sales-staff'); if(el && !el.value) el.value = currentUser.name; }
   }
   if(id === 's-add-staff') populateOutletSelects();
   if(id === 's-cashcount') {
-    loadCashCountHistory();
+    loadCashCountHistory(); showCashCountFloat();
     if(currentUser) { const el = document.getElementById('cc-by'); if(el && !el.value) el.value = currentUser.name; }
   }
   if(id === 's-ingredients') loadIngredients();
@@ -1344,7 +1420,7 @@ function go(id) {
 let selectedStaffId = null;
 
 async function loadStaffNameList() {
-  const result = await sb.from('staff').select('*').order('name');
+  const result = await sb.from('staff').select('id,name,role,outlet_id').order('name');
   const data = result.data || [];
   const list = document.getElementById('staff-name-list');
   if(!list) return;
@@ -1413,6 +1489,17 @@ function updatePinDisplay() {
   }
 }
 
+async function callStaffLogin(staffId, pin) {
+  const res = await fetch(SUPABASE_URL + '/functions/v1/staff-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+    body: JSON.stringify({ staff_id: staffId, pin: pin })
+  });
+  let data = {};
+  try { data = await res.json(); } catch(e) {}
+  return { status: res.status, data: data };
+}
+
 async function doLogin() {
   if(!selectedStaffId) { showToast('Please select your name!'); return; }
   if(pinValue.length < 6) { showToast('Please enter your 6 digit PIN!'); return; }
@@ -1420,23 +1507,32 @@ async function doLogin() {
   const errEl = document.getElementById('login-error');
   btn.disabled = true; btn.textContent = 'Signing in...';
   errEl.style.display = 'none';
-  const result = await sb.from('staff').select('*').eq('id', selectedStaffId).eq('pin', pinValue);
+  const res = await callStaffLogin(selectedStaffId, pinValue);
   btn.disabled = false; btn.textContent = 'Sign in';
-  if(result.error || !result.data || result.data.length === 0) {
+  if(res.status !== 200 || !res.data || !res.data.ok) {
+    errEl.textContent = (res.data && res.data.error) ? res.data.error : 'Incorrect PIN. Please try again.';
     errEl.style.display = 'block';
-    pinValue = ''; updatePinDisplay(); return;
+    pinValue = ''; updatePinDisplay();
+    return;
   }
-  currentUser = result.data[0];
-  localStorage.setItem('tally_user_id', currentUser.id);
-  localStorage.setItem('tally_user_name', currentUser.name);
-  localStorage.setItem('tally_user_role', currentUser.role);
+  const u = res.data.user;
+  authToken = res.data.access_token;
+  localStorage.setItem('tally_access_token', res.data.access_token);
+  localStorage.setItem('tally_refresh_token', res.data.refresh_token || '');
+  localStorage.setItem('tally_login_kind', 'staff');
+  localStorage.setItem('tally_user_name', u.name);
+  localStorage.setItem('tally_user_role', u.role);
+  localStorage.setItem('tally_user_outlet', u.outlet_id || '');
+  localStorage.setItem('tally_tenant_id', u.tenant_id || '');
+  currentUser = { id: u.staff_id, name: u.name, role: u.role, outlet_id: u.outlet_id };
+  currentTenantId = u.tenant_id || null;
   pinValue = ''; updatePinDisplay();
   errEl.style.display = 'none';
   selectedStaffId = null;
   await loadOutlets();
-  ownerName = currentUser.name;
-  if(currentUser.role === 'staff' && currentUser.outlet_id) {
-    currentOutlet = outlets.find(function(o){ return o.id === currentUser.outlet_id; }) || outlets[0];
+  ownerName = u.name;
+  if(u.role === 'staff' && u.outlet_id) {
+    currentOutlet = outlets.find(function(o){ return o.id === u.outlet_id; }) || outlets[0];
   } else {
     const savedId = localStorage.getItem('tally_outlet_id');
     if(savedId === 'all') currentOutlet = {id:'all',name:'All outlets'};
@@ -1521,6 +1617,10 @@ function applyRoleUI() {
   const settingsBtn = document.querySelector('[onclick="openSettings()"]');
   if(settingsBtn) settingsBtn.style.display = isStaff ? 'none' : '';
 
+  // Reserve float - hidden for staff
+  const reserveMenu = document.querySelector('[onclick="go(\'s-reserve\')"]');
+  if(reserveMenu) reserveMenu.style.display = isStaff ? 'none' : '';
+
   // Costing section - hidden for staff
   const ingredientsMenu = document.querySelector('[onclick="go(\'s-ingredients\')"]');
   const costingMenu = document.querySelector('[onclick="go(\'s-costing\')"]');
@@ -1542,6 +1642,8 @@ function logout() {
   localStorage.removeItem('tally_user_id');
   localStorage.removeItem('tally_user_name');
   localStorage.removeItem('tally_user_role');
+  localStorage.removeItem('tally_user_outlet');
+  localStorage.removeItem('tally_tenant_id');
   const ownerStep = document.getElementById('login-step-owner');
   if(ownerStep) ownerStep.style.display = 'none';
   document.getElementById('login-step-1').style.display = 'block';
@@ -1611,11 +1713,6 @@ function addOutletField() {
   fields.appendChild(nameWrap); fields.appendChild(locWrap);
   d.appendChild(header); d.appendChild(fields);
   c.appendChild(d);
-}
-
-function removeOutletField(n) {
-  const el = document.getElementById('outlet-field-' + n);
-  if(el) el.remove();
 }
 
 function initOnboarding() {
@@ -1754,7 +1851,7 @@ async function loadHomeStats() {
 
 async function loadOutlets() {
   const result = await sb.from('outlets').select('*').order('created_at');
-  if(result.data) outlets = result.data.map(function(o){ return {id:o.id,name:o.name,location:o.location,created_at:o.created_at}; });
+  if(result.data) outlets = result.data.map(function(o){ return {id:o.id,name:o.name,location:o.location,cash_float:o.cash_float,created_at:o.created_at}; });
 }
 
 function renderOutletsList() {
@@ -2091,21 +2188,32 @@ async function saveWastage() {
 function calcCashVariance() {
   const actual = parseFloat(document.getElementById('cc-actual').value) || 0;
   const system = parseFloat(document.getElementById('cc-system').value) || 0;
+  const float = (currentOutlet && currentOutlet.id !== 'all' && currentOutlet.cash_float) ? parseFloat(currentOutlet.cash_float) : 0;
   const box = document.getElementById('cc-var-box');
   const txt = document.getElementById('cc-var-txt');
   if(actual === 0 && system === 0) { box.style.display='none'; return; }
   box.style.display = 'block';
-  const diff = actual - system;
+  const diff = (actual - float) - system;
+  const floatNote = float > 0 ? ' (after RM ' + float.toFixed(2) + ' float)' : '';
   if(Math.abs(diff) < 0.01) {
     box.className = 'var-box var-ok';
-    txt.textContent = 'All good — cash matches system exactly.';
+    txt.textContent = 'All good — cash matches system exactly' + floatNote + '.';
   } else if(diff < 0) {
     box.className = 'var-box var-short';
-    txt.textContent = 'Short by RM ' + Math.abs(diff).toFixed(2) + ' vs system.';
+    txt.textContent = 'Short by RM ' + Math.abs(diff).toFixed(2) + ' vs system' + floatNote + '.';
   } else {
     box.className = 'var-box var-ok';
-    txt.textContent = 'Over by RM ' + diff.toFixed(2) + ' vs system.';
+    txt.textContent = 'Over by RM ' + diff.toFixed(2) + ' vs system' + floatNote + '.';
   }
+}
+
+function showCashCountFloat() {
+  const note = document.getElementById('cc-float-note');
+  const txt = document.getElementById('cc-float-txt');
+  if(!note || !txt) return;
+  const float = (currentOutlet && currentOutlet.id !== 'all' && currentOutlet.cash_float) ? parseFloat(currentOutlet.cash_float) : 0;
+  if(float > 0) { txt.textContent = 'Float RM ' + float.toFixed(2) + ' is deducted automatically.'; note.style.display = 'block'; }
+  else { note.style.display = 'none'; }
 }
 
 async function saveCashCount() {
@@ -2115,7 +2223,8 @@ async function saveCashCount() {
   const by = document.getElementById('cc-by').value.trim();
   const notes = document.getElementById('cc-notes').value.trim();
   if(!by) { showToast('Please enter who counted!'); return; }
-  const variance = actual - system;
+  const float = (currentOutlet && currentOutlet.cash_float) ? parseFloat(currentOutlet.cash_float) : 0;
+  const variance = (actual - float) - system;
   const now = new Date();
   const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':00';
   const btn = document.getElementById('cc-btn');
@@ -2738,6 +2847,9 @@ function openSettings() {
   if(isOwner) { loadStaffList(); populateOutletSelects(); }
   const dangerZone = document.querySelector('#s-settings [style*="vermillion-light"]');
   if(dangerZone) dangerZone.style.display = isOwner ? '' : 'none';
+  const catConfirm = document.getElementById('cat-clear-confirm');
+  if(catConfirm) catConfirm.value = '';
+  toggleCategoryClear();
   go('s-settings');
 }
 
@@ -2758,6 +2870,7 @@ function openEditOutlet(id) {
   document.getElementById('edit-outlet-id').value = outlet.id;
   document.getElementById('edit-outlet-name').value = outlet.name;
   document.getElementById('edit-outlet-loc').value = outlet.location || '';
+  document.getElementById('edit-outlet-float').value = (outlet.cash_float != null && outlet.cash_float !== 0) ? outlet.cash_float : '';
   go('s-edit-outlet');
   renderOutletChannelsList(id);
 }
@@ -2766,16 +2879,17 @@ async function saveEditOutlet() {
   const id = document.getElementById('edit-outlet-id').value;
   const name = document.getElementById('edit-outlet-name').value.trim();
   const loc = document.getElementById('edit-outlet-loc').value.trim();
+  const floatVal = parseFloat(document.getElementById('edit-outlet-float').value) || 0;
   if(!name) { showToast('Please enter an outlet name!'); return; }
   const btn = document.getElementById('edit-outlet-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
-  const result = await sb.from('outlets').update({name:name, location:loc}).eq('id', id);
+  const result = await sb.from('outlets').update({name:name, location:loc, cash_float:floatVal}).eq('id', id);
   btn.disabled = false; btn.textContent = 'Save outlet';
   if(result.error) { showToast('Error: ' + result.error.message); return; }
   const idx = outlets.findIndex(function(o){ return o.id === id; });
-  if(idx > -1) { outlets[idx].name = name; outlets[idx].location = loc; }
+  if(idx > -1) { outlets[idx].name = name; outlets[idx].location = loc; outlets[idx].cash_float = floatVal; }
   if(currentOutlet && currentOutlet.id === id) {
-    currentOutlet.name = name; currentOutlet.location = loc;
+    currentOutlet.name = name; currentOutlet.location = loc; currentOutlet.cash_float = floatVal;
     document.getElementById('current-outlet-name').textContent = name;
   }
   showToast('Outlet updated!');
@@ -2827,18 +2941,87 @@ function saveSettings() {
 async function addNewOutlet() {
   const name = document.getElementById('new-outlet-name').value.trim();
   const loc = document.getElementById('new-outlet-loc').value.trim();
+  const floatVal = parseFloat(document.getElementById('new-outlet-float').value) || 0;
   if(!name) { showToast('Please enter an outlet name!'); return; }
   const btn = document.getElementById('add-outlet-btn');
   btn.disabled = true; btn.textContent = 'Adding...';
-  const result = await sb.from('outlets').insert({name:name, location:loc}).select();
+  const result = await sb.from('outlets').insert({name:name, location:loc, cash_float:floatVal}).select();
   btn.disabled = false; btn.textContent = 'Add outlet';
   if(result.error) { showToast('Error: ' + result.error.message); return; }
-  const newOutlet = result.data[0]; outlets.push({id:newOutlet.id,name:newOutlet.name,location:newOutlet.location,created_at:newOutlet.created_at});
+  const newOutlet = result.data[0]; outlets.push({id:newOutlet.id,name:newOutlet.name,location:newOutlet.location,cash_float:newOutlet.cash_float,created_at:newOutlet.created_at});
   document.getElementById('new-outlet-name').value = '';
   document.getElementById('new-outlet-loc').value = '';
+  document.getElementById('new-outlet-float').value = '';
   showToast('Outlet added!');
   go('s-settings');
   renderSettingsOutlets();
+}
+
+function showCashFloatReminder() {
+  const el = document.getElementById('cash-float-reminder');
+  const amtEl = document.getElementById('cash-float-amt');
+  if(!el || !amtEl) return;
+  const o = (currentOutlet && currentOutlet.id !== 'all') ? outlets.find(function(x){ return x.id === currentOutlet.id; }) : null;
+  const f = (o && o.cash_float != null) ? parseFloat(o.cash_float) : 0;
+  if(o && f > 0) { amtEl.textContent = 'RM ' + f.toFixed(2); el.style.display = 'block'; }
+  else { el.style.display = 'none'; }
+}
+
+async function loadReserveFloat() {
+  if(currentUser) { const byEl = document.getElementById('rf-by'); if(byEl && !byEl.value) byEl.value = currentUser.name; }
+  const nameEl = document.getElementById('rf-outlet-name');
+  const curEl = document.getElementById('rf-current');
+  const metaEl = document.getElementById('rf-current-meta');
+  const histEl = document.getElementById('rf-history');
+  const histCount = document.getElementById('rf-hist-count');
+  const isAll = !currentOutlet || currentOutlet.id === 'all';
+  if(nameEl) nameEl.textContent = isAll ? '· all outlets' : '· ' + currentOutlet.name;
+  let q = sb.from('reserve_float_log').select('*').order('created_at', {ascending:false});
+  if(!isAll) q = q.eq('outlet_id', currentOutlet.id);
+  const res = await q;
+  const data = res.data || [];
+  if(data.length > 0) {
+    const latest = data[0];
+    curEl.textContent = 'est RM ' + parseFloat(latest.est_amount).toFixed(2);
+    const lo = outlets.find(function(x){ return x.id === latest.outlet_id; });
+    metaEl.textContent = (isAll && lo ? lo.name + ' · ' : '') + 'updated ' + formatDate(latest.created_at);
+  } else {
+    curEl.textContent = '—';
+    metaEl.textContent = 'No counts logged yet';
+  }
+  if(!histEl) return;
+  if(data.length === 0) { histEl.innerHTML = '<div class="empty-state">No reserve counts yet.</div>'; if(histCount) histCount.textContent = ''; return; }
+  if(histCount) histCount.textContent = data.length;
+  histEl.innerHTML = data.map(function(r){
+    const o = outlets.find(function(x){ return x.id === r.outlet_id; });
+    const dateLabel = new Date(r.created_at).toLocaleDateString('en-MY', {weekday:'short', day:'numeric', month:'short'});
+    return '<div style="display:flex;align-items:center;gap:8px;padding:0.65rem 0;border-bottom:1px solid var(--border);">' +
+      '<div style="flex:1;">' +
+      '<div style="font-size:12px;font-weight:500;color:var(--ink-mid);">' + dateLabel + (isAll && o ? ' · ' + o.name : '') + (r.logged_by ? ' · <span style="font-weight:400;color:var(--ink-soft);">' + r.logged_by + '</span>' : '') + '</div>' +
+      (r.note ? '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">' + r.note + '</div>' : '') +
+      '</div>' +
+      '<div style="font-size:13px;font-weight:500;color:#2d6bc4;">est RM ' + parseFloat(r.est_amount).toFixed(2) + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+async function saveReserveFloat() {
+  if(!currentOutlet || currentOutlet.id === 'all') { showToast('Select a specific outlet first!'); return; }
+  const amt = parseFloat(document.getElementById('rf-amount').value);
+  if(isNaN(amt) || amt < 0) { showToast('Enter a valid amount!'); return; }
+  const note = document.getElementById('rf-note').value.trim();
+  const by = document.getElementById('rf-by').value.trim();
+  const btn = document.getElementById('rf-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const row = { outlet_id: currentOutlet.id, est_amount: amt, note: note, logged_by: by };
+  if(currentTenantId) row.tenant_id = currentTenantId;
+  const res = await sb.from('reserve_float_log').insert(row).select();
+  btn.disabled = false; btn.textContent = 'Save reserve count';
+  if(res.error) { showToast('Error: ' + res.error.message); return; }
+  document.getElementById('rf-amount').value = '';
+  document.getElementById('rf-note').value = '';
+  showToast('Reserve count saved!');
+  loadReserveFloat();
 }
 
 // STAFF MANAGEMENT
@@ -3019,23 +3202,57 @@ function resetApp() {
   }
 }
 
+async function deleteAllFrom(table) {
+  let url = SUPABASE_URL + '/rest/v1/' + table + '?id=neq.00000000-0000-0000-0000-000000000000';
+  if(currentTenantId) url += '&tenant_id=eq.' + currentTenantId;
+  return fetch(url, {
+    method: 'DELETE',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY),
+      'Prefer': 'return=minimal'
+    }
+  });
+}
+
+function toggleCategoryClear() {
+  const el = document.getElementById('cat-clear-confirm');
+  const enabled = !!el && el.value.trim() === 'CLEAR';
+  document.querySelectorAll('.cat-clear-btn').forEach(function(b){
+    b.disabled = !enabled;
+    b.style.opacity = enabled ? '1' : '0.45';
+    b.style.cursor = enabled ? 'pointer' : 'not-allowed';
+  });
+}
+
+async function clearCategory(table, label) {
+  if(!confirm('Delete ALL ' + label + ' entries? Outlets and setup stay intact. This cannot be undone.')) return;
+  const btn = document.querySelector('[onclick="clearCategory(\'' + table + '\',\'' + label + '\')"]');
+  const orig = btn ? btn.innerHTML : '';
+  if(btn) { btn.disabled = true; btn.textContent = 'Clearing...'; }
+  try {
+    await deleteAllFrom(table);
+    if(btn) { btn.disabled = false; btn.innerHTML = orig; }
+    const cc = document.getElementById('cat-clear-confirm'); if(cc) cc.value = '';
+    toggleCategoryClear();
+    showToast(label.charAt(0).toUpperCase() + label.slice(1) + ' cleared ✓');
+    loadHomeStats();
+  } catch(e) {
+    if(btn) { btn.disabled = false; btn.innerHTML = orig; }
+    showToast('Error: ' + e.message);
+  }
+}
+
 async function clearTestData() {
   const confirm1 = document.getElementById('clear-data-confirm').value.trim();
   if(confirm1 !== 'CLEAR') { showToast('Please type CLEAR to confirm!'); return; }
-  if(!confirm('This will delete all sales, expenses and wastage data. Your outlets stay intact. Continue?')) return;
+  if(!confirm('This will delete all sales, expenses, wastage, cash count and reserve float data. Your outlets stay intact. Continue?')) return;
   const btn = document.querySelector('[onclick="clearTestData()"]');
   btn.disabled = true; btn.textContent = 'Clearing...';
   try {
-    const tables = ['sales_entries', 'expenses', 'wastage'];
+    const tables = ['sales_entries', 'expenses', 'wastage', 'cash_counts', 'reserve_float_log'];
     for(let i = 0; i < tables.length; i++) {
-      await fetch(SUPABASE_URL + '/rest/v1/' + tables[i] + '?id=neq.00000000-0000-0000-0000-000000000000', {
-        method: 'DELETE',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_KEY,
-          'Prefer': 'return=minimal'
-        }
-      });
+      await deleteAllFrom(tables[i]);
     }
     document.getElementById('clear-data-confirm').value = '';
     btn.disabled = false;
@@ -3058,17 +3275,10 @@ async function factoryReset() {
   const btn = document.querySelector('[onclick="factoryReset()"]');
   btn.disabled = true; btn.textContent = 'Deleting everything...';
   try {
-    // Delete all data from all tables using direct fetch
-    const tables = ['sales_entries', 'expenses', 'wastage', 'outlets'];
+    // Delete all data from all tables (tenant-scoped when signed in as owner)
+    const tables = ['sales_entries', 'expenses', 'wastage', 'cash_counts', 'reserve_float_log', 'outlets'];
     for(let i = 0; i < tables.length; i++) {
-      await fetch(SUPABASE_URL + '/rest/v1/' + tables[i] + '?id=neq.00000000-0000-0000-0000-000000000000', {
-        method: 'DELETE',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_KEY,
-          'Prefer': 'return=minimal'
-        }
-      });
+      await deleteAllFrom(tables[i]);
     }
     localStorage.clear();
     showToast('All data deleted. Restarting...');
@@ -3112,6 +3322,40 @@ async function init() {
       }
     }
     // Session invalid/expired — clear and fall through to normal login
+    auth.signOut();
+    localStorage.removeItem('tally_login_kind');
+  }
+  // Staff session (real auth) restore
+  if(localStorage.getItem('tally_login_kind') === 'staff') {
+    authToken = localStorage.getItem('tally_access_token');
+    let u = await auth.getUser();
+    if(u.error) {
+      const r = await auth.refresh();
+      if(!r.error) u = await auth.getUser();
+    }
+    if(!u.error && u.data && u.data.id) {
+      currentTenantId = localStorage.getItem('tally_tenant_id') || null;
+      const meta = u.data.user_metadata || {};
+      const name = localStorage.getItem('tally_user_name') || meta.name || 'Staff';
+      const role = localStorage.getItem('tally_user_role') || meta.role || 'staff';
+      const outlet = localStorage.getItem('tally_user_outlet') || '';
+      const staffId = meta.staff_id || '';
+      currentUser = { id: staffId, name: name, role: role, outlet_id: outlet || null };
+      await loadOutlets();
+      if(outlets.length === 0) { go('s-login'); return; }
+      ownerName = name;
+      if(role === 'staff' && outlet) {
+        currentOutlet = outlets.find(function(o){ return o.id === outlet; }) || outlets[0];
+      } else {
+        const savedId = localStorage.getItem('tally_outlet_id');
+        if(savedId === 'all') currentOutlet = {id:'all', name:'All outlets'};
+        else currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+      }
+      initHome();
+      go('s-home');
+      applyRoleUI();
+      return;
+    }
     auth.signOut();
     localStorage.removeItem('tally_login_kind');
   }
