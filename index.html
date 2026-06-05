@@ -127,6 +127,11 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--white);padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;}
 .loading{text-align:center;padding:1.5rem;color:var(--ink-soft);font-size:13px;}
+.accordion-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+.accordion-head .acc-arrow{transition:transform 0.25s ease;color:var(--ink-soft);font-size:13px;}
+.accordion-head.open .acc-arrow{transform:rotate(180deg);}
+.accordion-body{overflow:hidden;max-height:0;transition:max-height 0.3s ease;}
+.accordion-body.open{max-height:9999px;}
 .pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:0.6rem 0;}
 .pin-btn{
   padding:10px;font-size:16px;font-weight:500;font-family:'DM Sans',sans-serif;
@@ -204,6 +209,9 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <div class="card-head"><i class="ti ti-user" style="font-size:14px"></i> Who are you?</div>
           <div id="staff-name-list"><div class="loading">Loading...</div></div>
         </div>
+        <div style="text-align:center;margin-top:1rem;">
+          <span onclick="showOwnerLogin()" style="font-size:12px;color:var(--matcha);cursor:pointer;border-bottom:1px solid var(--matcha);padding-bottom:1px;">Owner login</span>
+        </div>
       </div>
       <!-- Step 2: PIN entry -->
       <div id="login-step-2" style="display:none;">
@@ -240,6 +248,22 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           </div>
           <button class="submit-btn" id="login-btn" onclick="doLogin()">Sign in</button>
           <div id="login-error" style="color:var(--vermillion);font-size:12px;text-align:center;margin-top:0.75rem;display:none;">Incorrect PIN. Please try again.</div>
+        </div>
+      </div>
+      <!-- Owner email/password login -->
+      <div id="login-step-owner" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;cursor:pointer;" onclick="showStaffLogin()">
+          <i class="ti ti-arrow-left" style="font-size:14px;color:var(--ink-soft)"></i>
+          <span style="font-size:13px;color:var(--ink-soft);">Back to staff login</span>
+        </div>
+        <div class="card">
+          <div class="card-head"><i class="ti ti-lock" style="font-size:14px"></i> Owner sign in</div>
+          <label class="form-lbl">Email</label>
+          <input class="inp" id="owner-email" type="email" autocomplete="username" placeholder="you@business.com"/>
+          <label class="form-lbl" style="margin-top:0.75rem;">Password</label>
+          <input class="inp" id="owner-password" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doOwnerLogin()"/>
+          <button class="submit-btn" id="owner-login-btn" onclick="doOwnerLogin()" style="margin-top:1rem;">Sign in</button>
+          <div id="owner-login-error" style="color:var(--vermillion);font-size:12px;text-align:center;margin-top:0.75rem;display:none;"></div>
         </div>
       </div>
     </div>
@@ -424,9 +448,10 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="card-head"><i class="ti ti-cash" style="font-size:14px"></i> Sales by channel</div>
         <div class="ch-row"><span class="ch-lbl">Cash</span><input class="ch-inp" id="ch-cash" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
         <div class="ch-row"><span class="ch-lbl">Card</span><input class="ch-inp" id="ch-card" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
-        <div class="ch-row"><span class="ch-lbl">GrabFood</span><input class="ch-inp" id="ch-grab" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
-        <div class="ch-row"><span class="ch-lbl">FoodPanda</span><input class="ch-inp" id="ch-panda" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
+        <div class="ch-row"><span class="ch-lbl">QR</span><input class="ch-inp" id="ch-qr" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>
+        <div id="dynamic-channels"></div>
         <div class="var-box" id="var-box"><span id="var-txt"></span></div>
+        <div id="sales-exp-note" style="display:none;margin-top:0.5rem;padding:0.6rem 0.75rem;background:var(--amber-light);border-radius:8px;font-size:12px;color:var(--amber);"></div>
       </div>
       <div class="card">
         <div class="card-head"><i class="ti ti-user" style="font-size:14px"></i> Closing staff</div>
@@ -441,8 +466,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       </div>
       <button class="submit-btn" id="sales-btn" onclick="saveSales()">Save sales entry</button>
       <div class="card" style="margin-top:1rem;">
-        <div class="card-head"><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="sales-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
-        <div id="sales-history"><div class="empty-state">Loading history...</div></div>
+        <div class="card-head accordion-head" onclick="toggleAccordion(this,'sales-history-body')">
+          <span><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="sales-hist-count" style="text-transform:none;letter-spacing:0;"></span></span>
+          <i class="ti ti-chevron-down acc-arrow"></i>
+        </div>
+        <div class="accordion-body" id="sales-history-body">
+          <div id="sales-history"><div class="empty-state">Loading history...</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -493,8 +523,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="exp-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
-        <div id="exp-history"><div class="empty-state">Loading history...</div></div>
+        <div class="card-head accordion-head" onclick="toggleAccordion(this,'exp-history-body')">
+          <span><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="exp-hist-count" style="text-transform:none;letter-spacing:0;"></span></span>
+          <i class="ti ti-chevron-down acc-arrow"></i>
+        </div>
+        <div class="accordion-body" id="exp-history-body">
+          <div id="exp-history"><div class="empty-state">Loading history...</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -534,6 +569,10 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <label class="form-lbl">Logged by</label>
           <input class="inp" id="wast-by" type="text" placeholder="Staff name"/>
         </div>
+        <div class="form-row" style="margin-bottom:0;margin-top:0.9rem;">
+          <label class="form-lbl">Wasted by <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label>
+          <input class="inp" id="wast-who" type="text" placeholder="Who caused the wastage"/>
+        </div>
         <button class="submit-btn" id="wast-btn" onclick="saveWastage()" style="background:var(--rose);">Log wastage</button>
       </div>
       <div class="card">
@@ -545,8 +584,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="wast-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
-        <div id="wast-history"><div class="empty-state">Loading history...</div></div>
+        <div class="card-head accordion-head" onclick="toggleAccordion(this,'wast-history-body')">
+          <span><i class="ti ti-history" style="font-size:14px"></i> Last 30 days <span class="badge badge-neutral" id="wast-hist-count" style="text-transform:none;letter-spacing:0;"></span></span>
+          <i class="ti ti-chevron-down acc-arrow"></i>
+        </div>
+        <div class="accordion-body" id="wast-history-body">
+          <div id="wast-history"><div class="empty-state">Loading history...</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -577,6 +621,23 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <button class="submit-btn" onclick="saveSettings()">Save changes</button>
       <div style="margin-top:1rem;">
         <button onclick="logout()" style="width:100%;padding:12px;background:none;border:1px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--ink-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="ti ti-logout" style="font-size:15px"></i> Sign out</button>
+      </div>
+      <div class="section-lbl" style="margin-top:1.25rem;">Custom options</div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-head"><i class="ti ti-tag" style="font-size:14px"></i> Expense categories</div>
+        <div id="exp-categories-list" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:8px;">
+          <input class="inp" id="new-exp-cat" type="text" placeholder="e.g. Transport, Utilities" style="flex:1;"/>
+          <button onclick="addCustomOption('expense_category')" style="padding:9px 14px;background:var(--amber);border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-head"><i class="ti ti-flame" style="font-size:14px"></i> Wastage reasons</div>
+        <div id="wast-reasons-list" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:8px;">
+          <input class="inp" id="new-wast-reason" type="text" placeholder="e.g. Over-portioned, Wrong order" style="flex:1;"/>
+          <button onclick="addCustomOption('wastage_reason')" style="padding:9px 14px;background:var(--rose);border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
+        </div>
       </div>
       <div class="section-lbl" style="margin-top:1.25rem;">Staff management</div>
       <div class="menu-card" id="staff-list"></div>
@@ -736,6 +797,23 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <input class="inp" id="edit-outlet-loc" type="text" placeholder="e.g. AEON Mall Kuching"/>
         </div>
       </div>
+      <div class="card">
+        <div class="card-head"><i class="ti ti-device-mobile" style="font-size:14px"></i> Delivery channels</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:0.75rem;">Cash, Card and QR are always included. Add delivery platforms for this outlet.</div>
+        <div id="outlet-channels-list" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:8px;">
+          <select class="inp" id="new-channel-select" style="flex:1;">
+            <option value="">Select platform...</option>
+            <option value="GrabFood">GrabFood</option>
+            <option value="FoodPanda">FoodPanda</option>
+            <option value="Shopeefood">Shopeefood</option>
+            <option value="Boost">Boost</option>
+            <option value="TNG">TNG</option>
+            <option value="Others">Others</option>
+          </select>
+          <button onclick="addOutletChannel()" style="padding:9px 14px;background:var(--matcha);border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
+        </div>
+      </div>
       <button class="submit-btn" id="edit-outlet-btn" onclick="saveEditOutlet()">Save outlet</button>
       <div style="margin-top:1rem;">
         <div class="card" style="border-color:var(--vermillion-light);">
@@ -780,8 +858,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <button class="submit-btn" id="cc-btn" onclick="saveCashCount()" style="background:#2d6bc4;">Save cash count</button>
       </div>
       <div class="card">
-        <div class="card-head" style="color:#2d6bc4;"><i class="ti ti-history" style="font-size:14px"></i> Last 8 days <span class="badge badge-neutral" id="cc-hist-count" style="text-transform:none;letter-spacing:0;"></span></div>
-        <div id="cc-history"><div class="empty-state">No cash counts yet.</div></div>
+        <div class="card-head accordion-head" onclick="toggleAccordion(this,'cc-history-body')" style="color:#2d6bc4;">
+          <span><i class="ti ti-history" style="font-size:14px"></i> Last 8 days <span class="badge badge-neutral" id="cc-hist-count" style="text-transform:none;letter-spacing:0;"></span></span>
+          <i class="ti ti-chevron-down acc-arrow"></i>
+        </div>
+        <div class="accordion-body" id="cc-history-body">
+          <div id="cc-history"><div class="empty-state">No cash counts yet.</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1044,13 +1127,17 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 const SUPABASE_URL = 'https://gvilerrdqzwsdprobacc.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_2iBCyH3Q2lcQLE4Qj1C1Zg_4SJjlOxq';
 
+// Current Supabase auth access token (owner email/password sessions).
+// When null, requests fall back to the publishable key (current behaviour).
+let authToken = null;
+
 // Lightweight Supabase REST client - no library needed
 const sb = {
   from: function(table) {
     const base = SUPABASE_URL + '/rest/v1/' + table;
     const h = {
       'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY),
       'Content-Type': 'application/json'
     };
     const q = { filters: [], cols: '*', orderBy: null, orderAsc: true, method: 'GET', body: null, returnData: false };
@@ -1130,7 +1217,77 @@ const sb = {
   }
 };
 
+// Supabase Auth (email/password) — owner sessions only.
+// Talks to /auth/v1/* directly. apikey stays the publishable key;
+// Authorization carries the user's JWT once signed in.
+const auth = {
+  async signIn(email, password) {
+    try {
+      const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: password })
+      });
+      const data = await res.json();
+      if(!res.ok) return { data: null, error: { message: data.error_description || data.msg || data.error || 'Login failed' } };
+      auth._store(data);
+      return { data: data, error: null };
+    } catch(e) { return { data: null, error: { message: e.message } }; }
+  },
+  async refresh() {
+    const rt = localStorage.getItem('tally_refresh_token');
+    if(!rt) return { data: null, error: { message: 'No refresh token' } };
+    try {
+      const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: rt })
+      });
+      const data = await res.json();
+      if(!res.ok) return { data: null, error: { message: data.error_description || 'Refresh failed' } };
+      auth._store(data);
+      return { data: data, error: null };
+    } catch(e) { return { data: null, error: { message: e.message } }; }
+  },
+  async getUser() {
+    const t = authToken || localStorage.getItem('tally_access_token');
+    if(!t) return { data: null, error: { message: 'No token' } };
+    try {
+      const res = await fetch(SUPABASE_URL + '/auth/v1/user', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + t }
+      });
+      const data = await res.json();
+      if(!res.ok) return { data: null, error: { message: data.msg || 'Invalid session' } };
+      return { data: data, error: null };
+    } catch(e) { return { data: null, error: { message: e.message } }; }
+  },
+  _store(data) {
+    if(data.access_token) { authToken = data.access_token; localStorage.setItem('tally_access_token', data.access_token); }
+    if(data.refresh_token) localStorage.setItem('tally_refresh_token', data.refresh_token);
+    if(data.expires_at) localStorage.setItem('tally_token_expiry', String(data.expires_at));
+    if(data.user) {
+      localStorage.setItem('tally_auth_user_id', data.user.id);
+      localStorage.setItem('tally_auth_email', data.user.email || '');
+    }
+  },
+  signOut() {
+    const t = authToken || localStorage.getItem('tally_access_token');
+    authToken = null;
+    localStorage.removeItem('tally_access_token');
+    localStorage.removeItem('tally_refresh_token');
+    localStorage.removeItem('tally_token_expiry');
+    localStorage.removeItem('tally_auth_user_id');
+    localStorage.removeItem('tally_auth_email');
+    if(t) {
+      fetch(SUPABASE_URL + '/auth/v1/logout', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + t }
+      }).catch(function(){});
+    }
+  }
+};
 let currentOutlet = null;
+let currentTenantId = null;
 let outlets = [];
 let ownerName = '';
 let insightPeriod = 'today';
@@ -1159,13 +1316,25 @@ function go(id) {
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
   if(id === 's-home') loadHomeStats();
-  if(id === 's-expenses') loadExpenses();
-  if(id === 's-wastage') loadWastage();
+  if(id === 's-expenses') {
+    loadExpenses(); loadExpenseCategoryOptions();
+    if(currentUser) { const el = document.getElementById('exp-by'); if(el && !el.value) el.value = currentUser.name; }
+  }
+  if(id === 's-wastage') {
+    loadWastage(); loadWastageReasonOptions();
+    if(currentUser) { const el = document.getElementById('wast-by'); if(el && !el.value) el.value = currentUser.name; }
+  }
   if(id === 's-insights') loadInsights();
   if(id === 's-outlets') renderOutletsList();
-  if(id === 's-sales') loadSalesHistory();
+  if(id === 's-sales') {
+    loadSalesHistory(); loadSalesExpensesNote(); loadDynamicChannels();
+    if(currentUser) { const el = document.getElementById('sales-staff'); if(el && !el.value) el.value = currentUser.name; }
+  }
   if(id === 's-add-staff') populateOutletSelects();
-  if(id === 's-cashcount') loadCashCountHistory();
+  if(id === 's-cashcount') {
+    loadCashCountHistory();
+    if(currentUser) { const el = document.getElementById('cc-by'); if(el && !el.value) el.value = currentUser.name; }
+  }
   if(id === 's-ingredients') loadIngredients();
   if(id === 's-costing') loadProducts();
   if(id === 's-add-product') { prodIngredients = []; renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); }
@@ -1278,6 +1447,63 @@ async function doLogin() {
   applyRoleUI();
 }
 
+function showOwnerLogin() {
+  document.getElementById('login-step-1').style.display = 'none';
+  document.getElementById('login-step-2').style.display = 'none';
+  document.getElementById('login-step-owner').style.display = 'block';
+  const e = document.getElementById('owner-login-error'); if(e) e.style.display = 'none';
+}
+
+function showStaffLogin() {
+  document.getElementById('login-step-owner').style.display = 'none';
+  document.getElementById('login-step-2').style.display = 'none';
+  document.getElementById('login-step-1').style.display = 'block';
+}
+
+async function doOwnerLogin() {
+  const email = (document.getElementById('owner-email').value || '').trim();
+  const pwd = document.getElementById('owner-password').value || '';
+  const btn = document.getElementById('owner-login-btn');
+  const errEl = document.getElementById('owner-login-error');
+  errEl.style.display = 'none';
+  if(!email || !pwd) { errEl.textContent = 'Enter your email and password.'; errEl.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  const res = await auth.signIn(email, pwd);
+  if(res.error || !res.data || !res.data.user) {
+    btn.disabled = false; btn.textContent = 'Sign in';
+    errEl.textContent = 'Incorrect email or password.'; errEl.style.display = 'block';
+    return;
+  }
+  // authToken is now set; tenant_users RLS returns only this user's own row
+  const memRes = await sb.from('tenant_users').select('tenant_id,role').eq('user_id', res.data.user.id);
+  if(memRes.error || !memRes.data || memRes.data.length === 0) {
+    auth.signOut();
+    btn.disabled = false; btn.textContent = 'Sign in';
+    errEl.textContent = 'This account is not linked to a business yet.'; errEl.style.display = 'block';
+    return;
+  }
+  currentTenantId = memRes.data[0].tenant_id;
+  const role = memRes.data[0].role || 'owner';
+  // Display name: prefer the owner staff row in this tenant, else email prefix
+  let displayName = email.split('@')[0];
+  const staffRes = await sb.from('staff').select('name').eq('tenant_id', currentTenantId).eq('role', 'owner');
+  if(staffRes.data && staffRes.data.length > 0) displayName = staffRes.data[0].name;
+  currentUser = { id: 'auth:' + res.data.user.id, name: displayName, role: role, outlet_id: null };
+  localStorage.setItem('tally_login_kind', 'owner');
+  localStorage.setItem('tally_user_name', displayName);
+  localStorage.setItem('tally_user_role', role);
+  document.getElementById('owner-password').value = '';
+  btn.disabled = false; btn.textContent = 'Sign in';
+  await loadOutlets();
+  ownerName = displayName;
+  const savedId = localStorage.getItem('tally_outlet_id');
+  if(savedId === 'all') currentOutlet = {id:'all', name:'All outlets'};
+  else currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+  initHome();
+  go('s-home');
+  applyRoleUI();
+}
+
 function applyRoleUI() {
   if(!currentUser) return;
   const role = currentUser.role;
@@ -1308,16 +1534,29 @@ function applyRoleUI() {
 
 function logout() {
   currentUser = null;
+  currentTenantId = null;
+  auth.signOut();
+  localStorage.removeItem('tally_login_kind');
   selectedStaffId = null;
   pinValue = '';
   localStorage.removeItem('tally_user_id');
   localStorage.removeItem('tally_user_name');
   localStorage.removeItem('tally_user_role');
+  const ownerStep = document.getElementById('login-step-owner');
+  if(ownerStep) ownerStep.style.display = 'none';
   document.getElementById('login-step-1').style.display = 'block';
   document.getElementById('login-step-2').style.display = 'none';
   loadStaffNameList();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('s-login').classList.add('active');
+}
+
+function toggleAccordion(head, bodyId) {
+  const body = document.getElementById(bodyId);
+  if(!body) return;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  head.classList.toggle('open', !isOpen);
 }
 
 function showToast(msg, duration) {
@@ -1545,27 +1784,47 @@ function selectOutlet(id) {
   showToast('Switched to ' + currentOutlet.name);
 }
 
-function calcVar() {
+async function loadSalesExpensesNote() {
+  const noteEl = document.getElementById('sales-exp-note');
+  if(!noteEl || !currentOutlet || currentOutlet.id === 'all') return;
+  const expResult = await sb.from('expenses').select('amount').eq('outlet_id', currentOutlet.id).eq('date', getToday());
+  if(expResult.data && expResult.data.length > 0) {
+    const total = expResult.data.reduce(function(a,e){ return a + parseFloat(e.amount); }, 0);
+    noteEl.style.display = 'block';
+    noteEl.innerHTML = '<i class="ti ti-receipt" style="font-size:12px"></i> Today\'s expenses: <strong>RM ' + total.toFixed(2) + '</strong> — will be included in variance calculation.';
+  } else {
+    noteEl.style.display = 'none';
+  }
+}
+
+async function calcVar() {
   const pos = parseFloat(document.getElementById('pos-total').value) || 0;
   const cash = parseFloat(document.getElementById('ch-cash').value) || 0;
   const card = parseFloat(document.getElementById('ch-card').value) || 0;
-  const grab = parseFloat(document.getElementById('ch-grab').value) || 0;
-  const panda = parseFloat(document.getElementById('ch-panda').value) || 0;
-  const total = cash + card + grab + panda;
-  const diff = total - pos;
+  const qr = parseFloat(document.getElementById('ch-qr').value) || 0;
+  const dynTotal = getDynamicChannelValues().total;
+  const total = cash + card + qr + dynTotal;
   const box = document.getElementById('var-box');
   const txt = document.getElementById('var-txt');
   if(pos === 0 && total === 0) { box.style.display='none'; return; }
+  // Fetch today's expenses
+  let expTotal = 0;
+  if(currentOutlet && currentOutlet.id !== 'all') {
+    const expResult = await sb.from('expenses').select('amount').eq('outlet_id', currentOutlet.id).eq('date', getToday());
+    if(expResult.data) expTotal = expResult.data.reduce(function(a,e){ return a + parseFloat(e.amount); }, 0);
+  }
+  const diff = (total + expTotal) - pos;
   box.style.display = 'block';
+  const expNote = expTotal > 0 ? ' (incl. RM ' + expTotal.toFixed(2) + ' expenses)' : '';
   if(Math.abs(diff) < 0.01) {
     box.className = 'var-box var-ok';
-    txt.textContent = 'All good — sales tally matches POS exactly.';
+    txt.textContent = 'All good — sales tally matches POS' + expNote + '.';
   } else if(diff < 0) {
     box.className = 'var-box var-short';
-    txt.textContent = 'Cash shortage of RM ' + Math.abs(diff).toFixed(2) + ' vs POS total.';
+    txt.textContent = 'Cash shortage of RM ' + Math.abs(diff).toFixed(2) + ' vs POS' + expNote + '.';
   } else {
     box.className = 'var-box var-ok';
-    txt.textContent = 'Overage of RM ' + diff.toFixed(2) + ' vs POS total.';
+    txt.textContent = 'Overage of RM ' + diff.toFixed(2) + ' vs POS' + expNote + '.';
   }
 }
 
@@ -1585,9 +1844,19 @@ async function loadSalesHistory() {
     histEl.innerHTML = '<div class="empty-state">No sales entries yet.</div>';
     histCount.textContent = ''; return;
   }
+  // Fetch expenses in window so variance matches saveSales (expenses don't count as shortage)
+  let eq = sb.from('expenses').select('outlet_id,date,amount').gte('date', from30).lte('date', today);
+  if(currentOutlet.id !== 'all') eq = eq.eq('outlet_id', currentOutlet.id);
+  const expRes = await eq;
+  const expMap = {};
+  (expRes.data || []).forEach(function(e){
+    const k = e.outlet_id + '|' + e.date;
+    expMap[k] = (expMap[k] || 0) + parseFloat(e.amount);
+  });
   histEl.innerHTML = hist.map(function(s){
-    const total = (+s.cash)+(+s.card)+(+s.grabfood)+(+s.foodpanda);
-    const variance = total - (+s.pos_total);
+    const total = (+s.cash)+(+s.card)+(+s.qr||0)+(+s.grabfood||0)+(+s.foodpanda||0)+(+s.shopeefood||0)+(+s.boost||0)+(+s.tng||0)+(+s.others||0);
+    const expForRow = expMap[s.outlet_id + '|' + s.date] || 0;
+    const variance = (total + expForRow) - (+s.pos_total);
     const isToday = s.date === today;
     const label = isToday ? 'Today' : new Date(s.date+'T00:00:00').toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short'});
     const varColor = Math.abs(variance) < 0.01 ? 'var(--matcha)' : variance < 0 ? 'var(--vermillion)' : 'var(--matcha)';
@@ -1595,7 +1864,7 @@ async function loadSalesHistory() {
     return '<div style="display:flex;align-items:center;gap:8px;padding:0.65rem 0;border-bottom:1px solid var(--border);">' +
       '<div style="flex:1;">' +
       '<div style="font-size:12px;font-weight:500;color:' + (isToday ? 'var(--matcha)' : 'var(--ink-mid)') + ';">' + label + (s.staff_name ? ' · <span style="font-weight:400;color:var(--ink-soft);">' + s.staff_name + '</span>' : '') + '</div>' +
-      '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">Cash RM' + (+s.cash).toFixed(2) + ' · Card RM' + (+s.card).toFixed(2) + ' · Grab RM' + (+s.grabfood).toFixed(2) + ' · Panda RM' + (+s.foodpanda).toFixed(2) + '</div></div>' +
+      '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">Cash RM' + (+s.cash).toFixed(2) + ' · Card RM' + (+s.card).toFixed(2) + ' · QR RM' + (+s.qr||0).toFixed(2) + (s.grabfood > 0 ? ' · Grab RM'+s.grabfood.toFixed(2) : '') + (s.foodpanda > 0 ? ' · Panda RM'+s.foodpanda.toFixed(2) : '') + (s.shopeefood > 0 ? ' · Shopee RM'+s.shopeefood.toFixed(2) : '') + '</div></div>' +
       '<div style="text-align:right;">' +
       '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + total.toFixed(2) + '</div>' +
       '<div style="font-size:10px;color:' + varColor + ';">' + varText + '</div></div></div>';
@@ -1609,28 +1878,35 @@ async function saveSales() {
   const pos = parseFloat(document.getElementById('pos-total').value) || 0;
   const cash = parseFloat(document.getElementById('ch-cash').value) || 0;
   const card = parseFloat(document.getElementById('ch-card').value) || 0;
-  const grab = parseFloat(document.getElementById('ch-grab').value) || 0;
-  const panda = parseFloat(document.getElementById('ch-panda').value) || 0;
+  const qr = parseFloat(document.getElementById('ch-qr').value) || 0;
+  const dynChannels = getDynamicChannelValues();
   const staff = document.getElementById('sales-staff').value.trim();
   const notes = document.getElementById('sales-notes').value.trim();
   if(!staff) { showToast('Please enter your name!'); return; }
-  const variance = (cash + card + grab + panda) - pos;
   const btn = document.getElementById('sales-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
   const today = getToday();
+  // Fetch today's expenses to include in variance
+  let expTotal = 0;
+  const expResult = await sb.from('expenses').select('amount').eq('outlet_id', currentOutlet.id).eq('date', today);
+  if(expResult.data) expTotal = expResult.data.reduce(function(a,e){ return a + parseFloat(e.amount); }, 0);
+  const channelTotal = cash + card + qr + dynChannels.total;
+  const variance = (channelTotal + expTotal) - pos;
+  const saveData = Object.assign({outlet_id:currentOutlet.id,date:today,pos_total:pos,cash:cash,card:card,qr:qr,variance:variance,staff_name:staff,notes:notes}, dynChannels.data);
   const existing = await sb.from('sales_entries').select('id').eq('outlet_id', currentOutlet.id).eq('date', today);
   let error;
   if(existing.data && existing.data.length > 0) {
-    const r = await sb.from('sales_entries').update({pos_total:pos,cash:cash,card:card,grabfood:grab,foodpanda:panda,variance:variance,staff_name:staff,notes:notes}).eq('id', existing.data[0].id);
+    const r = await sb.from('sales_entries').update(saveData).eq('id', existing.data[0].id);
     error = r.error;
   } else {
-    const r = await sb.from('sales_entries').insert({outlet_id:currentOutlet.id,date:today,pos_total:pos,cash:cash,card:card,grabfood:grab,foodpanda:panda,variance:variance,staff_name:staff,notes:notes});
+    const r = await sb.from('sales_entries').insert(saveData);
     error = r.error;
   }
   btn.disabled = false; btn.textContent = 'Save sales entry';
   if(error) { showToast('Error: ' + error.message); return; }
   showToast('Sales entry saved!');
-  ['pos-total','ch-cash','ch-card','ch-grab','ch-panda','sales-staff','sales-notes'].forEach(function(id){ document.getElementById(id).value = ''; });
+  ['pos-total','ch-cash','ch-card','ch-qr','sales-staff','sales-notes'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('dynamic-channels').querySelectorAll('input').forEach(function(inp){ inp.value = ''; });
   document.getElementById('var-box').style.display = 'none';
   go('s-home');
 }
@@ -1751,7 +2027,10 @@ async function loadWastage() {
   } else {
     list.innerHTML = data.map(function(w){
       return '<div class="exp-row"><span class="w-tag ' + (tagClass[w.reason]||'w-other') + '">' + w.reason.split('/')[0].trim() + '</span>' +
-        '<span class="exp-name">' + w.item_name + '<br/>' + (w.logged_by ? '<span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> ' + w.logged_by + '</span>' : '<span style="color:var(--border);font-size:11px;">No name logged</span>') + '</span>' +
+        '<span class="exp-name">' + w.item_name + '<br/>' +
+        (w.logged_by ? '<span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> ' + w.logged_by + '</span>' : '<span style="color:var(--border);font-size:11px;">No name logged</span>') +
+        (w.wasted_by ? ' <span style="color:var(--rose);font-size:11px;">· by ' + w.wasted_by + '</span>' : '') +
+        '</span>' +
         '<span class="exp-amt">RM ' + parseFloat(w.estimated_cost).toFixed(2) + '</span></div>';
     }).join('');
     const total = data.reduce(function(a,b){ return a + parseFloat(b.estimated_cost); }, 0);
@@ -1778,7 +2057,10 @@ async function loadWastage() {
         '<span style="font-size:11px;color:var(--ink-soft);">RM ' + dayTotal.toFixed(2) + '</span></div>' +
         items.map(function(w){
           return '<div class="exp-row" style="padding:4px 0;"><span class="w-tag ' + (tagClass[w.reason]||'w-other') + '">' + w.reason.split('/')[0].trim() + '</span>' +
-            '<span class="exp-name">' + w.item_name + (w.logged_by ? '<br/><span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> '+w.logged_by+'</span>' : '') + '</span>' +
+            '<span class="exp-name">' + w.item_name + 
+            (w.logged_by ? '<br/><span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> '+w.logged_by+'</span>' : '') +
+            (w.wasted_by ? ' <span style="color:var(--rose);font-size:11px;">· by '+w.wasted_by+'</span>' : '') +
+            '</span>' +
             '<span class="exp-amt">RM ' + parseFloat(w.estimated_cost).toFixed(2) + '</span></div>';
         }).join('') + '</div>';
     }).join('');
@@ -1793,14 +2075,15 @@ async function saveWastage() {
   const cost = parseFloat(document.getElementById('wast-cost').value) || 0;
   const reason = document.getElementById('wast-reason').value;
   const by = document.getElementById('wast-by').value.trim();
+  const who = document.getElementById('wast-who').value.trim();
   if(!item) { showToast('Please enter an item name!'); return; }
   const btn = document.getElementById('wast-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
-  const result = await sb.from('wastage').insert({outlet_id:currentOutlet.id,date:getToday(),item_name:item,estimated_cost:cost,reason:reason,logged_by:by});
+  const result = await sb.from('wastage').insert({outlet_id:currentOutlet.id,date:getToday(),item_name:item,estimated_cost:cost,reason:reason,logged_by:by,wasted_by:who});
   btn.disabled = false; btn.textContent = 'Log wastage';
   if(result.error) { showToast('Error: ' + result.error.message); return; }
   showToast('Wastage logged!');
-  ['wast-item','wast-cost','wast-by'].forEach(function(id){ document.getElementById(id).value = ''; });
+  ['wast-item','wast-cost','wast-by','wast-who'].forEach(function(id){ document.getElementById(id).value = ''; });
   loadWastage();
 }
 
@@ -1924,32 +2207,6 @@ function renderMarginBar(pct, containerId) {
     '<span style="font-size:13px;font-weight:500;color:' + color + ';">' + pct.toFixed(1) + '% · ' + label + '</span></div>' +
     '<div style="height:8px;background:var(--cream-dark);border-radius:4px;overflow:hidden;">' +
     '<div style="height:100%;width:' + barW + '%;background:' + color + ';border-radius:4px;transition:width 0.4s ease;"></div></div>';
-}
-
-function calcProductMargin() {
-  const cost = parseFloat(document.getElementById('prod-cost').value) || 0;
-  const price = parseFloat(document.getElementById('prod-price').value) || 0;
-  if(cost === 0 && price === 0) { document.getElementById('prod-margin-preview').style.display='none'; return; }
-  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
-  const profit = price - cost;
-  renderMarginBar(margin, 'prod-margin-preview');
-  const el = document.getElementById('prod-margin-preview');
-  el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
-    '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
-    '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
-}
-
-function calcEditProductMargin() {
-  const cost = parseFloat(document.getElementById('edit-prod-cost').value) || 0;
-  const price = parseFloat(document.getElementById('edit-prod-price').value) || 0;
-  if(cost === 0 && price === 0) { document.getElementById('edit-prod-margin-preview').style.display='none'; return; }
-  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
-  const profit = price - cost;
-  renderMarginBar(margin, 'edit-prod-margin-preview');
-  const el = document.getElementById('edit-prod-margin-preview');
-  el.innerHTML += '<div style="display:flex;justify-content:space-between;margin-top:6px;">' +
-    '<span style="font-size:12px;color:var(--ink-soft);">Profit per item</span>' +
-    '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
 }
 
 // INGREDIENTS
@@ -2387,20 +2644,98 @@ async function loadInsights() {
 }
 
 // SETTINGS
+// CHANNEL MANAGEMENT
+const CHANNEL_COLUMN_MAP = {
+  'GrabFood': 'grabfood',
+  'FoodPanda': 'foodpanda',
+  'Shopeefood': 'shopeefood',
+  'Boost': 'boost',
+  'TNG': 'tng',
+  'Others': 'others'
+};
+
+async function loadOutletChannels(outletId) {
+  const result = await sb.from('outlet_channels').select('*').eq('outlet_id', outletId).order('created_at');
+  return result.data || [];
+}
+
+async function renderOutletChannelsList(outletId) {
+  const channels = await loadOutletChannels(outletId);
+  const list = document.getElementById('outlet-channels-list');
+  if(!list) return;
+  if(channels.length === 0) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);padding:0.25rem 0;">No delivery channels added yet.</div>';
+    return;
+  }
+  list.innerHTML = channels.map(function(c){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border);">' +
+      '<span style="font-size:13px;color:var(--ink);">' + c.name + '</span>' +
+      '<button onclick="removeOutletChannel(\'' + c.id + '\',\'' + outletId + '\')" style="background:none;border:none;color:var(--vermillion);cursor:pointer;font-size:12px;padding:2px 6px;">Remove</button>' +
+      '</div>';
+  }).join('');
+}
+
+async function addOutletChannel() {
+  const outletId = document.getElementById('edit-outlet-id').value;
+  const name = document.getElementById('new-channel-select').value;
+  if(!name) { showToast('Please select a channel!'); return; }
+  // Check not already added
+  const existing = await sb.from('outlet_channels').select('id').eq('outlet_id', outletId).eq('name', name);
+  if(existing.data && existing.data.length > 0) { showToast(name + ' already added!'); return; }
+  await sb.from('outlet_channels').insert({outlet_id: outletId, name: name});
+  document.getElementById('new-channel-select').value = '';
+  renderOutletChannelsList(outletId);
+  showToast(name + ' added!');
+}
+
+async function removeOutletChannel(channelId, outletId) {
+  await fetch(SUPABASE_URL + '/rest/v1/outlet_channels?id=eq.' + channelId, {
+    method: 'DELETE',
+    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal'}
+  });
+  renderOutletChannelsList(outletId);
+  showToast('Channel removed');
+}
+
+async function loadDynamicChannels() {
+  const container = document.getElementById('dynamic-channels');
+  if(!container || !currentOutlet || currentOutlet.id === 'all') return;
+  const channels = await loadOutletChannels(currentOutlet.id);
+  container.innerHTML = channels.map(function(c){
+    const colId = 'ch-' + c.name.toLowerCase().replace(/[^a-z0-9]/g,'');
+    return '<div class="ch-row"><span class="ch-lbl">' + c.name + '</span><input class="ch-inp" id="' + colId + '" type="number" inputmode="decimal" placeholder="0.00" oninput="calcVar()"/></div>';
+  }).join('');
+}
+
+function getDynamicChannelValues() {
+  const container = document.getElementById('dynamic-channels');
+  if(!container) return {total: 0, data: {}};
+  let total = 0;
+  const data = {};
+  container.querySelectorAll('.ch-row').forEach(function(row) {
+    const lbl = row.querySelector('.ch-lbl').textContent;
+    const inp = row.querySelector('.ch-inp');
+    const val = parseFloat(inp.value) || 0;
+    total += val;
+    const col = CHANNEL_COLUMN_MAP[lbl];
+    if(col) data[col] = val;
+  });
+  return {total: total, data: data};
+}
+
 function openSettings() {
   if(!currentUser || currentUser.role === 'staff') { showToast('Access restricted'); return; }
   document.getElementById('set-biz').value = localStorage.getItem('tally_biz') || '';
   document.getElementById('set-name').value = localStorage.getItem('tally_owner') || '';
   renderSettingsOutlets();
-  // Only owner can see staff management
+  renderCustomOptionsList('expense_category');
+  renderCustomOptionsList('wastage_reason');
   const staffSection = document.getElementById('staff-list');
   const addStaffBtn = document.querySelector('[onclick="go(\'s-add-staff\')"]');
-  const staffLabel = document.querySelector('#s-settings .section-lbl:last-of-type');
   const isOwner = currentUser.role === 'owner';
   if(staffSection) staffSection.closest('.menu-card') && (staffSection.closest('.menu-card').style.display = isOwner ? '' : 'none');
   if(addStaffBtn) addStaffBtn.style.display = isOwner ? '' : 'none';
   if(isOwner) { loadStaffList(); populateOutletSelects(); }
-  // Only owner can see danger zone
   const dangerZone = document.querySelector('#s-settings [style*="vermillion-light"]');
   if(dangerZone) dangerZone.style.display = isOwner ? '' : 'none';
   go('s-settings');
@@ -2424,6 +2759,7 @@ function openEditOutlet(id) {
   document.getElementById('edit-outlet-name').value = outlet.name;
   document.getElementById('edit-outlet-loc').value = outlet.location || '';
   go('s-edit-outlet');
+  renderOutletChannelsList(id);
 }
 
 async function saveEditOutlet() {
@@ -2599,6 +2935,83 @@ async function removeStaff() {
   loadStaffList();
 }
 
+// CUSTOM OPTIONS
+const DEFAULT_EXP_CATS = ['Supplies','Cleaning','Packaging','Maintenance','Other'];
+const DEFAULT_WAST_REASONS = ['Burnt / rejected','Spilled','Staff consumption','Expired / spoiled','Other'];
+
+async function loadCustomOptions(type) {
+  const result = await sb.from('custom_options').select('*').eq('type', type).order('created_at');
+  return result.data || [];
+}
+
+async function renderCustomOptionsList(type) {
+  const listId = type === 'expense_category' ? 'exp-categories-list' : 'wast-reasons-list';
+  const defaults = type === 'expense_category' ? DEFAULT_EXP_CATS : DEFAULT_WAST_REASONS;
+  const list = document.getElementById(listId);
+  if(!list) return;
+  const custom = await loadCustomOptions(type);
+  let html = '';
+  // Show defaults as non-removable
+  defaults.forEach(function(d){
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);">' +
+      '<span style="font-size:13px;color:var(--ink-mid);">' + d + '</span>' +
+      '<span style="font-size:10px;color:var(--ink-soft);padding:2px 6px;background:var(--cream-dark);border-radius:4px;">default</span>' +
+      '</div>';
+  });
+  // Show custom as removable
+  custom.forEach(function(c){
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);">' +
+      '<span style="font-size:13px;color:var(--ink);">' + c.value + '</span>' +
+      '<button onclick="removeCustomOption(\'' + c.id + '\',\'' + type + '\')" style="background:none;border:none;color:var(--vermillion);cursor:pointer;font-size:12px;padding:2px 6px;">Remove</button>' +
+      '</div>';
+  });
+  list.innerHTML = html || '<div style="font-size:12px;color:var(--ink-soft);">No custom options yet.</div>';
+}
+
+async function addCustomOption(type) {
+  const inputId = type === 'expense_category' ? 'new-exp-cat' : 'new-wast-reason';
+  const value = document.getElementById(inputId).value.trim();
+  if(!value) { showToast('Please enter a value!'); return; }
+  await sb.from('custom_options').insert({type: type, value: value});
+  document.getElementById(inputId).value = '';
+  renderCustomOptionsList(type);
+  showToast('Added!');
+  // Reload the dropdown in the form
+  if(type === 'expense_category') loadExpenseCategoryOptions();
+  else loadWastageReasonOptions();
+}
+
+async function removeCustomOption(id, type) {
+  await fetch(SUPABASE_URL + '/rest/v1/custom_options?id=eq.' + id, {
+    method: 'DELETE',
+    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal'}
+  });
+  renderCustomOptionsList(type);
+  showToast('Removed');
+  if(type === 'expense_category') loadExpenseCategoryOptions();
+  else loadWastageReasonOptions();
+}
+
+async function loadExpenseCategoryOptions() {
+  const select = document.getElementById('exp-cat');
+  if(!select) return;
+  const custom = await loadCustomOptions('expense_category');
+  const all = DEFAULT_EXP_CATS.concat(custom.map(function(c){ return c.value; }));
+  const current = select.value;
+  select.innerHTML = all.map(function(c){ return '<option value="' + c + '">' + c + '</option>'; }).join('');
+  if(current) select.value = current;
+}
+
+async function loadWastageReasonOptions() {
+  const select = document.getElementById('wast-reason');
+  if(!select) return;
+  const custom = await loadCustomOptions('wastage_reason');
+  const all = DEFAULT_WAST_REASONS.concat(custom.map(function(c){ return c.value; }));
+  const current = select.value;
+  select.innerHTML = all.map(function(r){ return '<option value="' + r + '">' + r + '</option>'; }).join('');
+  if(current) select.value = current;
+}
+
 function resetApp() {
   if(confirm('This will reset your onboarding on this device. Your saved data in Supabase is safe. Continue?')) {
     localStorage.clear();
@@ -2669,6 +3082,39 @@ async function factoryReset() {
 
 async function init() {
   initOnboarding();
+  // Owner session (real auth) restore — try saved token, refresh if expired
+  if(localStorage.getItem('tally_login_kind') === 'owner') {
+    authToken = localStorage.getItem('tally_access_token');
+    let u = await auth.getUser();
+    if(u.error) {
+      const r = await auth.refresh();
+      if(!r.error) u = await auth.getUser();
+    }
+    if(!u.error && u.data && u.data.id) {
+      const memRes = await sb.from('tenant_users').select('tenant_id,role').eq('user_id', u.data.id);
+      if(memRes.data && memRes.data.length > 0) {
+        currentTenantId = memRes.data[0].tenant_id;
+        const role = memRes.data[0].role || 'owner';
+        let displayName = (u.data.email || 'owner').split('@')[0];
+        const staffRes = await sb.from('staff').select('name').eq('tenant_id', currentTenantId).eq('role', 'owner');
+        if(staffRes.data && staffRes.data.length > 0) displayName = staffRes.data[0].name;
+        currentUser = { id: 'auth:' + u.data.id, name: displayName, role: role, outlet_id: null };
+        await loadOutlets();
+        if(outlets.length === 0) { go('s-onboard'); return; }
+        ownerName = displayName;
+        const savedId = localStorage.getItem('tally_outlet_id');
+        if(savedId === 'all') currentOutlet = {id:'all', name:'All outlets'};
+        else currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+        initHome();
+        go('s-home');
+        applyRoleUI();
+        return;
+      }
+    }
+    // Session invalid/expired — clear and fall through to normal login
+    auth.signOut();
+    localStorage.removeItem('tally_login_kind');
+  }
   // Check for saved login session
   const savedUserId = localStorage.getItem('tally_user_id');
   if(savedUserId) {
