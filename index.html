@@ -572,6 +572,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     <div class="pad">
       <div class="card">
         <div class="card-head" style="color:var(--rose);"><i class="ti ti-plus" style="font-size:14px"></i> Log wastage</div>
+        <div id="wast-edit-banner" style="display:none;margin-bottom:0.85rem;padding:0.6rem 0.8rem;border-radius:8px;font-size:12px;background:var(--rose-light);color:var(--rose);"><span id="wast-edit-text"></span> · <span onclick="cancelWastageEdit()" style="text-decoration:underline;cursor:pointer;">Cancel</span></div>
         <div class="form-row">
           <label class="form-lbl">Item</label>
           <input class="inp" id="wast-item" type="text" placeholder="e.g. taiyaki, matcha latte"/>
@@ -1407,6 +1408,11 @@ let rankPeriod = 'month';
 let outletFields = 1;
 let currentUser = null;
 let pinValue = '';
+let editingWastageId = null;
+
+function canEditEntries() {
+  return currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin');
+}
 
 function go(id) {
   // Auth guard - non-login screens require a logged in user
@@ -1434,6 +1440,7 @@ function go(id) {
     if(currentUser) { const el = document.getElementById('exp-by'); if(el && !el.value) el.value = currentUser.name; }
   }
   if(id === 's-wastage') {
+    cancelWastageEdit();
     loadWastage(); loadWastageReasonOptions();
     if(currentUser) { const el = document.getElementById('wast-by'); if(el && !el.value) el.value = currentUser.name; }
   }
@@ -2260,6 +2267,8 @@ async function loadWastage() {
   const histEl = document.getElementById('wast-history');
   const histCount = document.getElementById('wast-hist-count');
   const tagClass = {'Burnt / rejected':'w-burnt','Spilled':'w-spill','Staff consumption':'w-staff','Expired / spoiled':'w-spoil','Other':'w-other'};
+  const canEdit = canEditEntries();
+  const editBtn = function(id){ return canEdit ? '<i class="ti ti-pencil" onclick="openEditWastage(\'' + id + '\')" style="font-size:14px;color:var(--ink-soft);margin-left:8px;cursor:pointer;flex-shrink:0;"></i>' : ''; };
 
   // Today
   if(data.length === 0) {
@@ -2272,7 +2281,7 @@ async function loadWastage() {
         (w.logged_by ? '<span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> ' + w.logged_by + '</span>' : '<span style="color:var(--border);font-size:11px;">No name logged</span>') +
         (w.wasted_by ? ' <span style="color:var(--rose);font-size:11px;">· by ' + w.wasted_by + '</span>' : '') +
         '</span>' +
-        '<span class="exp-amt">RM ' + parseFloat(w.estimated_cost).toFixed(2) + '</span></div>';
+        '<span class="exp-amt">RM ' + parseFloat(w.estimated_cost).toFixed(2) + '</span>' + editBtn(w.id) + '</div>';
     }).join('');
     const total = data.reduce(function(a,b){ return a + parseFloat(b.estimated_cost); }, 0);
     countEl.textContent = data.length + ' item' + (data.length !== 1 ? 's' : '');
@@ -2302,7 +2311,7 @@ async function loadWastage() {
             (w.logged_by ? '<br/><span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> '+w.logged_by+'</span>' : '') +
             (w.wasted_by ? ' <span style="color:var(--rose);font-size:11px;">· by '+w.wasted_by+'</span>' : '') +
             '</span>' +
-            '<span class="exp-amt">RM ' + parseFloat(w.estimated_cost).toFixed(2) + '</span></div>';
+            '<span class="exp-amt">RM ' + parseFloat(w.estimated_cost).toFixed(2) + '</span>' + editBtn(w.id) + '</div>';
         }).join('') + '</div>';
     }).join('');
     histCount.textContent = hist.length + ' entries';
@@ -2310,8 +2319,10 @@ async function loadWastage() {
 }
 
 async function saveWastage() {
-  if(!currentOutlet) { showToast('Please select an outlet first!'); return; }
-  if(currentOutlet.id === 'all') { showToast('Please select a specific outlet to log wastage!'); return; }
+  if(!editingWastageId) {
+    if(!currentOutlet) { showToast('Please select an outlet first!'); return; }
+    if(currentOutlet.id === 'all') { showToast('Please select a specific outlet to log wastage!'); return; }
+  }
   const item = document.getElementById('wast-item').value.trim();
   const cost = parseFloat(document.getElementById('wast-cost').value) || 0;
   const reason = document.getElementById('wast-reason').value;
@@ -2319,13 +2330,51 @@ async function saveWastage() {
   const who = document.getElementById('wast-who').value.trim();
   if(!item) { showToast('Please enter an item name!'); return; }
   const btn = document.getElementById('wast-btn');
-  btn.disabled = true; btn.textContent = 'Saving...';
-  const result = await sb.from('wastage').insert({outlet_id:currentOutlet.id,date:getToday(),item_name:item,estimated_cost:cost,reason:reason,logged_by:by,wasted_by:who});
-  btn.disabled = false; btn.textContent = 'Log wastage';
-  if(result.error) { showToast('Error: ' + result.error.message); return; }
-  showToast('Wastage logged!');
-  ['wast-item','wast-cost','wast-by','wast-who'].forEach(function(id){ document.getElementById(id).value = ''; });
+  btn.disabled = true; btn.textContent = editingWastageId ? 'Updating...' : 'Saving...';
+  let result;
+  if(editingWastageId) {
+    result = await sb.from('wastage').update({item_name:item,estimated_cost:cost,reason:reason,logged_by:by,wasted_by:who}).eq('id', editingWastageId);
+  } else {
+    result = await sb.from('wastage').insert({outlet_id:currentOutlet.id,date:getToday(),item_name:item,estimated_cost:cost,reason:reason,logged_by:by,wasted_by:who});
+  }
+  btn.disabled = false;
+  if(result.error) { btn.textContent = editingWastageId ? 'Update wastage' : 'Log wastage'; showToast('Error: ' + result.error.message); return; }
+  if(editingWastageId) {
+    showToast('Wastage updated!');
+    cancelWastageEdit();
+  } else {
+    showToast('Wastage logged!');
+    ['wast-item','wast-cost','wast-by','wast-who'].forEach(function(id){ document.getElementById(id).value = ''; });
+    btn.textContent = 'Log wastage';
+  }
   loadWastage();
+}
+
+async function openEditWastage(id) {
+  if(!canEditEntries()) return;
+  const res = await sb.from('wastage').select('*').eq('id', id);
+  if(!res.data || res.data.length === 0) { showToast('Entry not found.'); return; }
+  const w = res.data[0];
+  editingWastageId = id;
+  await loadWastageReasonOptions();
+  document.getElementById('wast-item').value = w.item_name || '';
+  document.getElementById('wast-cost').value = (w.estimated_cost != null) ? w.estimated_cost : '';
+  document.getElementById('wast-reason').value = w.reason || 'Other';
+  document.getElementById('wast-by').value = w.logged_by || '';
+  document.getElementById('wast-who').value = w.wasted_by || '';
+  const btn = document.getElementById('wast-btn'); if(btn) btn.textContent = 'Update wastage';
+  const txt = document.getElementById('wast-edit-text');
+  if(txt) txt.innerHTML = '<i class="ti ti-pencil" style="font-size:12px"></i> Editing \u201c' + (w.item_name || 'entry') + '\u201d';
+  const banner = document.getElementById('wast-edit-banner'); if(banner) banner.style.display = 'block';
+  const scroller = document.querySelector('#s-wastage [style*="overflow-y"]');
+  if(scroller) scroller.scrollTop = 0;
+}
+
+function cancelWastageEdit() {
+  editingWastageId = null;
+  ['wast-item','wast-cost','wast-by','wast-who'].forEach(function(id){ const el = document.getElementById(id); if(el) el.value = ''; });
+  const btn = document.getElementById('wast-btn'); if(btn) btn.textContent = 'Log wastage';
+  const banner = document.getElementById('wast-edit-banner'); if(banner) banner.style.display = 'none';
 }
 
 // CASH COUNT
