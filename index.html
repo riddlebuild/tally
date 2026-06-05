@@ -669,12 +669,16 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <div style="height:1px;background:var(--vermillion-light);margin-bottom:0.75rem;"></div>
 
           <div style="font-size:13px;color:var(--ink-mid);margin-bottom:0.5rem;line-height:1.6;"><strong style="color:var(--vermillion);">Clear one category</strong> — wipes just that type of entry if it gets messy, leaving the rest untouched. Outlets and setup stay intact.</div>
+          <div class="form-row" style="margin-bottom:0.5rem;">
+            <label class="form-lbl">Type <strong>CLEAR</strong> to unlock</label>
+            <input class="inp" id="cat-clear-confirm" type="text" placeholder="Type CLEAR here" oninput="toggleCategoryClear()" style="border-color:var(--vermillion-light);"/>
+          </div>
           <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:0.75rem;">
-            <button onclick="clearCategory('sales_entries','sales')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear sales only</button>
-            <button onclick="clearCategory('expenses','expenses')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear expenses only</button>
-            <button onclick="clearCategory('wastage','wastage')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear wastage only</button>
-            <button onclick="clearCategory('cash_counts','cash counts')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear cash counts only</button>
-            <button onclick="clearCategory('reserve_float_log','reserve float')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear reserve float only</button>
+            <button class="cat-clear-btn" disabled onclick="clearCategory('sales_entries','sales')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;opacity:0.45;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear sales only</button>
+            <button class="cat-clear-btn" disabled onclick="clearCategory('expenses','expenses')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;opacity:0.45;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear expenses only</button>
+            <button class="cat-clear-btn" disabled onclick="clearCategory('wastage','wastage')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;opacity:0.45;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear wastage only</button>
+            <button class="cat-clear-btn" disabled onclick="clearCategory('cash_counts','cash counts')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;opacity:0.45;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear cash counts only</button>
+            <button class="cat-clear-btn" disabled onclick="clearCategory('reserve_float_log','reserve float')" style="width:100%;padding:9px 11px;background:none;border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;opacity:0.45;text-align:left;"><i class="ti ti-eraser" style="font-size:12px"></i> Clear reserve float only</button>
           </div>
 
           <div style="height:1px;background:var(--vermillion-light);margin-bottom:0.75rem;"></div>
@@ -874,6 +878,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           </div>
         </div>
         <div class="var-box" id="cc-var-box"><span id="cc-var-txt"></span></div>
+        <div id="cc-float-note" style="display:none;font-size:12px;color:#2d6bc4;margin-top:0.6rem;"><i class="ti ti-wallet" style="font-size:12px"></i> <span id="cc-float-txt"></span></div>
         <div class="form-row" style="margin-top:0.9rem;">
           <label class="form-lbl">Counted by</label>
           <input class="inp" id="cc-by" type="text" placeholder="Staff name"/>
@@ -1403,7 +1408,7 @@ function go(id) {
   }
   if(id === 's-add-staff') populateOutletSelects();
   if(id === 's-cashcount') {
-    loadCashCountHistory();
+    loadCashCountHistory(); showCashCountFloat();
     if(currentUser) { const el = document.getElementById('cc-by'); if(el && !el.value) el.value = currentUser.name; }
   }
   if(id === 's-ingredients') loadIngredients();
@@ -2161,21 +2166,32 @@ async function saveWastage() {
 function calcCashVariance() {
   const actual = parseFloat(document.getElementById('cc-actual').value) || 0;
   const system = parseFloat(document.getElementById('cc-system').value) || 0;
+  const float = (currentOutlet && currentOutlet.id !== 'all' && currentOutlet.cash_float) ? parseFloat(currentOutlet.cash_float) : 0;
   const box = document.getElementById('cc-var-box');
   const txt = document.getElementById('cc-var-txt');
   if(actual === 0 && system === 0) { box.style.display='none'; return; }
   box.style.display = 'block';
-  const diff = actual - system;
+  const diff = (actual - float) - system;
+  const floatNote = float > 0 ? ' (after RM ' + float.toFixed(2) + ' float)' : '';
   if(Math.abs(diff) < 0.01) {
     box.className = 'var-box var-ok';
-    txt.textContent = 'All good — cash matches system exactly.';
+    txt.textContent = 'All good — cash matches system exactly' + floatNote + '.';
   } else if(diff < 0) {
     box.className = 'var-box var-short';
-    txt.textContent = 'Short by RM ' + Math.abs(diff).toFixed(2) + ' vs system.';
+    txt.textContent = 'Short by RM ' + Math.abs(diff).toFixed(2) + ' vs system' + floatNote + '.';
   } else {
     box.className = 'var-box var-ok';
-    txt.textContent = 'Over by RM ' + diff.toFixed(2) + ' vs system.';
+    txt.textContent = 'Over by RM ' + diff.toFixed(2) + ' vs system' + floatNote + '.';
   }
+}
+
+function showCashCountFloat() {
+  const note = document.getElementById('cc-float-note');
+  const txt = document.getElementById('cc-float-txt');
+  if(!note || !txt) return;
+  const float = (currentOutlet && currentOutlet.id !== 'all' && currentOutlet.cash_float) ? parseFloat(currentOutlet.cash_float) : 0;
+  if(float > 0) { txt.textContent = 'Float RM ' + float.toFixed(2) + ' is deducted automatically.'; note.style.display = 'block'; }
+  else { note.style.display = 'none'; }
 }
 
 async function saveCashCount() {
@@ -2185,7 +2201,8 @@ async function saveCashCount() {
   const by = document.getElementById('cc-by').value.trim();
   const notes = document.getElementById('cc-notes').value.trim();
   if(!by) { showToast('Please enter who counted!'); return; }
-  const variance = actual - system;
+  const float = (currentOutlet && currentOutlet.cash_float) ? parseFloat(currentOutlet.cash_float) : 0;
+  const variance = (actual - float) - system;
   const now = new Date();
   const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':00';
   const btn = document.getElementById('cc-btn');
@@ -2808,6 +2825,9 @@ function openSettings() {
   if(isOwner) { loadStaffList(); populateOutletSelects(); }
   const dangerZone = document.querySelector('#s-settings [style*="vermillion-light"]');
   if(dangerZone) dangerZone.style.display = isOwner ? '' : 'none';
+  const catConfirm = document.getElementById('cat-clear-confirm');
+  if(catConfirm) catConfirm.value = '';
+  toggleCategoryClear();
   go('s-settings');
 }
 
@@ -3173,6 +3193,16 @@ async function deleteAllFrom(table) {
   });
 }
 
+function toggleCategoryClear() {
+  const el = document.getElementById('cat-clear-confirm');
+  const enabled = !!el && el.value.trim() === 'CLEAR';
+  document.querySelectorAll('.cat-clear-btn').forEach(function(b){
+    b.disabled = !enabled;
+    b.style.opacity = enabled ? '1' : '0.45';
+    b.style.cursor = enabled ? 'pointer' : 'not-allowed';
+  });
+}
+
 async function clearCategory(table, label) {
   if(!confirm('Delete ALL ' + label + ' entries? Outlets and setup stay intact. This cannot be undone.')) return;
   const btn = document.querySelector('[onclick="clearCategory(\'' + table + '\',\'' + label + '\')"]');
@@ -3181,6 +3211,8 @@ async function clearCategory(table, label) {
   try {
     await deleteAllFrom(table);
     if(btn) { btn.disabled = false; btn.innerHTML = orig; }
+    const cc = document.getElementById('cat-clear-confirm'); if(cc) cc.value = '';
+    toggleCategoryClear();
     showToast(label.charAt(0).toUpperCase() + label.slice(1) + ' cleared ✓');
     loadHomeStats();
   } catch(e) {
