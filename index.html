@@ -183,6 +183,25 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .insight-metric{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:0.6rem;display:flex;justify-content:space-between;align-items:center;}
 .insight-label{font-size:12px;color:var(--ink-mid);}
 .insight-val{font-size:18px;font-weight:500;color:var(--ink);}
+#secret-door { position:fixed; inset:0; z-index:9999; display:none; flex-direction:column; align-items:center; justify-content:center; background:#0e1512; color:#cfe3d6; opacity:0; transition:opacity 0.8s ease; padding:2rem 1.5rem; }
+#secret-door.open { opacity:1; }
+#secret-door .sd-glow { filter:drop-shadow(0 0 16px rgba(116,180,140,0.55)); opacity:0; transform:translateY(10px) scale(0.94); transition:opacity 1.1s ease 0.25s, transform 1.1s ease 0.25s; }
+#secret-door.open .sd-glow { opacity:1; transform:translateY(0) scale(1); }
+#secret-door .sd-label { font-size:11px; letter-spacing:0.34em; text-transform:uppercase; color:#5e7d6a; margin:1.15rem 0 1.6rem; opacity:0; transition:opacity 1.2s ease 0.6s; }
+#secret-door.open .sd-label { opacity:1; }
+#secret-door .vdots { display:flex; gap:14px; }
+#secret-door .vdot { width:13px; height:13px; border-radius:50%; border:1.5px solid #3c5547; background:transparent; transition:all 0.25s ease; }
+#secret-door .vdot.filled { background:#74b48c; border-color:#74b48c; box-shadow:0 0 9px rgba(116,180,140,0.7); }
+#secret-door .vdots.success .vdot { background:#8fe0a8; border-color:#8fe0a8; box-shadow:0 0 13px rgba(143,224,168,0.95); }
+#secret-door .vdots.shake { animation:vshake 0.42s ease; }
+@keyframes vshake { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-8px);} 40%{transform:translateX(8px);} 60%{transform:translateX(-6px);} 80%{transform:translateX(6px);} }
+#secret-door .sd-err { color:#d98a8a; font-size:12px; min-height:15px; margin-top:0.9rem; }
+#secret-door .vkeys { display:grid; grid-template-columns:repeat(3,66px); gap:15px; margin-top:1.4rem; opacity:0; transition:opacity 1.2s ease 0.7s; }
+#secret-door.open .vkeys { opacity:1; }
+#secret-door .vkey { height:66px; border-radius:50%; border:1px solid #243029; background:rgba(255,255,255,0.02); color:#cfe3d6; font-size:23px; font-weight:300; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; transition:background 0.15s ease; }
+#secret-door .vkey:active { background:rgba(116,180,140,0.18); }
+#secret-door .vkey.blank { border:none; background:transparent; cursor:default; }
+#secret-door .sd-back { position:absolute; top:1.3rem; left:1.3rem; color:#3c5547; font-size:13px; cursor:pointer; letter-spacing:0.05em; display:flex; align-items:center; gap:5px; }
 </style>
 </head>
 <body>
@@ -193,7 +212,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 <div class="screen" id="s-login">
   <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.4rem;">
     <div style="text-align:center;margin-bottom:1.25rem;">
-      <svg width="40" height="40" viewBox="0 0 96 96" fill="none" style="margin-bottom:8px;">
+      <svg width="40" height="40" viewBox="0 0 96 96" fill="none" style="margin-bottom:8px;cursor:pointer;" onclick="logoTap()">
         <rect width="96" height="96" rx="22" fill="#e8f0e9"/>
         <line x1="33" y1="22" x2="33" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
         <line x1="43" y1="22" x2="43" y2="74" stroke="#4a7c59" stroke-width="4" stroke-linecap="round"/>
@@ -361,6 +380,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
     </div>
+    <div id="home-daily">
     <div style="padding:0 1.1rem;">
       <div class="section-lbl">Daily closing</div>
     </div>
@@ -381,6 +401,8 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
     </div>
+    </div>
+    <div id="home-shift">
     <div style="padding:0 1.1rem;">
       <div class="section-lbl">Shift</div>
     </div>
@@ -396,7 +418,8 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
     </div>
-    <div class="staff-hide">
+    </div>
+    <div class="staff-hide" id="home-reports">
     <div style="padding:0 1.1rem;">
       <div class="section-lbl">Reports</div>
     </div>
@@ -408,7 +431,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       </div>
     </div>
     </div>
-    <div class="staff-hide">
+    <div class="staff-hide" id="home-costing">
     <div style="padding:0 1.1rem;">
       <div class="section-lbl">Costing</div>
     </div>
@@ -425,7 +448,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       </div>
     </div>
     </div>
-    <div class="staff-hide">
+    <div class="staff-hide" id="home-rankings">
     <div style="padding:0 1.1rem;">
       <div class="section-lbl">Rankings</div>
     </div>
@@ -740,6 +763,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
             <option value="staff">Staff</option>
             <option value="admin">Admin</option>
             <option value="owner">Owner</option>
+            <option value="viewer">Viewer (read-only)</option>
           </select>
         </div>
         <div class="form-row" style="margin-bottom:0;">
@@ -777,6 +801,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
             <option value="staff">Staff</option>
             <option value="admin">Admin</option>
             <option value="owner">Owner</option>
+            <option value="viewer">Viewer (read-only)</option>
           </select>
         </div>
         <div class="form-row" style="margin-bottom:0;">
@@ -1236,6 +1261,37 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
 </div>
 
+<div id="secret-door">
+  <div class="sd-back" onclick="closeSecretDoor()"><i class="ti ti-arrow-left" style="font-size:14px"></i> back</div>
+  <svg class="sd-glow" width="58" height="58" viewBox="0 0 96 96" fill="none">
+    <line x1="33" y1="22" x2="33" y2="74" stroke="#74b48c" stroke-width="5" stroke-linecap="round"/>
+    <line x1="43" y1="22" x2="43" y2="74" stroke="#74b48c" stroke-width="5" stroke-linecap="round"/>
+    <line x1="53" y1="22" x2="53" y2="74" stroke="#74b48c" stroke-width="5" stroke-linecap="round"/>
+    <line x1="63" y1="22" x2="63" y2="74" stroke="#74b48c" stroke-width="5" stroke-linecap="round"/>
+    <line x1="25" y1="48" x2="71" y2="48" stroke="#b08a5e" stroke-width="4.5" stroke-linecap="round"/>
+  </svg>
+  <div class="sd-label">private access</div>
+  <div class="vdots" id="viewer-pinrow">
+    <div class="vdot" id="vdot-0"></div><div class="vdot" id="vdot-1"></div><div class="vdot" id="vdot-2"></div>
+    <div class="vdot" id="vdot-3"></div><div class="vdot" id="vdot-4"></div><div class="vdot" id="vdot-5"></div>
+  </div>
+  <div class="sd-err" id="viewer-error"></div>
+  <div class="vkeys">
+    <div class="vkey" onclick="viewerKey('1')">1</div>
+    <div class="vkey" onclick="viewerKey('2')">2</div>
+    <div class="vkey" onclick="viewerKey('3')">3</div>
+    <div class="vkey" onclick="viewerKey('4')">4</div>
+    <div class="vkey" onclick="viewerKey('5')">5</div>
+    <div class="vkey" onclick="viewerKey('6')">6</div>
+    <div class="vkey" onclick="viewerKey('7')">7</div>
+    <div class="vkey" onclick="viewerKey('8')">8</div>
+    <div class="vkey" onclick="viewerKey('9')">9</div>
+    <div class="vkey blank"></div>
+    <div class="vkey" onclick="viewerKey('0')">0</div>
+    <div class="vkey" onclick="viewerBack()"><i class="ti ti-backspace" style="font-size:20px"></i></div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://gvilerrdqzwsdprobacc.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_2iBCyH3Q2lcQLE4Qj1C1Zg_4SJjlOxq';
@@ -1430,6 +1486,10 @@ function go(id) {
       const restricted = ['s-add-staff','s-edit-staff'];
       if(restricted.indexOf(id) > -1) { showToast('Owner access only'); return; }
     }
+    if(role === 'viewer') {
+      const allowed = ['s-home','s-insights','s-outlets'];
+      if(allowed.indexOf(id) === -1) { showToast('View only'); return; }
+    }
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -1467,7 +1527,7 @@ let selectedStaffId = null;
 
 async function loadStaffNameList() {
   const result = await sb.from('staff').select('id,name,role,outlet_id').order('name');
-  const data = result.data || [];
+  const data = (result.data || []).filter(function(s){ return s.role !== 'viewer'; });
   const list = document.getElementById('staff-name-list');
   if(!list) return;
   if(data.length === 0) { list.innerHTML = '<div class="empty-state">No staff found.</div>'; return; }
@@ -1544,6 +1604,91 @@ async function callStaffLogin(staffId, pin) {
   let data = {};
   try { data = await res.json(); } catch(e) {}
   return { status: res.status, data: data };
+}
+
+// ---- Secret door (read-only viewer access) ----
+let _logoTaps = 0, _logoTimer = null;
+function logoTap() {
+  _logoTaps++;
+  clearTimeout(_logoTimer);
+  if(_logoTaps >= 2) { _logoTaps = 0; openSecretDoor(); return; }
+  _logoTimer = setTimeout(function(){ _logoTaps = 0; }, 450);
+}
+let viewerPin = '';
+function openSecretDoor() {
+  viewerPin = '';
+  updateViewerDots();
+  const o = document.getElementById('secret-door');
+  const err = document.getElementById('viewer-error'); if(err) err.textContent = '';
+  const row = document.getElementById('viewer-pinrow'); if(row) row.classList.remove('success');
+  o.style.display = 'flex';
+  requestAnimationFrame(function(){ o.classList.add('open'); });
+}
+function closeSecretDoor() {
+  const o = document.getElementById('secret-door');
+  o.classList.remove('open');
+  setTimeout(function(){ o.style.display = 'none'; }, 700);
+  viewerPin = '';
+}
+function updateViewerDots() {
+  for(let i=0;i<6;i++){ const d = document.getElementById('vdot-'+i); if(d) d.className = 'vdot' + (i < viewerPin.length ? ' filled' : ''); }
+}
+function viewerKey(d) {
+  if(viewerPin.length >= 6) return;
+  const err = document.getElementById('viewer-error'); if(err) err.textContent = '';
+  viewerPin += d;
+  updateViewerDots();
+  if(viewerPin.length === 6) setTimeout(doViewerLogin, 180);
+}
+function viewerBack() {
+  viewerPin = viewerPin.slice(0,-1);
+  updateViewerDots();
+}
+async function doViewerLogin() {
+  const err = document.getElementById('viewer-error');
+  const row = document.getElementById('viewer-pinrow');
+  let data = {};
+  try {
+    const res = await fetch(SUPABASE_URL + '/functions/v1/staff-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+      body: JSON.stringify({ mode: 'viewer', pin: viewerPin })
+    });
+    try { data = await res.json(); } catch(e) {}
+    if(res.status !== 200 || !data || !data.ok) {
+      if(row){ row.classList.remove('shake'); void row.offsetWidth; row.classList.add('shake'); }
+      viewerPin = ''; updateViewerDots();
+      if(err) err.textContent = (data && data.error) ? data.error : 'Incorrect PIN';
+      return;
+    }
+  } catch(e) {
+    if(err) err.textContent = 'Connection error';
+    viewerPin = ''; updateViewerDots();
+    return;
+  }
+  const u = data.user;
+  authToken = data.access_token;
+  localStorage.setItem('tally_access_token', data.access_token);
+  localStorage.setItem('tally_refresh_token', data.refresh_token || '');
+  localStorage.setItem('tally_login_kind', 'staff');
+  localStorage.setItem('tally_user_name', u.name);
+  localStorage.setItem('tally_user_role', u.role);
+  localStorage.setItem('tally_user_outlet', u.outlet_id || '');
+  localStorage.setItem('tally_tenant_id', u.tenant_id || '');
+  currentUser = { id: u.staff_id, name: u.name, role: u.role, outlet_id: u.outlet_id };
+  currentTenantId = u.tenant_id || null;
+  ownerName = u.name;
+  if(row) row.classList.add('success');
+  await loadOutlets();
+  const savedId = localStorage.getItem('tally_outlet_id');
+  if(savedId && savedId !== 'all') currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || {id:'all',name:'All outlets'};
+  else currentOutlet = {id:'all',name:'All outlets'};
+  setTimeout(function(){
+    closeSecretDoor();
+    initHome();
+    go('s-home');
+    applyRoleUI();
+  }, 520);
 }
 
 async function doLogin() {
@@ -1681,6 +1826,16 @@ function applyRoleUI() {
   document.querySelectorAll('.staff-hide').forEach(function(el){
     el.style.display = isStaff ? 'none' : '';
   });
+
+  // Viewer (e.g. owner's family) - read-only: stats + Insights only
+  if(role === 'viewer') {
+    ['home-daily','home-shift','home-costing','home-rankings'].forEach(function(idn){
+      const el = document.getElementById(idn); if(el) el.style.display = 'none';
+    });
+    const rep = document.getElementById('home-reports'); if(rep) rep.style.display = '';
+    const sBtn = document.querySelector('[onclick="openSettings()"]'); if(sBtn) sBtn.style.display = 'none';
+    const oChip = document.querySelector('.outlet-chip'); if(oChip) oChip.style.pointerEvents = '';
+  }
 }
 
 function logout() {
