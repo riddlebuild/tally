@@ -1420,7 +1420,7 @@ function go(id) {
 let selectedStaffId = null;
 
 async function loadStaffNameList() {
-  const result = await sb.from('staff').select('*').order('name');
+  const result = await sb.from('staff').select('id,name,role,outlet_id').order('name');
   const data = result.data || [];
   const list = document.getElementById('staff-name-list');
   if(!list) return;
@@ -1489,6 +1489,17 @@ function updatePinDisplay() {
   }
 }
 
+async function callStaffLogin(staffId, pin) {
+  const res = await fetch(SUPABASE_URL + '/functions/v1/staff-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+    body: JSON.stringify({ staff_id: staffId, pin: pin })
+  });
+  let data = {};
+  try { data = await res.json(); } catch(e) {}
+  return { status: res.status, data: data };
+}
+
 async function doLogin() {
   if(!selectedStaffId) { showToast('Please select your name!'); return; }
   if(pinValue.length < 6) { showToast('Please enter your 6 digit PIN!'); return; }
@@ -1496,23 +1507,32 @@ async function doLogin() {
   const errEl = document.getElementById('login-error');
   btn.disabled = true; btn.textContent = 'Signing in...';
   errEl.style.display = 'none';
-  const result = await sb.from('staff').select('*').eq('id', selectedStaffId).eq('pin', pinValue);
+  const res = await callStaffLogin(selectedStaffId, pinValue);
   btn.disabled = false; btn.textContent = 'Sign in';
-  if(result.error || !result.data || result.data.length === 0) {
+  if(res.status !== 200 || !res.data || !res.data.ok) {
+    errEl.textContent = (res.data && res.data.error) ? res.data.error : 'Incorrect PIN. Please try again.';
     errEl.style.display = 'block';
-    pinValue = ''; updatePinDisplay(); return;
+    pinValue = ''; updatePinDisplay();
+    return;
   }
-  currentUser = result.data[0];
-  localStorage.setItem('tally_user_id', currentUser.id);
-  localStorage.setItem('tally_user_name', currentUser.name);
-  localStorage.setItem('tally_user_role', currentUser.role);
+  const u = res.data.user;
+  authToken = res.data.access_token;
+  localStorage.setItem('tally_access_token', res.data.access_token);
+  localStorage.setItem('tally_refresh_token', res.data.refresh_token || '');
+  localStorage.setItem('tally_login_kind', 'staff');
+  localStorage.setItem('tally_user_name', u.name);
+  localStorage.setItem('tally_user_role', u.role);
+  localStorage.setItem('tally_user_outlet', u.outlet_id || '');
+  localStorage.setItem('tally_tenant_id', u.tenant_id || '');
+  currentUser = { id: u.staff_id, name: u.name, role: u.role, outlet_id: u.outlet_id };
+  currentTenantId = u.tenant_id || null;
   pinValue = ''; updatePinDisplay();
   errEl.style.display = 'none';
   selectedStaffId = null;
   await loadOutlets();
-  ownerName = currentUser.name;
-  if(currentUser.role === 'staff' && currentUser.outlet_id) {
-    currentOutlet = outlets.find(function(o){ return o.id === currentUser.outlet_id; }) || outlets[0];
+  ownerName = u.name;
+  if(u.role === 'staff' && u.outlet_id) {
+    currentOutlet = outlets.find(function(o){ return o.id === u.outlet_id; }) || outlets[0];
   } else {
     const savedId = localStorage.getItem('tally_outlet_id');
     if(savedId === 'all') currentOutlet = {id:'all',name:'All outlets'};
@@ -1622,6 +1642,8 @@ function logout() {
   localStorage.removeItem('tally_user_id');
   localStorage.removeItem('tally_user_name');
   localStorage.removeItem('tally_user_role');
+  localStorage.removeItem('tally_user_outlet');
+  localStorage.removeItem('tally_tenant_id');
   const ownerStep = document.getElementById('login-step-owner');
   if(ownerStep) ownerStep.style.display = 'none';
   document.getElementById('login-step-1').style.display = 'block';
@@ -3300,6 +3322,40 @@ async function init() {
       }
     }
     // Session invalid/expired — clear and fall through to normal login
+    auth.signOut();
+    localStorage.removeItem('tally_login_kind');
+  }
+  // Staff session (real auth) restore
+  if(localStorage.getItem('tally_login_kind') === 'staff') {
+    authToken = localStorage.getItem('tally_access_token');
+    let u = await auth.getUser();
+    if(u.error) {
+      const r = await auth.refresh();
+      if(!r.error) u = await auth.getUser();
+    }
+    if(!u.error && u.data && u.data.id) {
+      currentTenantId = localStorage.getItem('tally_tenant_id') || null;
+      const meta = u.data.user_metadata || {};
+      const name = localStorage.getItem('tally_user_name') || meta.name || 'Staff';
+      const role = localStorage.getItem('tally_user_role') || meta.role || 'staff';
+      const outlet = localStorage.getItem('tally_user_outlet') || '';
+      const staffId = meta.staff_id || '';
+      currentUser = { id: staffId, name: name, role: role, outlet_id: outlet || null };
+      await loadOutlets();
+      if(outlets.length === 0) { go('s-login'); return; }
+      ownerName = name;
+      if(role === 'staff' && outlet) {
+        currentOutlet = outlets.find(function(o){ return o.id === outlet; }) || outlets[0];
+      } else {
+        const savedId = localStorage.getItem('tally_outlet_id');
+        if(savedId === 'all') currentOutlet = {id:'all', name:'All outlets'};
+        else currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
+      }
+      initHome();
+      go('s-home');
+      applyRoleUI();
+      return;
+    }
     auth.signOut();
     localStorage.removeItem('tally_login_kind');
   }
