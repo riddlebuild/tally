@@ -78,6 +78,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .stat-label{font-size:11px;color:var(--ink-soft);margin-bottom:6px;letter-spacing:0.02em;}
 .stat-val{font-size:21px;font-weight:500;color:var(--ink);}
 .stat-sub{font-size:11px;margin-top:4px;}
+.stat-yest{font-size:10px;margin-top:5px;line-height:1.3;}
 .section-lbl{font-size:11px;color:var(--ink-soft);letter-spacing:0.1em;text-transform:uppercase;margin:0 1.1rem 0.6rem;}
 .menu-card{background:var(--white);border:1px solid var(--border);border-radius:12px;margin:0 1.1rem 1.25rem;overflow:hidden;}
 #s-settings .section-lbl{margin-left:0;margin-right:0;}
@@ -364,6 +365,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <div class="stat-label">Today's sales</div>
           <div class="stat-val" id="stat-sales">RM 0</div>
           <div class="stat-sub"><span class="badge badge-neutral" id="stat-sales-sub">No entries</span></div>
+          <div class="stat-yest" id="stat-sales-yest" style="display:none;"></div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Cash variance</div>
@@ -1997,6 +1999,7 @@ async function loadHomeStats() {
   document.getElementById('stat-sales').style.color = 'var(--ink)';
   document.getElementById('stat-sales-sub').className = 'badge badge-neutral';
   document.getElementById('stat-sales-sub').textContent = 'No entries';
+  const _yestReset = document.getElementById('stat-sales-yest'); if(_yestReset) _yestReset.style.display = 'none';
   document.getElementById('stat-variance').textContent = '—';
   document.getElementById('stat-variance').style.color = 'var(--ink)';
   document.getElementById('stat-variance-sub').className = 'badge badge-neutral';
@@ -2050,6 +2053,34 @@ async function loadHomeStats() {
       vSub.className = 'badge badge-green'; vSub.textContent = currentOutlet.id === 'all' ? 'Total overage' : 'Overage';
     }
   }
+
+  // Yesterday comparison on the sales card
+  const ydate = new Date(); ydate.setDate(ydate.getDate() - 1);
+  const yestStr = ydate.toISOString().split('T')[0];
+  let yq = sb.from('sales_entries').select('*').eq('date', yestStr);
+  if(currentOutlet.id !== 'all') yq = yq.eq('outlet_id', currentOutlet.id);
+  const yres = await yq;
+  const yData = yres.data || [];
+  const yestTotal = yData.reduce(function(a,s){ return a + channelTotal(s); }, 0);
+  const todayTotal = salesData.reduce(function(a,s){ return a + channelTotal(s); }, 0);
+  const yestEl = document.getElementById('stat-sales-yest');
+  if(yestEl) {
+    if(todayTotal > 0 && yestTotal > 0) {
+      const pct = ((todayTotal - yestTotal) / yestTotal) * 100;
+      let arrow, col;
+      if(pct > 0.5) { arrow = '\u2191'; col = 'var(--matcha)'; }
+      else if(pct < -0.5) { arrow = '\u2193'; col = 'var(--vermillion)'; }
+      else { arrow = '\u2248'; col = 'var(--ink-soft)'; }
+      yestEl.innerHTML = '<span style="color:' + col + ';font-weight:600;">' + arrow + ' ' + Math.abs(pct).toFixed(0) + '%</span> <span style="color:var(--ink-soft);">vs yesterday (RM ' + yestTotal.toFixed(0) + ')</span>';
+      yestEl.style.display = 'block';
+    } else if(todayTotal === 0 && yestTotal > 0) {
+      yestEl.innerHTML = '<span style="color:var(--ink-soft);">Yesterday: RM ' + yestTotal.toFixed(2) + '</span>';
+      yestEl.style.display = 'block';
+    } else {
+      yestEl.style.display = 'none';
+    }
+  }
+
   if(expData.length > 0) {
     const total = expData.reduce(function(a,b){ return a + parseFloat(b.amount); }, 0);
     document.getElementById('stat-expenses').style.color = 'var(--amber)';
