@@ -542,6 +542,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     <div class="pad">
       <div class="card">
         <div class="card-head" style="color:var(--amber);"><i class="ti ti-plus" style="font-size:14px"></i> Add expense</div>
+        <div id="exp-edit-banner" style="display:none;margin-bottom:0.85rem;padding:0.6rem 0.8rem;border-radius:8px;font-size:12px;background:var(--amber-light);color:var(--amber);"><span id="exp-edit-text"></span> · <span onclick="cancelExpenseEdit()" style="text-decoration:underline;cursor:pointer;">Cancel</span></div>
         <div class="form-row">
           <label class="form-lbl">Item name</label>
           <input class="inp" id="exp-item" type="text" placeholder="e.g. ice cubes, kitchen towels"/>
@@ -1469,6 +1470,11 @@ let outletFields = 1;
 let currentUser = null;
 let pinValue = '';
 let editingWastageId = null;
+let editingExpenseId = null;
+let editingSalesId = null;
+let editingSalesDate = null;
+let editingSalesOutlet = null;
+let pendingSalesEditId = null;
 
 function canEditEntries() {
   return currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin');
@@ -1500,6 +1506,7 @@ function go(id) {
   window.scrollTo(0,0);
   if(id === 's-home') loadHomeStats();
   if(id === 's-expenses') {
+    cancelExpenseEdit();
     loadExpenses(); loadExpenseCategoryOptions();
     if(currentUser) { const el = document.getElementById('exp-by'); if(el && !el.value) el.value = currentUser.name; }
   }
@@ -2203,6 +2210,8 @@ async function loadSalesHistory() {
     expMap[k] = (expMap[k] || 0) + parseFloat(e.amount);
   });
   histEl.innerHTML = hist.map(function(s){
+    const canEdit = canEditEntries();
+    const editBtn = canEdit ? '<i class="ti ti-pencil" onclick="openEditSales(\'' + s.id + '\')" style="font-size:14px;color:var(--ink-soft);margin-left:6px;cursor:pointer;flex-shrink:0;"></i>' : '';
     const total = (+s.cash)+(+s.card)+(+s.qr||0)+(+s.grabfood||0)+(+s.foodpanda||0)+(+s.shopeefood||0)+(+s.boost||0)+(+s.tng||0)+(+s.others||0);
     const expForRow = expMap[s.outlet_id + '|' + s.date] || 0;
     const variance = (total + expForRow) - (+s.pos_total);
@@ -2216,7 +2225,7 @@ async function loadSalesHistory() {
       '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">Cash RM' + (+s.cash).toFixed(2) + ' · Card RM' + (+s.card).toFixed(2) + ' · QR RM' + (+s.qr||0).toFixed(2) + (s.grabfood > 0 ? ' · Grab RM'+s.grabfood.toFixed(2) : '') + (s.foodpanda > 0 ? ' · Panda RM'+s.foodpanda.toFixed(2) : '') + (s.shopeefood > 0 ? ' · Shopee RM'+s.shopeefood.toFixed(2) : '') + '</div></div>' +
       '<div style="text-align:right;">' +
       '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + total.toFixed(2) + '</div>' +
-      '<div style="font-size:10px;color:' + varColor + ';">' + varText + '</div></div></div>';
+      '<div style="font-size:10px;color:' + varColor + ';">' + varText + '</div></div>' + editBtn + '</div>';
   }).join('');
   histCount.textContent = hist.length + ' entr' + (hist.length !== 1 ? 'ies' : 'y');
 }
@@ -2274,6 +2283,29 @@ async function prepSalesScreen() {
   const btn = document.getElementById('sales-btn');
   setSalesFormLocked(false);
   if(banner) banner.style.display = 'none';
+  editingSalesId = null; editingSalesDate = null; editingSalesOutlet = null;
+
+  // Editing a specific entry chosen from the history (pencil)
+  if(pendingSalesEditId) {
+    const pid = pendingSalesEditId; pendingSalesEditId = null;
+    const r = await sb.from('sales_entries').select('*').eq('id', pid);
+    const s = (r.data && r.data.length) ? r.data[0] : null;
+    if(s) {
+      editingSalesId = s.id; editingSalesDate = s.date; editingSalesOutlet = s.outlet_id;
+      fillSalesForm(s);
+      calcVar();
+      if(btn) btn.textContent = 'Update sales entry';
+      if(banner) {
+        const dlabel = s.date === getToday() ? "today\u2019s" : new Date(s.date+'T00:00:00').toLocaleDateString('en-MY',{day:'numeric',month:'short'}) + ' entry';
+        banner.style.background = '#e8f0e9';
+        banner.style.color = 'var(--matcha)';
+        banner.innerHTML = '<i class="ti ti-pencil" style="font-size:13px"></i> Editing ' + dlabel + (s.staff_name ? ' (logged by ' + s.staff_name + ')' : '') + '. Make changes and tap Update.';
+        banner.style.display = 'block';
+      }
+      return;
+    }
+  }
+
   if(!currentOutlet || currentOutlet.id === 'all') {
     clearSalesForm();
     if(currentUser) { const el = document.getElementById('sales-staff'); if(el) el.value = currentUser.name; }
@@ -2313,9 +2345,26 @@ async function prepSalesScreen() {
   }
 }
 
+async function openEditSales(id) {
+  if(!canEditEntries()) return;
+  const res = await sb.from('sales_entries').select('outlet_id').eq('id', id);
+  if(!res.data || !res.data.length) { showToast('Entry not found.'); return; }
+  const oid = res.data[0].outlet_id;
+  const o = outlets.find(function(x){ return x.id === oid; });
+  if(o) {
+    currentOutlet = o;
+    const nm = document.getElementById('current-outlet-name'); if(nm) nm.textContent = o.name;
+    localStorage.setItem('tally_outlet_id', o.id);
+  }
+  pendingSalesEditId = id;
+  go('s-sales');
+}
+
 async function saveSales() {
-  if(!currentOutlet) { showToast('Please select an outlet first!'); return; }
-  if(currentOutlet.id === 'all') { showToast('Please select a specific outlet to log sales!'); return; }
+  if(!editingSalesId) {
+    if(!currentOutlet) { showToast('Please select an outlet first!'); return; }
+    if(currentOutlet.id === 'all') { showToast('Please select a specific outlet to log sales!'); return; }
+  }
   const pos = parseFloat(document.getElementById('pos-total').value) || 0;
   const cash = parseFloat(document.getElementById('ch-cash').value) || 0;
   const card = parseFloat(document.getElementById('ch-card').value) || 0;
@@ -2325,30 +2374,39 @@ async function saveSales() {
   const notes = document.getElementById('sales-notes').value.trim();
   if(!staff) { showToast('Please enter your name!'); return; }
   const btn = document.getElementById('sales-btn');
-  btn.disabled = true; btn.textContent = 'Saving...';
-  const today = getToday();
-  // Fetch today's expenses to include in variance
+  btn.disabled = true; btn.textContent = editingSalesId ? 'Updating...' : 'Saving...';
+  const calcOutlet = editingSalesId ? editingSalesOutlet : currentOutlet.id;
+  const calcDate = editingSalesId ? editingSalesDate : getToday();
   let expTotal = 0;
-  const expResult = await sb.from('expenses').select('amount').eq('outlet_id', currentOutlet.id).eq('date', today);
+  const expResult = await sb.from('expenses').select('amount').eq('outlet_id', calcOutlet).eq('date', calcDate);
   if(expResult.data) expTotal = expResult.data.reduce(function(a,e){ return a + parseFloat(e.amount); }, 0);
-  const channelTotal = cash + card + qr + dynChannels.total;
-  const variance = (channelTotal + expTotal) - pos;
-  const saveData = Object.assign({outlet_id:currentOutlet.id,date:today,pos_total:pos,cash:cash,card:card,qr:qr,variance:variance,staff_name:staff,notes:notes}, dynChannels.data);
-  const existing = await sb.from('sales_entries').select('id').eq('outlet_id', currentOutlet.id).eq('date', today);
+  const chTotal = cash + card + qr + dynChannels.total;
+  const variance = (chTotal + expTotal) - pos;
+  const saveData = Object.assign({pos_total:pos,cash:cash,card:card,qr:qr,variance:variance,staff_name:staff,notes:notes}, dynChannels.data);
   let error;
-  if(existing.data && existing.data.length > 0) {
-    const r = await sb.from('sales_entries').update(saveData).eq('id', existing.data[0].id);
+  if(editingSalesId) {
+    const r = await sb.from('sales_entries').update(saveData).eq('id', editingSalesId);
     error = r.error;
   } else {
-    const r = await sb.from('sales_entries').insert(saveData);
-    error = r.error;
+    saveData.outlet_id = currentOutlet.id; saveData.date = getToday();
+    const existing = await sb.from('sales_entries').select('id').eq('outlet_id', currentOutlet.id).eq('date', getToday());
+    if(existing.data && existing.data.length > 0) {
+      const r = await sb.from('sales_entries').update(saveData).eq('id', existing.data[0].id); error = r.error;
+    } else {
+      const r = await sb.from('sales_entries').insert(saveData); error = r.error;
+    }
   }
-  btn.disabled = false; btn.textContent = 'Save sales entry';
-  if(error) { showToast('Error: ' + error.message); return; }
-  showToast('Sales entry saved!');
+  btn.disabled = false;
+  if(error) { btn.textContent = editingSalesId ? 'Update sales entry' : 'Save sales entry'; showToast('Error: ' + error.message); return; }
+  const wasEditing = !!editingSalesId;
+  editingSalesId = null; editingSalesDate = null; editingSalesOutlet = null;
+  btn.textContent = 'Save sales entry';
+  showToast(wasEditing ? 'Sales entry updated!' : 'Sales entry saved!');
   ['pos-total','ch-cash','ch-card','ch-qr','sales-staff','sales-notes'].forEach(function(id){ document.getElementById(id).value = ''; });
   document.getElementById('dynamic-channels').querySelectorAll('input').forEach(function(inp){ inp.value = ''; });
   document.getElementById('var-box').style.display = 'none';
+  const banner = document.getElementById('sales-edit-banner'); if(banner) banner.style.display = 'none';
+  setSalesFormLocked(false);
   go('s-home');
 }
 
@@ -2382,10 +2440,12 @@ async function loadExpenses() {
     list.innerHTML = '<div class="empty-state">No expenses logged yet today.</div>';
     countEl.textContent = '0 items'; totalRow.style.display = 'none';
   } else {
+    const canEdit = canEditEntries();
+    const editBtn = function(id){ return canEdit ? '<i class="ti ti-pencil" onclick="openEditExpense(\'' + id + '\')" style="font-size:14px;color:var(--ink-soft);margin-left:8px;cursor:pointer;flex-shrink:0;"></i>' : ''; };
     list.innerHTML = data.map(function(e){
       return '<div class="exp-row"><span class="exp-cat ' + (catClass[e.category]||'cat-other') + '">' + e.category + '</span>' +
         '<span class="exp-name">' + e.item_name + '<br/>' + (e.bought_by ? '<span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> ' + e.bought_by + '</span>' : '<span style="color:var(--border);font-size:11px;">No name logged</span>') + '</span>' +
-        '<span class="exp-amt">RM ' + parseFloat(e.amount).toFixed(2) + '</span></div>';
+        '<span class="exp-amt">RM ' + parseFloat(e.amount).toFixed(2) + '</span>' + editBtn(e.id) + '</div>';
     }).join('');
     const total = data.reduce(function(a,b){ return a + parseFloat(b.amount); }, 0);
     countEl.textContent = data.length + ' item' + (data.length !== 1 ? 's' : '');
@@ -2399,6 +2459,8 @@ async function loadExpenses() {
     histCount.textContent = '';
   } else {
     const grouped = {};
+    const canEditH = canEditEntries();
+    const editBtnH = function(id){ return canEditH ? '<i class="ti ti-pencil" onclick="openEditExpense(\'' + id + '\')" style="font-size:14px;color:var(--ink-soft);margin-left:8px;cursor:pointer;flex-shrink:0;"></i>' : ''; };
     hist.forEach(function(e){ if(!grouped[e.date]) grouped[e.date]=[]; grouped[e.date].push(e); });
     histEl.innerHTML = Object.keys(grouped).map(function(date){
       const items = grouped[date];
@@ -2412,7 +2474,7 @@ async function loadExpenses() {
         items.map(function(e){
           return '<div class="exp-row" style="padding:4px 0;"><span class="exp-cat ' + (catClass[e.category]||'cat-other') + '">' + e.category + '</span>' +
             '<span class="exp-name">' + e.item_name + (e.bought_by ? '<br/><span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> '+e.bought_by+'</span>' : '') + '</span>' +
-            '<span class="exp-amt">RM ' + parseFloat(e.amount).toFixed(2) + '</span></div>';
+            '<span class="exp-amt">RM ' + parseFloat(e.amount).toFixed(2) + '</span>' + editBtnH(e.id) + '</div>';
         }).join('') + '</div>';
     }).join('');
     histCount.textContent = hist.length + ' entries';
@@ -2420,8 +2482,10 @@ async function loadExpenses() {
 }
 
 async function saveExpense() {
-  if(!currentOutlet) { showToast('Please select an outlet first!'); return; }
-  if(currentOutlet.id === 'all') { showToast('Please select a specific outlet to log expenses!'); return; }
+  if(!editingExpenseId) {
+    if(!currentOutlet) { showToast('Please select an outlet first!'); return; }
+    if(currentOutlet.id === 'all') { showToast('Please select a specific outlet to log expenses!'); return; }
+  }
   const item = document.getElementById('exp-item').value.trim();
   const amount = parseFloat(document.getElementById('exp-amount').value);
   const cat = document.getElementById('exp-cat').value;
@@ -2429,13 +2493,50 @@ async function saveExpense() {
   if(!item) { showToast('Please enter an item name!'); return; }
   if(!amount || amount <= 0) { showToast('Please enter a valid amount!'); return; }
   const btn = document.getElementById('exp-btn');
-  btn.disabled = true; btn.textContent = 'Saving...';
-  const result = await sb.from('expenses').insert({outlet_id:currentOutlet.id,date:getToday(),item_name:item,amount:amount,category:cat,bought_by:by});
-  btn.disabled = false; btn.textContent = 'Add expense';
-  if(result.error) { showToast('Error: ' + result.error.message); return; }
-  showToast('Expense added!');
-  ['exp-item','exp-amount','exp-by'].forEach(function(id){ document.getElementById(id).value = ''; });
+  btn.disabled = true; btn.textContent = editingExpenseId ? 'Updating...' : 'Saving...';
+  let result;
+  if(editingExpenseId) {
+    result = await sb.from('expenses').update({item_name:item,amount:amount,category:cat,bought_by:by}).eq('id', editingExpenseId);
+  } else {
+    result = await sb.from('expenses').insert({outlet_id:currentOutlet.id,date:getToday(),item_name:item,amount:amount,category:cat,bought_by:by});
+  }
+  btn.disabled = false;
+  if(result.error) { btn.textContent = editingExpenseId ? 'Update expense' : 'Add expense'; showToast('Error: ' + result.error.message); return; }
+  if(editingExpenseId) {
+    showToast('Expense updated!');
+    cancelExpenseEdit();
+  } else {
+    showToast('Expense added!');
+    ['exp-item','exp-amount','exp-by'].forEach(function(id){ document.getElementById(id).value = ''; });
+    btn.textContent = 'Add expense';
+  }
   loadExpenses();
+}
+
+async function openEditExpense(id) {
+  if(!canEditEntries()) return;
+  const res = await sb.from('expenses').select('*').eq('id', id);
+  if(!res.data || res.data.length === 0) { showToast('Entry not found.'); return; }
+  const e = res.data[0];
+  editingExpenseId = id;
+  await loadExpenseCategoryOptions();
+  document.getElementById('exp-item').value = e.item_name || '';
+  document.getElementById('exp-amount').value = (e.amount != null) ? e.amount : '';
+  document.getElementById('exp-cat').value = e.category || 'Other';
+  document.getElementById('exp-by').value = e.bought_by || '';
+  const btn = document.getElementById('exp-btn'); if(btn) btn.textContent = 'Update expense';
+  const txt = document.getElementById('exp-edit-text');
+  if(txt) txt.innerHTML = '<i class="ti ti-pencil" style="font-size:12px"></i> Editing \u201c' + (e.item_name || 'entry') + '\u201d';
+  const banner = document.getElementById('exp-edit-banner'); if(banner) banner.style.display = 'block';
+  const scroller = document.querySelector('#s-expenses [style*="overflow-y"]');
+  if(scroller) scroller.scrollTop = 0;
+}
+
+function cancelExpenseEdit() {
+  editingExpenseId = null;
+  ['exp-item','exp-amount','exp-by'].forEach(function(id){ const el = document.getElementById(id); if(el) el.value = ''; });
+  const btn = document.getElementById('exp-btn'); if(btn) btn.textContent = 'Add expense';
+  const banner = document.getElementById('exp-edit-banner'); if(banner) banner.style.display = 'none';
 }
 
 async function loadWastage() {
