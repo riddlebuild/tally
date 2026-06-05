@@ -166,6 +166,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .role-admin{background:var(--matcha-light);color:var(--matcha);}
 .role-owner{background:#e8f0fb;color:#2d6bc4;}
 .role-staff{background:var(--wood-light);color:var(--wood);}
+.role-viewer{background:#f0edf8;color:#6b4fa0;}
 .staff-row{display:flex;align-items:center;gap:10px;padding:0.75rem 0;border-bottom:1px solid var(--border);}
 .staff-row:last-child{border-bottom:none;}
 .onboard-hero{padding:2.5rem 1.4rem 1.5rem;text-align:center;}
@@ -201,6 +202,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 #secret-door .vkey { height:66px; border-radius:50%; border:1px solid #243029; background:rgba(255,255,255,0.02); color:#cfe3d6; font-size:23px; font-weight:300; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; transition:background 0.15s ease; }
 #secret-door .vkey:active { background:rgba(116,180,140,0.18); }
 #secret-door .vkey.blank { border:none; background:transparent; cursor:default; }
+#secret-door .vkey.vkey-clear { font-size:12px; letter-spacing:0.08em; color:#5e7d6a; text-transform:uppercase; }
 #secret-door .sd-back { position:absolute; top:1.3rem; left:1.3rem; color:#3c5547; font-size:13px; cursor:pointer; letter-spacing:0.05em; display:flex; align-items:center; gap:5px; }
 </style>
 </head>
@@ -1286,7 +1288,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     <div class="vkey" onclick="viewerKey('7')">7</div>
     <div class="vkey" onclick="viewerKey('8')">8</div>
     <div class="vkey" onclick="viewerKey('9')">9</div>
-    <div class="vkey blank"></div>
+    <div class="vkey vkey-clear" onclick="viewerClear()">clear</div>
     <div class="vkey" onclick="viewerKey('0')">0</div>
     <div class="vkey" onclick="viewerBack()"><i class="ti ti-backspace" style="font-size:20px"></i></div>
   </div>
@@ -1642,6 +1644,11 @@ function viewerKey(d) {
 }
 function viewerBack() {
   viewerPin = viewerPin.slice(0,-1);
+  updateViewerDots();
+}
+function viewerClear() {
+  const err = document.getElementById('viewer-error'); if(err) err.textContent = '';
+  viewerPin = '';
   updateViewerDots();
 }
 async function doViewerLogin() {
@@ -3444,7 +3451,7 @@ async function loadStaffList() {
     return '<div class="menu-item" onclick="openEditStaff(\'' + s.id + '\')">' +
       '<div class="menu-icon mi-ink"><i class="ti ti-user"></i></div>' +
       '<div class="menu-text"><strong>' + s.name + '</strong><span>' + outletName + '</span></div>' +
-      '<span class="role-badge ' + (s.role === 'owner' ? 'role-owner' : s.role === 'admin' ? 'role-admin' : 'role-staff') + '">' + s.role + '</span>' +
+      '<span class="role-badge ' + (s.role === 'owner' ? 'role-owner' : s.role === 'admin' ? 'role-admin' : s.role === 'viewer' ? 'role-viewer' : 'role-staff') + '">' + (s.role === 'viewer' ? 'Viewer' : s.role) + '</span>' +
       '</div>';
   }).join('');
 }
