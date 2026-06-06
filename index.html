@@ -1335,18 +1335,23 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 <div class="screen" id="s-change-pin">
   <div class="topbar">
     <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
-    <span class="topbar-title">Change my PIN</span>
+    <span class="topbar-title" id="cp-title">My PIN</span>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
       <div class="card">
-        <label class="form-lbl">Current PIN</label>
-        <input class="inp" id="cp-current" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off"/>
-        <label class="form-lbl" style="margin-top:0.85rem;">New PIN (6 digits)</label>
-        <input class="inp" id="cp-new" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off"/>
-        <label class="form-lbl" style="margin-top:0.85rem;">Confirm new PIN</label>
-        <input class="inp" id="cp-confirm" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off"/>
-        <button class="submit-btn" id="cp-btn" onclick="changeMyPin()" style="margin-top:1rem;">Update PIN</button>
+        <div id="cp-msg" style="display:none;font-size:13px;color:var(--ink-mid);text-align:center;padding:0.6rem 0;line-height:1.5;"></div>
+        <div id="cp-form" style="display:none;">
+          <div id="cp-current-wrap">
+            <label class="form-lbl">Current PIN</label>
+            <input class="inp" id="cp-current" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off"/>
+          </div>
+          <label class="form-lbl" style="margin-top:0.85rem;">New PIN (6 digits)</label>
+          <input class="inp" id="cp-new" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off"/>
+          <label class="form-lbl" style="margin-top:0.85rem;">Confirm new PIN</label>
+          <input class="inp" id="cp-confirm" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off"/>
+          <button class="submit-btn" id="cp-btn" onclick="changeMyPin()" style="margin-top:1rem;">Update PIN</button>
+        </div>
         <div id="cp-error" style="color:var(--vermillion);font-size:12px;text-align:center;margin-top:0.75rem;display:none;"></div>
       </div>
       <div class="hint" style="margin-top:0.8rem;">Your PIN is how you sign in quickly. Keep it private.</div>
@@ -1661,10 +1666,7 @@ function go(id) {
   if(id === 's-reserve') loadReserveFloat();
   if(id === 's-rankings') loadRankings();
   if(id === 's-dev') loadDevStatus();
-  if(id === 's-change-pin') {
-    ['cp-current','cp-new','cp-confirm'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; });
-    const er=document.getElementById('cp-error'); if(er) er.style.display='none';
-  }
+  if(id === 's-change-pin') prepChangePin();
   if(id === 's-add-client') {
     ['ac-biz','ac-email','ac-pass','ac-owner-name'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; });
     const cb=document.getElementById('ac-enable-pin'); if(cb) cb.checked=false;
@@ -3436,6 +3438,49 @@ async function addClient() {
   go('s-dev');
 }
 
+let cpStaffId = null, cpMode = 'none';
+
+async function prepChangePin() {
+  const curWrap = document.getElementById('cp-current-wrap');
+  const form = document.getElementById('cp-form');
+  const msg = document.getElementById('cp-msg');
+  const err = document.getElementById('cp-error');
+  ['cp-current','cp-new','cp-confirm'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; });
+  if(err) err.style.display = 'none';
+  cpStaffId = null; cpMode = 'none';
+  if(!currentUser) { go('s-login'); return; }
+  let row = null;
+  if(typeof currentUser.id === 'string' && currentUser.id.indexOf('auth:') !== 0) {
+    const r = await sb.from('staff').select('id,pin').eq('id', currentUser.id);
+    row = r.data && r.data[0];
+  } else {
+    const r = await sb.from('staff').select('id,pin').eq('tenant_id', currentTenantId).eq('role', 'owner');
+    row = r.data && r.data[0];
+  }
+  if(!row) {
+    form.style.display = 'none';
+    msg.style.display = 'block';
+    msg.textContent = "PIN login isn't enabled for your account.";
+    document.getElementById('cp-title').textContent = 'My PIN';
+    return;
+  }
+  cpStaffId = row.id;
+  msg.style.display = 'none';
+  form.style.display = 'block';
+  const hasPin = !(row.pin === null || row.pin === '' || typeof row.pin === 'undefined');
+  if(hasPin) {
+    cpMode = 'change';
+    curWrap.style.display = 'block';
+    document.getElementById('cp-title').textContent = 'Change my PIN';
+    document.getElementById('cp-btn').textContent = 'Update PIN';
+  } else {
+    cpMode = 'setup';
+    curWrap.style.display = 'none';
+    document.getElementById('cp-title').textContent = 'Set up your PIN';
+    document.getElementById('cp-btn').textContent = 'Set PIN';
+  }
+}
+
 async function changeMyPin() {
   const cur = (document.getElementById('cp-current').value || '').trim();
   const nw = (document.getElementById('cp-new').value || '').trim();
@@ -3443,24 +3488,22 @@ async function changeMyPin() {
   const err = document.getElementById('cp-error');
   const show = function(m){ err.textContent = m; err.style.display = 'block'; };
   err.style.display = 'none';
-  if(!currentUser) { go('s-login'); return; }
-  // Only PIN-based accounts have a staff-row id. Email-only owners set their
-  // first PIN through onboarding, not here.
-  if(typeof currentUser.id !== 'string' || currentUser.id.indexOf('auth:') === 0) {
-    show("PIN login isn't set up for this account."); return;
-  }
+  if(!cpStaffId) { show("PIN login isn't enabled for your account."); return; }
   if(nw.length !== 6 || isNaN(nw)) { show('New PIN must be exactly 6 digits.'); return; }
   if(nw !== cf) { show("New PIN and confirmation don't match."); return; }
   const btn = document.getElementById('cp-btn');
-  btn.disabled = true; btn.textContent = 'Updating...';
-  const r = await sb.from('staff').select('pin').eq('id', currentUser.id);
-  if(r.error || !r.data || r.data.length === 0) { btn.disabled=false; btn.textContent='Update PIN'; show('Could not verify your account.'); return; }
-  if(String(r.data[0].pin) !== String(cur)) { btn.disabled=false; btn.textContent='Update PIN'; show('Current PIN is incorrect.'); return; }
-  const up = await sb.from('staff').update({ pin: nw }).eq('id', currentUser.id);
-  btn.disabled=false; btn.textContent='Update PIN';
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Saving...';
+  if(cpMode === 'change') {
+    const r = await sb.from('staff').select('pin').eq('id', cpStaffId);
+    if(r.error || !r.data || r.data.length === 0) { btn.disabled=false; btn.textContent=label; show('Could not verify your account.'); return; }
+    if(String(r.data[0].pin) !== String(cur)) { btn.disabled=false; btn.textContent=label; show('Current PIN is incorrect.'); return; }
+  }
+  const up = await sb.from('staff').update({ pin: nw }).eq('id', cpStaffId);
+  btn.disabled=false; btn.textContent=label;
   if(up.error) { show('Error: ' + up.error.message); return; }
   ['cp-current','cp-new','cp-confirm'].forEach(function(id){ document.getElementById(id).value=''; });
-  showToast('PIN updated!');
+  showToast(cpMode === 'setup' ? 'PIN set! Sign in with your name + PIN next time.' : 'PIN updated!');
   go('s-home');
 }
 
