@@ -372,12 +372,12 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="logo-mark">Tally</div>
       <div class="logo-sub">by Harulabs</div>
     </div>
+    <div id="home-biz-code" style="display:none;align-items:center;gap:5px;font-size:10px;color:var(--ink-soft);background:var(--matcha-light);padding:5px 11px;border-radius:999px;letter-spacing:0.03em;white-space:nowrap;flex-shrink:0;margin-right:4px;" title="Your business code"><i class="ti ti-hash" style="font-size:11px;color:var(--matcha);"></i>Business code <span id="home-biz-code-val" style="color:var(--matcha);font-weight:600;"></span></div>
     <div class="outlet-chip" onclick="go('s-outlets')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       <span id="current-outlet-name">Loading...</span>
       <i class="ti ti-chevron-down" style="font-size:11px"></i>
     </div>
-    <div id="home-biz-code" style="display:none;align-items:center;gap:4px;font-size:10px;background:var(--matcha-light);padding:5px 9px;border-radius:999px;letter-spacing:0.04em;white-space:nowrap;flex-shrink:0;margin-left:4px;" title="Your business code"><i class="ti ti-hash" style="font-size:11px;color:var(--matcha);"></i><span id="home-biz-code-val" style="color:var(--matcha);font-weight:600;"></span></div>
     <div class="back-btn" id="home-dev-btn" onclick="go('s-dev')" style="margin-left:4px;display:none;" title="Developer"><i class="ti ti-rocket" style="font-size:16px"></i></div>
     <div class="back-btn" id="home-pin-btn" onclick="go('s-change-pin')" style="margin-left:4px;" title="Change my PIN"><i class="ti ti-key" style="font-size:16px"></i></div>
     <div class="back-btn" onclick="openSettings()" style="margin-left:4px;" title="Settings"><i class="ti ti-settings" style="font-size:16px"></i></div>
@@ -1427,6 +1427,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
       <div class="hint" style="margin-top:0.6rem;">Your client businesses will appear here.</div>
+      <div class="section-lbl" style="margin-top:1.1rem;">Security</div>
+      <div class="card">
+        <div id="sec-status" style="margin-bottom:0.85rem;"></div>
+        <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;margin-bottom:0.6rem;">One-time: scramble (hash) all existing PINs so they're no longer stored in plain text. Safe — doesn't change how anyone logs in.</div>
+        <button onclick="runHashAllPins()" id="hash-all-btn" style="width:100%;padding:10px;background:var(--matcha-light);border:1px solid var(--matcha-light);border-radius:8px;color:var(--matcha);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;"><i class="ti ti-lock" style="font-size:13px"></i> Hash all PINs now</button>
+        <div id="hash-all-result" style="font-size:12px;text-align:center;margin-top:0.6rem;display:none;"></div>
+      </div>
       <button onclick="logout()" style="width:100%;margin-top:1.4rem;padding:12px;background:none;border:1px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--ink-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="ti ti-logout" style="font-size:15px"></i> Sign out</button>
       <div class="hint" style="margin-top:1rem;">Tally · v1.1 · Harulabs platform</div>
     </div>
@@ -3630,13 +3637,50 @@ async function callPlatform(path, body) {
   return { status: res.status, data: data };
 }
 
+function renderSecurity(sec) {
+  const el = document.getElementById('sec-status');
+  if(!el) return;
+  if(!sec) { el.innerHTML = ''; return; }
+  const total = sec.total || 0, hashed = sec.hashed || 0, plain = sec.plaintext_remaining || 0;
+  const pct = total ? Math.round((hashed / total) * 100) : 0;
+  const allHashed = total > 0 && hashed >= total;
+  const barColor = pct === 100 ? 'var(--matcha)' : 'var(--amber)';
+  const iters = (sec.iterations || 0).toLocaleString();
+  el.innerHTML =
+    '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;"><i class="ti ti-shield-lock" style="color:var(--matcha);font-size:16px;"></i><span style="font-size:13px;font-weight:600;color:var(--ink);">PIN protection</span></div>' +
+    '<div class="insight-metric"><span class="insight-label">Method</span><span class="insight-val" style="font-size:12px;">' + escHtml(sec.algo || '\u2014') + '</span></div>' +
+    '<div class="insight-metric"><span class="insight-label">Iterations</span><span class="insight-val" style="font-size:12px;">' + iters + '</span></div>' +
+    '<div class="insight-metric"><span class="insight-label">Salt</span><span class="insight-val" style="font-size:12px;">' + escHtml(sec.salt || 'unique per PIN') + '</span></div>' +
+    '<div class="insight-metric"><span class="insight-label">Hashed</span><span class="insight-val" style="font-size:12px;color:' + (allHashed ? 'var(--matcha)' : 'var(--amber)') + ';">' + hashed + ' / ' + total + ' (' + pct + '%)</span></div>' +
+    '<div style="height:6px;background:var(--border);border-radius:999px;overflow:hidden;margin:6px 0 8px;"><div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:999px;transition:width .4s;"></div></div>' +
+    '<div class="insight-metric"><span class="insight-label">Plain text remaining</span><span class="insight-val" style="font-size:12px;color:' + (plain === 0 ? 'var(--matcha)' : 'var(--ink-mid)') + ';">' + (plain === 0 ? 'none (cleared)' : plain + ' PIN' + (plain === 1 ? '' : 's')) + '</span></div>';
+}
+
+async function runHashAllPins() {
+  const btn = document.getElementById('hash-all-btn');
+  const out = document.getElementById('hash-all-result');
+  if(!confirm('Hash all existing PINs now? This is safe and does not change how anyone logs in.')) return;
+  btn.disabled = true; const orig = btn.innerHTML; btn.innerHTML = 'Hashing...';
+  const r = await callPlatform('hash-all-pins', {});
+  btn.disabled = false; btn.innerHTML = orig;
+  out.style.display = 'block';
+  if(r.status !== 200 || !r.data || !r.data.ok) {
+    out.style.color = 'var(--vermillion)';
+    out.textContent = (r.data && r.data.error) ? r.data.error : 'Failed.';
+    return;
+  }
+  out.style.color = 'var(--matcha)';
+  out.textContent = 'Done — ' + r.data.newly_hashed + ' newly hashed, ' + r.data.already_hashed + ' already done' + (r.data.failed ? ', ' + r.data.failed + ' failed' : '') + '.';
+  loadDevStatus();
+}
+
 async function loadDevStatus() {
   const statusEl = document.getElementById('dev-status');
   const listEl = document.getElementById('dev-client-list');
   if(listEl) { listEl.style.opacity = '1'; listEl.innerHTML = '<div class="loading">Loading clients...</div>'; }
   let clients = [], count = 0, errMsg = null;
   const r = await callPlatform('platform-clients', {});
-  if(r.status === 200 && r.data && r.data.ok) { clients = r.data.clients || []; count = r.data.count || 0; }
+  if(r.status === 200 && r.data && r.data.ok) { clients = r.data.clients || []; count = r.data.count || 0; renderSecurity(r.data.security); }
   else { errMsg = (r.data && r.data.error) ? r.data.error : 'Could not load clients'; }
   if(statusEl) {
     const rows = [
