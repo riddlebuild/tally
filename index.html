@@ -372,6 +372,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <i class="ti ti-chevron-down" style="font-size:11px"></i>
     </div>
     <div class="back-btn" id="home-dev-btn" onclick="go('s-dev')" style="margin-left:4px;display:none;" title="Developer"><i class="ti ti-rocket" style="font-size:16px"></i></div>
+    <div class="back-btn" id="home-pin-btn" onclick="go('s-change-pin')" style="margin-left:4px;" title="Change my PIN"><i class="ti ti-key" style="font-size:16px"></i></div>
     <div class="back-btn" onclick="openSettings()" style="margin-left:4px;" title="Settings"><i class="ti ti-settings" style="font-size:16px"></i></div>
     <div class="back-btn" onclick="logout()" style="margin-left:4px;" title="Sign out"><i class="ti ti-logout" style="font-size:16px"></i></div>
   </div>
@@ -1296,6 +1297,28 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
 </div>
 
+<div class="screen" id="s-change-pin">
+  <div class="topbar">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Change my PIN</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="card">
+        <label class="form-lbl">Current PIN</label>
+        <input class="inp" id="cp-current" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off"/>
+        <label class="form-lbl" style="margin-top:0.85rem;">New PIN (6 digits)</label>
+        <input class="inp" id="cp-new" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off"/>
+        <label class="form-lbl" style="margin-top:0.85rem;">Confirm new PIN</label>
+        <input class="inp" id="cp-confirm" type="password" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off"/>
+        <button class="submit-btn" id="cp-btn" onclick="changeMyPin()" style="margin-top:1rem;">Update PIN</button>
+        <div id="cp-error" style="color:var(--vermillion);font-size:12px;text-align:center;margin-top:0.75rem;display:none;"></div>
+      </div>
+      <div class="hint" style="margin-top:0.8rem;">Your PIN is how you sign in quickly. Keep it private.</div>
+    </div>
+  </div>
+</div>
+
 <div class="screen" id="s-dev">
   <div class="topbar">
     <span class="topbar-title">Mission control</span>
@@ -1603,6 +1626,10 @@ function go(id) {
   if(id === 's-reserve') loadReserveFloat();
   if(id === 's-rankings') loadRankings();
   if(id === 's-dev') loadDevStatus();
+  if(id === 's-change-pin') {
+    ['cp-current','cp-new','cp-confirm'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; });
+    const er=document.getElementById('cp-error'); if(er) er.style.display='none';
+  }
   if(id === 's-sales') {
     loadSalesHistory(); loadSalesExpensesNote(); showCashFloatReminder();
     enterSalesScreen();
@@ -1969,6 +1996,8 @@ function applyRoleUI() {
   // Developer quick-access (home header) - owner only
   const homeDevBtn = document.getElementById('home-dev-btn');
   if(homeDevBtn) homeDevBtn.style.display = (currentUser && currentUser.role === 'developer') ? '' : 'none';
+  const homePinBtn = document.getElementById('home-pin-btn');
+  if(homePinBtn) homePinBtn.style.display = (currentUser && (currentUser.role === 'staff' || currentUser.role === 'admin' || currentUser.role === 'owner')) ? '' : 'none';
 
   // Reserve float - hidden for staff
   const reserveMenu = document.querySelector('[onclick="go(\'s-reserve\')"]');
@@ -3318,6 +3347,34 @@ function setRankTab(el, period) {
   el.classList.add('on');
   rankPeriod = period;
   loadRankings();
+}
+
+async function changeMyPin() {
+  const cur = (document.getElementById('cp-current').value || '').trim();
+  const nw = (document.getElementById('cp-new').value || '').trim();
+  const cf = (document.getElementById('cp-confirm').value || '').trim();
+  const err = document.getElementById('cp-error');
+  const show = function(m){ err.textContent = m; err.style.display = 'block'; };
+  err.style.display = 'none';
+  if(!currentUser) { go('s-login'); return; }
+  // Only PIN-based accounts have a staff-row id. Email-only owners set their
+  // first PIN through onboarding, not here.
+  if(typeof currentUser.id !== 'string' || currentUser.id.indexOf('auth:') === 0) {
+    show("PIN login isn't set up for this account."); return;
+  }
+  if(nw.length !== 6 || isNaN(nw)) { show('New PIN must be exactly 6 digits.'); return; }
+  if(nw !== cf) { show("New PIN and confirmation don't match."); return; }
+  const btn = document.getElementById('cp-btn');
+  btn.disabled = true; btn.textContent = 'Updating...';
+  const r = await sb.from('staff').select('pin').eq('id', currentUser.id);
+  if(r.error || !r.data || r.data.length === 0) { btn.disabled=false; btn.textContent='Update PIN'; show('Could not verify your account.'); return; }
+  if(String(r.data[0].pin) !== String(cur)) { btn.disabled=false; btn.textContent='Update PIN'; show('Current PIN is incorrect.'); return; }
+  const up = await sb.from('staff').update({ pin: nw }).eq('id', currentUser.id);
+  btn.disabled=false; btn.textContent='Update PIN';
+  if(up.error) { show('Error: ' + up.error.message); return; }
+  ['cp-current','cp-new','cp-confirm'].forEach(function(id){ document.getElementById(id).value=''; });
+  showToast('PIN updated!');
+  go('s-home');
 }
 
 async function loadDevStatus() {
