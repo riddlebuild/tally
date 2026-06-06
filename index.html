@@ -3930,14 +3930,12 @@ async function init() {
       return;
     }
   }
-  // No saved session - check if app is set up
-  await loadOutlets();
-  if(outlets.length > 0) {
-    loadStaffNameList();
-    go('s-login');
-  } else {
-    go('s-onboard');
-  }
+  // No saved session — show the staff login screen.
+  // We no longer gate this on loadOutlets(): outlets is now tenant-isolated and
+  // returns nothing to an anonymous (pre-login) visitor. The staff name list only
+  // needs the staff table, which stays readable, so load it directly.
+  loadStaffNameList();
+  go('s-login');
 }
 
 init();
