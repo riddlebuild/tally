@@ -3377,25 +3377,49 @@ async function changeMyPin() {
   go('s-home');
 }
 
+function escHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+async function callPlatform(path, body) {
+  const res = await fetch(SUPABASE_URL + '/functions/v1/' + path, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_KEY, 'Authorization':'Bearer ' + (authToken || '') },
+    body: JSON.stringify(body || {})
+  });
+  let data = {}; try { data = await res.json(); } catch(e) {}
+  return { status: res.status, data: data };
+}
+
 async function loadDevStatus() {
-  const c = document.getElementById('dev-status'); if(!c) return;
-  let bizCount = '—';
-  try {
-    const r = await sb.from('tenants').select('id');
-    if(r.data) bizCount = String(r.data.length);
-  } catch(e) {}
-  const rows = [
-    ['Signed in as', currentUser ? currentUser.name : '—'],
-    ['Your role', currentUser ? currentUser.role : '—'],
-    ['Businesses', bizCount],
-    ['Outlets', String((outlets || []).length)],
-    ['Data isolation', 'On · tenant-locked'],
-    ['PIN security', 'Server-validated'],
-    ['Version', 'Tally v1.1']
-  ];
-  c.innerHTML = rows.map(function(r){
-    return '<div class="insight-metric"><span class="insight-label">' + r[0] + '</span><span class="insight-val" style="font-size:13px;">' + r[1] + '</span></div>';
-  }).join('');
+  const statusEl = document.getElementById('dev-status');
+  const listEl = document.getElementById('dev-client-list');
+  if(listEl) { listEl.style.opacity = '1'; listEl.innerHTML = '<div class="loading">Loading clients...</div>'; }
+  let clients = [], count = 0, errMsg = null;
+  const r = await callPlatform('platform-clients', {});
+  if(r.status === 200 && r.data && r.data.ok) { clients = r.data.clients || []; count = r.data.count || 0; }
+  else { errMsg = (r.data && r.data.error) ? r.data.error : 'Could not load clients'; }
+  if(statusEl) {
+    const rows = [
+      ['Signed in as', currentUser ? currentUser.name : '—'],
+      ['Your role', currentUser ? currentUser.role : '—'],
+      ['Businesses', errMsg ? '—' : String(count)],
+      ['Data isolation', 'On · tenant-locked'],
+      ['PIN security', 'Server-validated'],
+      ['Version', 'Tally v1.1']
+    ];
+    statusEl.innerHTML = rows.map(function(x){
+      return '<div class="insight-metric"><span class="insight-label">' + x[0] + '</span><span class="insight-val" style="font-size:13px;">' + x[1] + '</span></div>';
+    }).join('');
+  }
+  if(listEl) {
+    if(errMsg) { listEl.innerHTML = '<div style="font-size:12px;color:var(--vermillion);">' + escHtml(errMsg) + '</div>'; return; }
+    let html = '';
+    clients.forEach(function(c){
+      html += '<div class="staff-row"><div style="flex:1;"><div style="font-size:14px;color:var(--ink);font-weight:500;">' + escHtml(c.business_name || 'Unnamed') + '</div><div style="font-size:11px;color:var(--ink-soft);">' + (c.outlets || 0) + ' outlet' + (c.outlets === 1 ? '' : 's') + ' · ' + (c.staff || 0) + ' staff · ' + escHtml(c.status || 'active') + '</div></div></div>';
+    });
+    const sep = clients.length ? 'margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);' : '';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;' + sep + '"><div><strong style="font-size:14px;color:var(--ink);">Add client</strong><div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">Onboard a new business</div></div><span class="badge badge-neutral" style="white-space:nowrap;">Soon</span></div>';
+    listEl.innerHTML = html;
+  }
 }
 
 async function loadRankings() {
