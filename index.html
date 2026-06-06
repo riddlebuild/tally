@@ -205,6 +205,22 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 #secret-door .vkey.blank { border:none; background:transparent; cursor:default; }
 #secret-door .vkey.vkey-clear { font-size:12px; letter-spacing:0.08em; color:#5e7d6a; text-transform:uppercase; }
 #secret-door .sd-back { position:absolute; top:1.3rem; left:1.3rem; color:#3c5547; font-size:13px; cursor:pointer; letter-spacing:0.05em; display:flex; align-items:center; gap:5px; }
+#owner-welcome { position:fixed; inset:0; z-index:9998; display:none; flex-direction:column; align-items:center; justify-content:center; background:var(--cream); opacity:0; transition:opacity 0.55s ease; }
+#owner-welcome.show { opacity:1; }
+#owner-welcome.bye { opacity:0; }
+#owner-welcome .ow-line { stroke-dasharray:62; stroke-dashoffset:62; }
+#owner-welcome.show .ow-line { animation:owDraw 0.6s ease forwards; }
+#owner-welcome.show .ow-l1 { animation-delay:0.10s; }
+#owner-welcome.show .ow-l2 { animation-delay:0.20s; }
+#owner-welcome.show .ow-l3 { animation-delay:0.30s; }
+#owner-welcome.show .ow-l4 { animation-delay:0.40s; }
+#owner-welcome.show .ow-cross { animation-delay:0.58s; }
+@keyframes owDraw { to { stroke-dashoffset:0; } }
+#owner-welcome .ow-text { margin-top:1.3rem; font-family:'DM Serif Display',serif; font-size:23px; color:var(--matcha); letter-spacing:0.02em; opacity:0; }
+#owner-welcome.show .ow-text { animation:owFade 0.7s ease 0.85s forwards; }
+#owner-welcome .ow-sub { font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-soft); margin-top:7px; opacity:0; }
+#owner-welcome.show .ow-sub { animation:owFade 0.7s ease 1.15s forwards; }
+@keyframes owFade { to { opacity:1; } }
 </style>
 </head>
 <body>
@@ -1268,6 +1284,18 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
 </div>
 
+<div id="owner-welcome">
+  <svg width="64" height="64" viewBox="0 0 96 96" fill="none">
+    <line class="ow-line ow-l1" x1="33" y1="22" x2="33" y2="74" stroke="#4a7c59" stroke-width="5" stroke-linecap="round"/>
+    <line class="ow-line ow-l2" x1="43" y1="22" x2="43" y2="74" stroke="#4a7c59" stroke-width="5" stroke-linecap="round"/>
+    <line class="ow-line ow-l3" x1="53" y1="22" x2="53" y2="74" stroke="#4a7c59" stroke-width="5" stroke-linecap="round"/>
+    <line class="ow-line ow-l4" x1="63" y1="22" x2="63" y2="74" stroke="#4a7c59" stroke-width="5" stroke-linecap="round"/>
+    <line class="ow-line ow-cross" x1="25" y1="48" x2="71" y2="48" stroke="#8b5e3c" stroke-width="4.5" stroke-linecap="round"/>
+  </svg>
+  <div class="ow-text">Welcome back, <span id="ow-name">Harulabs</span></div>
+  <div class="ow-sub">Tally · by Harulabs</div>
+</div>
+
 <div id="secret-door">
   <div class="sd-back" onclick="closeSecretDoor()"><i class="ti ti-arrow-left" style="font-size:14px"></i> back</div>
   <svg class="sd-glow" width="58" height="58" viewBox="0 0 96 96" fill="none">
@@ -1633,6 +1661,26 @@ async function callStaffLogin(name, pin) {
   return { status: res.status, data: data };
 }
 
+// ---- Owner welcome transition ----
+function playOwnerWelcome(name) {
+  const ov = document.getElementById('owner-welcome');
+  if(!ov) return;
+  const nm = document.getElementById('ow-name'); if(nm) nm.textContent = name || 'Harulabs';
+  ov.classList.remove('bye', 'show');
+  ov.style.display = 'flex';
+  void ov.offsetWidth; // reflow so the draw animation replays each login
+  ov.classList.add('show');
+  let closed = false;
+  const close = function(){
+    if(closed) return; closed = true;
+    ov.classList.add('bye'); ov.classList.remove('show');
+    ov.removeEventListener('click', close);
+    setTimeout(function(){ ov.style.display = 'none'; ov.classList.remove('bye'); }, 600);
+  };
+  ov.addEventListener('click', close);
+  setTimeout(close, 1750);
+}
+
 // ---- Secret door (read-only viewer access) ----
 let _logoTaps = 0, _logoTimer = null;
 function logoTap() {
@@ -1823,6 +1871,7 @@ async function doOwnerLogin() {
   initHome();
   go('s-home');
   applyRoleUI();
+  playOwnerWelcome(displayName);
 }
 
 function applyRoleUI() {
