@@ -371,6 +371,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     <div style="flex:1;">
       <div class="logo-mark">Tally</div>
       <div class="logo-sub">by Harulabs</div>
+      <div id="home-biz-code" style="font-size:10px;color:var(--ink-soft);margin-top:3px;letter-spacing:0.04em;display:none;">code: <span id="home-biz-code-val" style="color:var(--matcha);font-weight:500;"></span></div>
     </div>
     <div class="outlet-chip" onclick="go('s-outlets')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1312,6 +1313,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     <div class="pad">
       <div class="card">
         <input type="hidden" id="ec-id"/>
+        <input type="hidden" id="ec-orig-code"/>
         <label class="form-lbl">Business name</label>
         <input class="inp" id="ec-biz" type="text" autocomplete="off"/>
         <label class="form-lbl" style="margin-top:0.85rem;">Business code (for staff login)</label>
@@ -1321,6 +1323,14 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div id="ec-error" style="color:var(--vermillion);font-size:12px;text-align:center;margin-top:0.75rem;display:none;"></div>
       </div>
       <div class="hint" style="margin-top:0.8rem;">Owner email, outlets and data are not changed here.</div>
+      <div class="card" style="border-color:var(--vermillion-light);margin-top:1.1rem;">
+        <div class="card-head" style="color:var(--vermillion);"><i class="ti ti-alert-triangle" style="font-size:14px"></i> Danger zone</div>
+        <div style="font-size:12px;color:var(--ink-mid);line-height:1.5;margin:0.4rem 0 0.75rem;">Permanently delete this business and <strong>all</strong> its data, staff and login accounts. This cannot be undone.</div>
+        <label class="form-lbl">Type the business code <span id="ec-del-code" style="color:var(--vermillion);font-weight:500;"></span> to confirm</label>
+        <input class="inp" id="ec-del-confirm" type="text" autocomplete="off" autocapitalize="none" placeholder="business code" style="border-color:var(--vermillion-light);"/>
+        <button onclick="deleteClient()" style="width:100%;margin-top:0.75rem;padding:11px;background:var(--vermillion-light);border:1px solid var(--vermillion-light);border-radius:8px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;"><i class="ti ti-trash" style="font-size:13px"></i> Permanently delete business</button>
+        <div id="ec-del-error" style="color:var(--vermillion);font-size:12px;text-align:center;margin-top:0.6rem;display:none;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1431,7 +1441,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     <line class="ow-line ow-l4" x1="63" y1="22" x2="63" y2="74" stroke="#4a7c59" stroke-width="5" stroke-linecap="round"/>
     <line class="ow-line ow-cross" x1="25" y1="48" x2="71" y2="48" stroke="#8b5e3c" stroke-width="4.5" stroke-linecap="round"/>
   </svg>
-  <div class="ow-text">Welcome back, <span id="ow-name">Harulabs</span></div>
+  <div class="ow-text"><span id="ow-greet">Welcome back</span>, <span id="ow-name">Harulabs</span></div>
   <div class="ow-sub">Tally · by Harulabs</div>
 </div>
 
@@ -1445,6 +1455,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     <line x1="25" y1="48" x2="71" y2="48" stroke="#b08a5e" stroke-width="4.5" stroke-linecap="round"/>
   </svg>
   <div class="sd-label">private access</div>
+  <input id="viewer-code" type="text" placeholder="business code" autocomplete="off" autocapitalize="none" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.16);border-radius:9px;color:#e8f0e9;font-size:13px;text-align:center;padding:9px 12px;margin-bottom:1.1rem;width:180px;outline:none;font-family:'DM Sans',sans-serif;letter-spacing:0.03em;"/>
   <div class="vdots" id="viewer-pinrow">
     <div class="vdot" id="vdot-0"></div><div class="vdot" id="vdot-1"></div><div class="vdot" id="vdot-2"></div>
     <div class="vdot" id="vdot-3"></div><div class="vdot" id="vdot-4"></div><div class="vdot" id="vdot-5"></div>
@@ -1818,7 +1829,8 @@ async function callStaffLogin(code, name, pin) {
 }
 
 // ---- Owner welcome transition ----
-function playOwnerWelcome(name) {
+function playOwnerWelcome(name, returning) {
+  const greet = document.getElementById('ow-greet'); if(greet) greet.textContent = (returning === false) ? 'Welcome' : 'Welcome back';
   const ov = document.getElementById('owner-welcome');
   if(!ov) return;
   const nm = document.getElementById('ow-name'); if(nm) nm.textContent = name || 'Harulabs';
@@ -1852,6 +1864,7 @@ function openSecretDoor() {
   const o = document.getElementById('secret-door');
   const err = document.getElementById('viewer-error'); if(err) err.textContent = '';
   const row = document.getElementById('viewer-pinrow'); if(row) row.classList.remove('success');
+  const vc = document.getElementById('viewer-code'); if(vc) vc.value = localStorage.getItem('tally_biz_code') || '';
   o.style.display = 'flex';
   requestAnimationFrame(function(){ o.classList.add('open'); });
 }
@@ -1883,12 +1896,14 @@ function viewerClear() {
 async function doViewerLogin() {
   const err = document.getElementById('viewer-error');
   const row = document.getElementById('viewer-pinrow');
+  const vcode = (document.getElementById('viewer-code').value || '').trim();
+  if(!vcode) { if(err) err.textContent = 'Enter the business code'; return; }
   let data = {};
   try {
     const res = await fetch(SUPABASE_URL + '/functions/v1/staff-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
-      body: JSON.stringify({ mode: 'viewer', pin: viewerPin })
+      body: JSON.stringify({ mode: 'viewer', code: vcode, pin: viewerPin })
     });
     try { data = await res.json(); } catch(e) {}
     if(res.status !== 200 || !data || !data.ok) {
@@ -1914,6 +1929,7 @@ async function doViewerLogin() {
   currentUser = { id: u.staff_id, name: u.name, role: u.role, outlet_id: u.outlet_id };
   currentTenantId = u.tenant_id || null;
   ownerName = u.name;
+  if(vcode) localStorage.setItem('tally_biz_code', vcode);
   if(row) row.classList.add('success');
   await loadOutlets();
   const savedId = localStorage.getItem('tally_outlet_id');
@@ -2044,7 +2060,7 @@ async function doOwnerLogin() {
   // Refresh per-business cache from the account so values from a previous login
   // on this device can't bleed in (business name + owner name).
   let bizName = '';
-  try { const bz = await sb.from('tenants').select('business_name').eq('id', currentTenantId); if(bz.data && bz.data[0]) bizName = bz.data[0].business_name || ''; } catch(e) {}
+  try { const bz = await sb.from('tenants').select('business_name,code').eq('id', currentTenantId); if(bz.data && bz.data[0]) { bizName = bz.data[0].business_name || ''; if(bz.data[0].code) localStorage.setItem('tally_biz_code', bz.data[0].code); } } catch(e) {}
   localStorage.setItem('tally_biz', bizName);
   localStorage.setItem('tally_owner', displayName);
   document.getElementById('owner-password').value = '';
@@ -2087,6 +2103,14 @@ function applyRoleUI() {
   if(homeDevBtn) homeDevBtn.style.display = (currentUser && currentUser.role === 'developer') ? '' : 'none';
   const homePinBtn = document.getElementById('home-pin-btn');
   if(homePinBtn) homePinBtn.style.display = (currentUser && (currentUser.role === 'staff' || currentUser.role === 'admin' || currentUser.role === 'owner')) ? '' : 'none';
+  // Business code (display only) in the home header
+  const codeEl = document.getElementById('home-biz-code');
+  const codeVal = document.getElementById('home-biz-code-val');
+  const bc = localStorage.getItem('tally_biz_code') || '';
+  if(codeEl && codeVal) {
+    if(bc && currentUser && currentUser.role !== 'developer') { codeVal.textContent = bc; codeEl.style.display = 'block'; }
+    else { codeEl.style.display = 'none'; }
+  }
 
   // Reserve float - hidden for staff
   const reserveMenu = document.querySelector('[onclick="go(\'s-reserve\')"]');
@@ -2256,6 +2280,7 @@ async function saveOnboarding() {
   btn.disabled = false; btn.textContent = "Let's go";
   initHome();
   go('s-home');
+  if(currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin')) playOwnerWelcome(name, false);
 }
 
 function initHome() {
@@ -3454,10 +3479,30 @@ function openEditClient(id) {
   const c = (devClients || []).find(function(x){ return x.id === id; });
   if(!c) return;
   document.getElementById('ec-id').value = c.id;
+  document.getElementById('ec-orig-code').value = c.code || '';
   document.getElementById('ec-biz').value = c.business_name || '';
   document.getElementById('ec-code').value = c.code || '';
+  document.getElementById('ec-del-code').textContent = c.code ? '(' + c.code + ')' : '';
+  const dc = document.getElementById('ec-del-confirm'); if(dc) dc.value = '';
+  const de = document.getElementById('ec-del-error'); if(de) de.style.display = 'none';
   const err = document.getElementById('ec-error'); if(err) err.style.display = 'none';
   go('s-edit-client');
+}
+
+async function deleteClient() {
+  const id = document.getElementById('ec-id').value;
+  const typed = (document.getElementById('ec-del-confirm').value || '').trim().toLowerCase();
+  const orig = (document.getElementById('ec-orig-code').value || '').trim().toLowerCase();
+  const err = document.getElementById('ec-del-error');
+  const show = function(m){ err.textContent = m; err.style.display = 'block'; };
+  err.style.display = 'none';
+  if(!orig) { show('This business has no code set; cannot confirm deletion.'); return; }
+  if(typed !== orig) { show('Type the exact business code to confirm.'); return; }
+  if(!confirm('Permanently delete this business and ALL its data, staff and logins? This cannot be undone.')) return;
+  const r = await callPlatform('delete-client', { tenant_id: id, confirm: typed });
+  if(r.status !== 200 || !r.data || !r.data.ok) { show((r.data && r.data.error) ? r.data.error : 'Could not delete.'); return; }
+  showToast('Business permanently deleted.');
+  go('s-dev');
 }
 
 async function editClient() {
