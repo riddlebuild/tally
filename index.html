@@ -1298,13 +1298,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 
 <div class="screen" id="s-dev">
   <div class="topbar">
-    <div class="back-btn" onclick="go('s-settings')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
-    <span class="topbar-title">Developer</span>
+    <span class="topbar-title">Mission control</span>
+    <div class="back-btn" onclick="logout()" style="margin-left:auto;" title="Sign out"><i class="ti ti-logout" style="font-size:16px"></i></div>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
       <div style="text-align:center;padding:1.6rem 0 0.4rem;">
-        <svg width="74" height="74" viewBox="0 0 96 96" fill="none">
+        <svg width="78" height="78" viewBox="0 0 96 96" fill="none">
           <line x1="48" y1="15" x2="48" y2="9" stroke="var(--wood)" stroke-width="2.5" stroke-linecap="round"/>
           <circle cx="48" cy="7" r="3" fill="var(--wood)"/>
           <rect x="13" y="41" width="6.5" height="16" rx="3.25" fill="var(--matcha)"/>
@@ -1313,19 +1313,21 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <rect x="29" y="38" width="38" height="30" rx="13" fill="#161410"/>
           <ellipse cx="40" cy="48" rx="5.5" ry="7.5" fill="var(--matcha-mid)" opacity="0.5"/>
         </svg>
-        <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink);margin-top:0.7rem;">Crafted by <span id="dev-name">Harulabs</span></div>
-        <div style="font-size:10px;color:var(--ink-soft);letter-spacing:0.18em;text-transform:uppercase;margin-top:4px;">Tally · v1.1</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:21px;color:var(--ink);margin-top:0.7rem;"><span id="dev-name">Harulabs</span></div>
+        <div style="font-size:10px;color:var(--ink-soft);letter-spacing:0.18em;text-transform:uppercase;margin-top:4px;">Platform · Mission control</div>
       </div>
       <div class="section-lbl" style="margin-top:1.1rem;">System status</div>
       <div class="card" id="dev-status"><div class="loading">Loading...</div></div>
       <div class="section-lbl" style="margin-top:1.1rem;">Clients</div>
-      <div class="card" style="opacity:0.7;">
+      <div class="card" id="dev-client-list" style="opacity:0.7;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
           <div><strong style="font-size:14px;color:var(--ink);">Add client</strong><div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">Onboard a new business</div></div>
-          <span class="badge badge-neutral" style="white-space:nowrap;">Stage 5</span>
+          <span class="badge badge-neutral" style="white-space:nowrap;">Soon</span>
         </div>
       </div>
-      <div class="hint" style="margin-top:1rem;">Owner-only panel — visible to you, not to admins or staff.</div>
+      <div class="hint" style="margin-top:0.6rem;">Your client businesses will appear here.</div>
+      <button onclick="logout()" style="width:100%;margin-top:1.4rem;padding:12px;background:none;border:1px solid var(--border);border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--ink-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="ti ti-logout" style="font-size:15px"></i> Sign out</button>
+      <div class="hint" style="margin-top:1rem;">Tally · v1.1 · Harulabs platform</div>
     </div>
   </div>
 </div>
@@ -1564,6 +1566,7 @@ function go(id) {
   // Staff guard - restricted screens
   if(currentUser) {
     const role = currentUser.role;
+    if(id === 's-dev' && role !== 'developer') { showToast('Restricted'); return; }
     if(role === 'staff') {
       const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-add-product','s-edit-product','s-reserve','s-rankings'];
       if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
@@ -1575,6 +1578,10 @@ function go(id) {
     if(role === 'viewer') {
       const allowed = ['s-home','s-insights','s-outlets'];
       if(allowed.indexOf(id) === -1) { showToast('View only'); return; }
+    }
+    if(role === 'developer') {
+      // Pure platform operator — only ever mission control, never a business screen
+      if(id !== 's-dev') return;
     }
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1961,7 +1968,7 @@ function applyRoleUI() {
 
   // Developer quick-access (home header) - owner only
   const homeDevBtn = document.getElementById('home-dev-btn');
-  if(homeDevBtn) homeDevBtn.style.display = (currentUser && currentUser.role === 'owner') ? '' : 'none';
+  if(homeDevBtn) homeDevBtn.style.display = (currentUser && currentUser.role === 'developer') ? '' : 'none';
 
   // Reserve float - hidden for staff
   const reserveMenu = document.querySelector('[onclick="go(\'s-reserve\')"]');
@@ -3556,7 +3563,7 @@ function openSettings() {
   const dangerZone = document.querySelector('#s-settings [style*="vermillion-light"]');
   if(dangerZone) dangerZone.style.display = isOwner ? '' : 'none';
   const devSection = document.getElementById('settings-dev-section');
-  if(devSection) devSection.style.display = isOwner ? '' : 'none';
+  if(devSection) devSection.style.display = (currentUser.role === 'developer') ? '' : 'none';
   const catConfirm = document.getElementById('cat-clear-confirm');
   if(catConfirm) catConfirm.value = '';
   toggleCategoryClear();
