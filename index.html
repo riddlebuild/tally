@@ -1313,6 +1313,9 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="card">
         <label class="form-lbl">Business name</label>
         <input class="inp" id="ac-biz" type="text" placeholder="e.g. Sakura Cafe" autocomplete="off"/>
+        <label class="form-lbl" style="margin-top:0.85rem;">Business code (for staff login)</label>
+        <input class="inp" id="ac-code" type="text" placeholder="e.g. sakura" autocomplete="off" autocapitalize="none"/>
+        <div style="font-size:11px;color:var(--ink-soft);margin-top:5px;line-height:1.4;">Lowercase letters, numbers or hyphens. Staff type this to sign in.</div>
         <label class="form-lbl" style="margin-top:0.85rem;">Owner email</label>
         <input class="inp" id="ac-email" type="email" placeholder="owner@email.com" autocomplete="off" autocapitalize="none"/>
         <label class="form-lbl" style="margin-top:0.85rem;">Owner password (temporary)</label>
@@ -1671,7 +1674,7 @@ function go(id) {
   if(id === 's-dev') loadDevStatus();
   if(id === 's-change-pin') prepChangePin();
   if(id === 's-add-client') {
-    ['ac-biz','ac-email','ac-pass','ac-owner-name'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; });
+    ['ac-biz','ac-code','ac-email','ac-pass','ac-owner-name'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; });
     const cb=document.getElementById('ac-enable-pin'); if(cb) cb.checked=false;
     const pr=document.getElementById('ac-pin-row'); if(pr) pr.style.display='none';
     const er=document.getElementById('ac-error'); if(er) er.style.display='none';
@@ -3425,6 +3428,7 @@ function toggleAcPin() {
 
 async function addClient() {
   const biz = (document.getElementById('ac-biz').value || '').trim();
+  const code = (document.getElementById('ac-code').value || '').trim().toLowerCase();
   const email = (document.getElementById('ac-email').value || '').trim();
   const pass = (document.getElementById('ac-pass').value || '');
   const enablePin = document.getElementById('ac-enable-pin').checked;
@@ -3433,15 +3437,16 @@ async function addClient() {
   const show = function(m){ err.textContent = m; err.style.display = 'block'; };
   err.style.display = 'none';
   if(!biz) { show('Enter a business name.'); return; }
+  if(!/^[a-z0-9-]{2,30}$/.test(code)) { show('Code must be 2–30 chars: lowercase letters, numbers or hyphens.'); return; }
   if(!email || email.indexOf('@') === -1) { show('Enter a valid owner email.'); return; }
   if(pass.length < 8) { show('Password must be at least 8 characters.'); return; }
   if(enablePin && !ownerName) { show('Enter the owner name for PIN login.'); return; }
   const btn = document.getElementById('ac-btn');
   btn.disabled = true; btn.textContent = 'Creating...';
-  const r = await callPlatform('add-client', { business_name: biz, owner_email: email, owner_password: pass, enable_pin: enablePin, owner_name: ownerName });
+  const r = await callPlatform('add-client', { business_name: biz, code: code, owner_email: email, owner_password: pass, enable_pin: enablePin, owner_name: ownerName });
   btn.disabled = false; btn.textContent = 'Create business';
   if(r.status !== 200 || !r.data || !r.data.ok) { show((r.data && r.data.error) ? r.data.error : 'Could not create business.'); return; }
-  ['ac-biz','ac-email','ac-pass','ac-owner-name'].forEach(function(id){ document.getElementById(id).value = ''; });
+  ['ac-biz','ac-code','ac-email','ac-pass','ac-owner-name'].forEach(function(id){ document.getElementById(id).value = ''; });
   document.getElementById('ac-enable-pin').checked = false; toggleAcPin();
   showToast(biz + ' created!');
   go('s-dev');
@@ -3553,7 +3558,7 @@ async function loadDevStatus() {
     if(errMsg) { listEl.innerHTML = '<div style="font-size:12px;color:var(--vermillion);">' + escHtml(errMsg) + '</div>'; return; }
     let html = '';
     clients.forEach(function(c){
-      html += '<div class="staff-row"><div style="flex:1;"><div style="font-size:14px;color:var(--ink);font-weight:500;">' + escHtml(c.business_name || 'Unnamed') + '</div><div style="font-size:11px;color:var(--ink-soft);">' + (c.outlets || 0) + ' outlet' + (c.outlets === 1 ? '' : 's') + ' · ' + (c.staff || 0) + ' staff · ' + escHtml(c.status || 'active') + '</div></div></div>';
+      html += '<div class="staff-row"><div style="flex:1;"><div style="font-size:14px;color:var(--ink);font-weight:500;">' + escHtml(c.business_name || 'Unnamed') + '</div><div style="font-size:11px;color:var(--ink-soft);">code: <span style="color:var(--matcha);font-weight:500;">' + escHtml(c.code || '—') + '</span> · ' + (c.outlets || 0) + ' outlet' + (c.outlets === 1 ? '' : 's') + ' · ' + (c.staff || 0) + ' staff</div></div></div>';
     });
     const sep = clients.length ? 'margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);' : '';
     html += '<div onclick="go(\'s-add-client\')" style="display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;' + sep + '"><div><strong style="font-size:14px;color:var(--matcha);">+ Add client</strong><div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">Onboard a new business</div></div><i class="ti ti-chevron-right" style="color:var(--ink-soft);font-size:16px;"></i></div>';
