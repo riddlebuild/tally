@@ -247,9 +247,11 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div id="login-step-1">
         <div class="card">
           <div class="card-head"><i class="ti ti-user" style="font-size:14px"></i> Staff sign in</div>
-          <label class="form-lbl">Your name</label>
+          <label class="form-lbl">Business code</label>
+          <input class="inp" id="login-code-input" type="text" placeholder="e.g. koharu" autocomplete="off" autocapitalize="none"/>
+          <label class="form-lbl" style="margin-top:0.85rem;">Your name</label>
           <input class="inp" id="login-name-input" type="text" placeholder="Type your name" autocomplete="off" autocapitalize="words"/>
-          <div style="font-size:11px;color:var(--ink-soft);margin-top:5px;line-height:1.4;">Type your name as registered (not case-sensitive).</div>
+          <div style="font-size:11px;color:var(--ink-soft);margin-top:5px;line-height:1.4;">Business code from your owner. Name not case-sensitive.</div>
           <button class="submit-btn" id="login-continue-btn" onclick="continueToPinByName()" style="margin-top:0.75rem;">Continue</button>
         </div>
         <div style="text-align:center;margin-top:1rem;">
@@ -1690,10 +1692,14 @@ function go(id) {
 // PIN functions
 let selectedStaffId = null;
 let loginName = '';
+let loginCode = '';
 
 function continueToPinByName() {
+  const cd = document.getElementById('login-code-input').value.trim();
   const nm = document.getElementById('login-name-input').value.trim();
+  if(!cd) { showToast('Please enter your business code!'); return; }
   if(!nm) { showToast('Please type your name!'); return; }
+  loginCode = cd;
   loginName = nm;
   document.getElementById('selected-name-display').textContent = nm;
   document.getElementById('login-step-1').style.display = 'none';
@@ -1774,11 +1780,11 @@ function updatePinDisplay() {
   }
 }
 
-async function callStaffLogin(name, pin) {
+async function callStaffLogin(code, name, pin) {
   const res = await fetch(SUPABASE_URL + '/functions/v1/staff-login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
-    body: JSON.stringify({ mode: 'staff_name', name: name, pin: pin })
+    body: JSON.stringify({ mode: 'staff_name', code: code, name: name, pin: pin })
   });
   let data = {};
   try { data = await res.json(); } catch(e) {}
@@ -1902,7 +1908,7 @@ async function doLogin() {
   const errEl = document.getElementById('login-error');
   btn.disabled = true; btn.textContent = 'Signing in...';
   errEl.style.display = 'none';
-  const res = await callStaffLogin(loginName, pinValue);
+  const res = await callStaffLogin(loginCode, loginName, pinValue);
   btn.disabled = false; btn.textContent = 'Sign in';
   if(res.status !== 200 || !res.data || !res.data.ok) {
     errEl.textContent = (res.data && res.data.error) ? res.data.error : 'Incorrect PIN. Please try again.';
@@ -1926,6 +1932,7 @@ async function doLogin() {
   pinValue = ''; updatePinDisplay();
   errEl.style.display = 'none';
   selectedStaffId = null;
+  if(loginCode) localStorage.setItem('tally_biz_code', loginCode);
   loginName = '';
   const _ni = document.getElementById('login-name-input'); if(_ni) _ni.value = '';
   await loadOutlets();
@@ -2106,6 +2113,7 @@ function logout() {
   document.getElementById('login-step-1').style.display = 'block';
   document.getElementById('login-step-2').style.display = 'none';
   const ni = document.getElementById('login-name-input'); if(ni) ni.value = '';
+  const cc = document.getElementById('login-code-input'); if(cc) cc.value = localStorage.getItem('tally_biz_code') || '';
   loginName = '';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('s-login').classList.add('active');
@@ -4335,6 +4343,7 @@ async function init() {
   document.getElementById('login-step-1').style.display = 'block';
   document.getElementById('login-step-2').style.display = 'none';
   const _os = document.getElementById('login-step-owner'); if(_os) _os.style.display = 'none';
+  const _cc = document.getElementById('login-code-input'); if(_cc) _cc.value = localStorage.getItem('tally_biz_code') || '';
   go('s-login');
 }
 
