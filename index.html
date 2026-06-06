@@ -371,13 +371,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     <div style="flex:1;">
       <div class="logo-mark">Tally</div>
       <div class="logo-sub">by Harulabs</div>
-      <div id="home-biz-code" style="font-size:10px;color:var(--ink-soft);margin-top:3px;letter-spacing:0.04em;display:none;">code: <span id="home-biz-code-val" style="color:var(--matcha);font-weight:500;"></span></div>
     </div>
     <div class="outlet-chip" onclick="go('s-outlets')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       <span id="current-outlet-name">Loading...</span>
       <i class="ti ti-chevron-down" style="font-size:11px"></i>
     </div>
+    <div id="home-biz-code" style="display:none;align-items:center;gap:4px;font-size:10px;background:var(--matcha-light);padding:5px 9px;border-radius:999px;letter-spacing:0.04em;white-space:nowrap;flex-shrink:0;margin-left:4px;" title="Your business code"><i class="ti ti-hash" style="font-size:11px;color:var(--matcha);"></i><span id="home-biz-code-val" style="color:var(--matcha);font-weight:600;"></span></div>
     <div class="back-btn" id="home-dev-btn" onclick="go('s-dev')" style="margin-left:4px;display:none;" title="Developer"><i class="ti ti-rocket" style="font-size:16px"></i></div>
     <div class="back-btn" id="home-pin-btn" onclick="go('s-change-pin')" style="margin-left:4px;" title="Change my PIN"><i class="ti ti-key" style="font-size:16px"></i></div>
     <div class="back-btn" onclick="openSettings()" style="margin-left:4px;" title="Settings"><i class="ti ti-settings" style="font-size:16px"></i></div>
@@ -2108,7 +2108,7 @@ function applyRoleUI() {
   const codeVal = document.getElementById('home-biz-code-val');
   const bc = localStorage.getItem('tally_biz_code') || '';
   if(codeEl && codeVal) {
-    if(bc && currentUser && currentUser.role !== 'developer') { codeVal.textContent = bc; codeEl.style.display = 'block'; }
+    if(bc && currentUser && currentUser.role !== 'developer') { codeVal.textContent = bc; codeEl.style.display = 'inline-flex'; }
     else { codeEl.style.display = 'none'; }
   }
 
