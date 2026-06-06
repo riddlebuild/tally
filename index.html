@@ -1876,6 +1876,18 @@ function showStaffLogin() {
   document.getElementById('login-step-1').style.display = 'block';
 }
 
+function enterDeveloper(userId, name) {
+  currentTenantId = null;
+  currentUser = { id: 'auth:' + userId, name: name || 'Harulabs', role: 'developer', outlet_id: null };
+  ownerName = currentUser.name;
+  localStorage.setItem('tally_login_kind', 'developer');
+  localStorage.setItem('tally_user_name', currentUser.name);
+  localStorage.setItem('tally_user_role', 'developer');
+  localStorage.removeItem('tally_tenant_id');
+  go('s-dev');
+  applyRoleUI();
+}
+
 async function doOwnerLogin() {
   const email = (document.getElementById('owner-email').value || '').trim();
   const pwd = document.getElementById('owner-password').value || '';
@@ -1893,6 +1905,15 @@ async function doOwnerLogin() {
   // authToken is now set; tenant_users RLS returns only this user's own row
   const memRes = await sb.from('tenant_users').select('tenant_id,role').eq('user_id', res.data.user.id);
   if(memRes.error || !memRes.data || memRes.data.length === 0) {
+    // Not linked to a business — check if this is a platform developer (Harulabs)
+    const devRes = await sb.from('platform_admins').select('name').eq('user_id', res.data.user.id);
+    if(devRes.data && devRes.data.length > 0) {
+      document.getElementById('owner-password').value = '';
+      btn.disabled = false; btn.textContent = 'Sign in';
+      enterDeveloper(res.data.user.id, devRes.data[0].name);
+      playOwnerWelcome(currentUser.name);
+      return;
+    }
     auth.signOut();
     btn.disabled = false; btn.textContent = 'Sign in';
     errEl.textContent = 'This account is not linked to a business yet.'; errEl.style.display = 'block';
@@ -4013,6 +4034,24 @@ async function init() {
       }
     }
     // Session invalid/expired — clear and fall through to normal login
+    auth.signOut();
+    localStorage.removeItem('tally_login_kind');
+  }
+  // Developer session (platform admin) restore
+  if(localStorage.getItem('tally_login_kind') === 'developer') {
+    authToken = localStorage.getItem('tally_access_token');
+    let u = await auth.getUser();
+    if(u.error) {
+      const r = await auth.refresh();
+      if(!r.error) u = await auth.getUser();
+    }
+    if(!u.error && u.data && u.data.id) {
+      const devRes = await sb.from('platform_admins').select('name').eq('user_id', u.data.id);
+      if(devRes.data && devRes.data.length > 0) {
+        enterDeveloper(u.data.id, devRes.data[0].name);
+        return;
+      }
+    }
     auth.signOut();
     localStorage.removeItem('tally_login_kind');
   }
