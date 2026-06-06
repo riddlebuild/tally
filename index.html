@@ -1916,6 +1916,8 @@ async function doLogin() {
   localStorage.setItem('tally_tenant_id', u.tenant_id || '');
   currentUser = { id: u.staff_id, name: u.name, role: u.role, outlet_id: u.outlet_id };
   currentTenantId = u.tenant_id || null;
+  try { const bz = await sb.from('tenants').select('business_name').eq('id', currentTenantId); localStorage.setItem('tally_biz', (bz.data && bz.data[0] && bz.data[0].business_name) ? bz.data[0].business_name : ''); } catch(e) {}
+  localStorage.setItem('tally_owner', u.name);
   pinValue = ''; updatePinDisplay();
   errEl.style.display = 'none';
   selectedStaffId = null;
@@ -2001,10 +2003,21 @@ async function doOwnerLogin() {
   localStorage.setItem('tally_login_kind', 'owner');
   localStorage.setItem('tally_user_name', displayName);
   localStorage.setItem('tally_user_role', role);
+  // Refresh per-business cache from the account so values from a previous login
+  // on this device can't bleed in (business name + owner name).
+  let bizName = '';
+  try { const bz = await sb.from('tenants').select('business_name').eq('id', currentTenantId); if(bz.data && bz.data[0]) bizName = bz.data[0].business_name || ''; } catch(e) {}
+  localStorage.setItem('tally_biz', bizName);
+  localStorage.setItem('tally_owner', displayName);
   document.getElementById('owner-password').value = '';
   btn.disabled = false; btn.textContent = 'Sign in';
   await loadOutlets();
   ownerName = displayName;
+  if(outlets.length === 0) {
+    const obz = document.getElementById('ob-biz'); if(obz) obz.value = bizName;
+    const obn = document.getElementById('ob-name'); if(obn) obn.value = displayName;
+    applyRoleUI(); go('s-onboard'); return;
+  }
   const savedId = localStorage.getItem('tally_outlet_id');
   if(savedId === 'all') currentOutlet = {id:'all', name:'All outlets'};
   else currentOutlet = outlets.find(function(o){ return o.id === savedId; }) || outlets[0];
@@ -2079,6 +2092,10 @@ function logout() {
   localStorage.removeItem('tally_user_role');
   localStorage.removeItem('tally_user_outlet');
   localStorage.removeItem('tally_tenant_id');
+  localStorage.removeItem('tally_biz');
+  localStorage.removeItem('tally_owner');
+  localStorage.removeItem('tally_setup');
+  localStorage.removeItem('tally_outlet_id');
   const ownerStep = document.getElementById('login-step-owner');
   if(ownerStep) ownerStep.style.display = 'none';
   document.getElementById('login-step-1').style.display = 'block';
