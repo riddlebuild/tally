@@ -3630,7 +3630,7 @@ async function saveProduct() {
   // Save ingredients
   if(prodIngredients.length > 0) {
     const ingData = prodIngredients.map(function(i){
-      const row = {costing_id:prodId, ingredient_id:i.ingredient_id, quantity:i.quantity, selling_price:price};
+      const row = {costing_id:prodId, ingredient_id:i.ingredient_id, quantity:i.quantity};
       if(currentTenantId) row.tenant_id = currentTenantId;
       return row;
     });
@@ -3720,7 +3720,7 @@ async function updateProduct() {
   });
   if(editProdIngredients.length > 0) {
     const ingData = editProdIngredients.map(function(i){
-      const row = {costing_id:id, ingredient_id:i.ingredient_id, quantity:i.quantity, selling_price:price};
+      const row = {costing_id:id, ingredient_id:i.ingredient_id, quantity:i.quantity};
       if(currentTenantId) row.tenant_id = currentTenantId;
       return row;
     });
