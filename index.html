@@ -3625,9 +3625,12 @@ async function saveProduct() {
   // Save ingredients
   if(prodIngredients.length > 0) {
     const ingData = prodIngredients.map(function(i){
-      return {costing_id:prodId, ingredient_id:i.ingredient_id, quantity:i.quantity, selling_price:price};
+      const row = {costing_id:prodId, ingredient_id:i.ingredient_id, quantity:i.quantity, selling_price:price};
+      if(currentTenantId) row.tenant_id = currentTenantId;
+      return row;
     });
-    await sb.from('costing_ingredients').insert(ingData);
+    const ins = await sb.from('costing_ingredients').insert(ingData);
+    if(ins.error) { btn.disabled=false; btn.textContent='Save product'; showToast('Ingredients not saved: ' + ins.error.message); return; }
   }
   btn.disabled = false; btn.textContent = 'Save product';
   showToast(name + ' saved!');
@@ -3712,9 +3715,12 @@ async function updateProduct() {
   });
   if(editProdIngredients.length > 0) {
     const ingData = editProdIngredients.map(function(i){
-      return {costing_id:id, ingredient_id:i.ingredient_id, quantity:i.quantity, selling_price:price};
+      const row = {costing_id:id, ingredient_id:i.ingredient_id, quantity:i.quantity, selling_price:price};
+      if(currentTenantId) row.tenant_id = currentTenantId;
+      return row;
     });
-    await sb.from('costing_ingredients').insert(ingData);
+    const ins = await sb.from('costing_ingredients').insert(ingData);
+    if(ins.error) { btn.disabled=false; btn.textContent='Save changes'; showToast('Ingredients not saved: ' + ins.error.message); return; }
   }
   btn.disabled = false; btn.textContent = 'Save changes';
   showToast('Updated!');
