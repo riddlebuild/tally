@@ -2541,7 +2541,8 @@ async function loadSalesHistory() {
     const editBtn = canEdit ? '<i class="ti ti-pencil" onclick="openEditSales(\'' + s.id + '\')" style="font-size:14px;color:var(--ink-soft);margin-left:6px;cursor:pointer;flex-shrink:0;"></i>' : '';
     const total = (+s.cash)+(+s.card)+(+s.qr||0)+(+s.grabfood||0)+(+s.foodpanda||0)+(+s.shopeefood||0)+(+s.boost||0)+(+s.tng||0)+(+s.others||0);
     const expForRow = expMap[s.outlet_id + '|' + s.date] || 0;
-    const variance = (total + expForRow) - (+s.pos_total);
+    const salesShown = total + expForRow; // true takings: counted channels + till cash spent on expenses
+    const variance = salesShown - (+s.pos_total);
     const isToday = s.date === today;
     const label = isToday ? 'Today' : new Date(s.date+'T00:00:00').toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short'});
     const varColor = Math.abs(variance) < 0.01 ? 'var(--matcha)' : variance < 0 ? 'var(--vermillion)' : 'var(--matcha)';
@@ -2549,9 +2550,9 @@ async function loadSalesHistory() {
     return '<div style="display:flex;align-items:center;gap:8px;padding:0.65rem 0;border-bottom:1px solid var(--border);">' +
       '<div style="flex:1;">' +
       '<div style="font-size:12px;font-weight:500;color:' + (isToday ? 'var(--matcha)' : 'var(--ink-mid)') + ';">' + label + (s.staff_name ? ' · <span style="font-weight:400;color:var(--ink-soft);">' + s.staff_name + '</span>' : '') + '</div>' +
-      '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">Cash RM' + (+s.cash).toFixed(2) + ' · Card RM' + (+s.card).toFixed(2) + ' · QR RM' + (+s.qr||0).toFixed(2) + (s.grabfood > 0 ? ' · Grab RM'+s.grabfood.toFixed(2) : '') + (s.foodpanda > 0 ? ' · Panda RM'+s.foodpanda.toFixed(2) : '') + (s.shopeefood > 0 ? ' · Shopee RM'+s.shopeefood.toFixed(2) : '') + '</div></div>' +
+      '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">Cash RM' + (+s.cash).toFixed(2) + ' · Card RM' + (+s.card).toFixed(2) + ' · QR RM' + (+s.qr||0).toFixed(2) + (s.grabfood > 0 ? ' · Grab RM'+s.grabfood.toFixed(2) : '') + (s.foodpanda > 0 ? ' · Panda RM'+s.foodpanda.toFixed(2) : '') + (s.shopeefood > 0 ? ' · Shopee RM'+s.shopeefood.toFixed(2) : '') + (s.boost > 0 ? ' · Boost RM'+(+s.boost).toFixed(2) : '') + (s.tng > 0 ? ' · TNG RM'+(+s.tng).toFixed(2) : '') + (s.others > 0 ? ' · Others RM'+(+s.others).toFixed(2) : '') + '</div></div>' +
       '<div style="text-align:right;">' +
-      '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + total.toFixed(2) + '</div>' +
+      '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + salesShown.toFixed(2) + '</div>' +
       '<div style="font-size:10px;color:' + varColor + ';">' + varText + '</div></div>' + editBtn + '</div>';
   }).join('');
   histCount.textContent = hist.length + ' entr' + (hist.length !== 1 ? 'ies' : 'y');
