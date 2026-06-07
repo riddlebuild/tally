@@ -1074,7 +1074,10 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
-      <div style="display:flex;gap:6px;margin-bottom:0.85rem;">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:0.5rem;">
+        <button id="ing-sort-toggle" onclick="toggleIngSort()" style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--ink-mid);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:5px;"><i class="ti ti-arrows-sort" style="font-size:14px;"></i> A–Z</button>
+      </div>
+      <div id="ing-sort-panel" style="display:none;gap:6px;margin-bottom:0.85rem;">
         <button class="ing-sort-chip" data-sort="name" onclick="setIngredientSort('name')" style="flex:1;padding:7px;border:1px solid #6b4fa0;background:#6b4fa0;color:#fff;border-radius:8px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;">A–Z</button>
         <button class="ing-sort-chip" data-sort="price" onclick="setIngredientSort('price')" style="flex:1;padding:7px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;">Pack price</button>
         <button class="ing-sort-chip" data-sort="cpu" onclick="setIngredientSort('cpu')" style="flex:1;padding:7px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;">Unit cost</button>
@@ -1219,10 +1222,16 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="card">
         <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> Ingredients used</div>
         <div id="prod-ingredients-list"></div>
-        <div style="display:flex;gap:8px;margin-top:0.75rem;">
-          <select class="inp" id="prod-ing-select" style="flex:1;"></select>
-          <input class="inp" id="prod-ing-qty" type="number" inputmode="decimal" placeholder="Qty" style="width:80px;"/>
+        <div style="display:flex;gap:8px;margin-top:0.75rem;flex-wrap:wrap;">
+          <select class="inp" id="prod-ing-select" style="flex:1 1 100%;" onchange="updateUnitOptions('prod-ing-select','prod-ing-unit')"></select>
+          <input class="inp" id="prod-ing-qty" type="number" inputmode="decimal" placeholder="Qty" style="flex:1;min-width:0;"/>
+          <select class="inp" id="prod-ing-unit" style="width:72px;"></select>
           <button onclick="addProductIngredient()" style="padding:9px 12px;background:#6b4fa0;border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
+        </div>
+        <div style="margin-top:0.85rem;font-size:11px;color:var(--ink-soft);">Other cost <span style="font-weight:400;">(optional, e.g. packaging)</span></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:0.35rem;">
+          <input class="inp" id="prod-extra-label" type="text" placeholder="Packaging" style="flex:1;min-width:0;"/>
+          <input class="inp" id="prod-extra-cost" type="number" inputmode="decimal" placeholder="0.00" style="width:90px;" oninput="calcProductMargin()"/>
         </div>
         <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
           <span style="font-size:13px;color:var(--ink-mid);">Total cost</span>
@@ -1272,11 +1281,18 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       </div>
       <div class="card">
         <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> Ingredients used</div>
+        <div id="edit-prod-ing-warn" style="display:none;background:var(--vermillion-light);border-radius:8px;padding:0.6rem 0.7rem;margin-bottom:0.6rem;font-size:11px;color:var(--vermillion);line-height:1.45;"></div>
         <div id="edit-prod-ingredients-list"></div>
-        <div style="display:flex;gap:8px;margin-top:0.75rem;">
-          <select class="inp" id="edit-prod-ing-select" style="flex:1;"></select>
-          <input class="inp" id="edit-prod-ing-qty" type="number" inputmode="decimal" placeholder="Qty" style="width:80px;"/>
+        <div style="display:flex;gap:8px;margin-top:0.75rem;flex-wrap:wrap;">
+          <select class="inp" id="edit-prod-ing-select" style="flex:1 1 100%;" onchange="updateUnitOptions('edit-prod-ing-select','edit-prod-ing-unit')"></select>
+          <input class="inp" id="edit-prod-ing-qty" type="number" inputmode="decimal" placeholder="Qty" style="flex:1;min-width:0;"/>
+          <select class="inp" id="edit-prod-ing-unit" style="width:72px;"></select>
           <button onclick="addEditProductIngredient()" style="padding:9px 12px;background:#6b4fa0;border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
+        </div>
+        <div style="margin-top:0.85rem;font-size:11px;color:var(--ink-soft);">Other cost <span style="font-weight:400;">(optional, e.g. packaging)</span></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:0.35rem;">
+          <input class="inp" id="edit-prod-extra-label" type="text" placeholder="Packaging" style="flex:1;min-width:0;"/>
+          <input class="inp" id="edit-prod-extra-cost" type="number" inputmode="decimal" placeholder="0.00" style="width:90px;" oninput="calcEditProductMargin()"/>
         </div>
         <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
           <span style="font-size:13px;color:var(--ink-mid);">Total cost</span>
@@ -1750,7 +1766,7 @@ function go(id) {
   }
   if(id === 's-ingredients') loadIngredients();
   if(id === 's-costing') loadProducts();
-  if(id === 's-add-product') { prodIngredients = []; renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); }
+  if(id === 's-add-product') { prodIngredients = []; ['prod-extra-label','prod-extra-cost'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; }); renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); }
 }
 
 // PIN functions
@@ -3148,6 +3164,9 @@ let ingredientSort = 'name';
 async function loadIngredients() {
   const result = await sb.from('ingredients').select('*');
   ingredientsCache = result.data || [];
+  const labels = { name: 'A–Z', price: 'Pack price', cpu: 'Unit cost' };
+  const tg = document.getElementById('ing-sort-toggle');
+  if(tg) tg.innerHTML = '<i class="ti ti-arrows-sort" style="font-size:14px;"></i> ' + (labels[ingredientSort] || 'A–Z');
   renderIngredients();
 }
 
@@ -3192,6 +3211,11 @@ function iconForIngredient(name) {
   return 'ti-package';
 }
 
+function toggleIngSort() {
+  const panel = document.getElementById('ing-sort-panel');
+  if(panel) panel.style.display = (panel.style.display === 'flex') ? 'none' : 'flex';
+}
+
 function setIngredientSort(key) {
   ingredientSort = key;
   document.querySelectorAll('.ing-sort-chip').forEach(function(c) {
@@ -3200,6 +3224,11 @@ function setIngredientSort(key) {
     c.style.color = active ? '#fff' : 'var(--ink-mid)';
     c.style.borderColor = active ? '#6b4fa0' : 'var(--border)';
   });
+  const labels = { name: 'A–Z', price: 'Pack price', cpu: 'Unit cost' };
+  const tg = document.getElementById('ing-sort-toggle');
+  if(tg) tg.innerHTML = '<i class="ti ti-arrows-sort" style="font-size:14px;"></i> ' + (labels[key] || 'Sort');
+  const panel = document.getElementById('ing-sort-panel');
+  if(panel) panel.style.display = 'none';
   renderIngredients();
 }
 
@@ -3303,9 +3332,52 @@ async function deleteIngredient() {
 
 // PRODUCTS
 // Product ingredient state
-let prodIngredients = []; // [{ingredient_id, name, unit, cost_per_unit, quantity}]
+let prodIngredients = []; // [{ingredient_id, name, unit, cost_per_unit, quantity, dispQty, dispUnit}]
 let editProdIngredients = [];
+let editProdStoredCost = 0;
+let editProdStoredExtra = 0;
 let allIngredients = [];
+
+// Unit families for recipe quantity entry. Values are in the family's base sub-unit.
+const UNIT_GROUPS = { g:{f:1,grp:'mass'}, kg:{f:1000,grp:'mass'}, ml:{f:1,grp:'vol'}, L:{f:1000,grp:'vol'} };
+
+// How many "toU" units are in 1 "fromU" unit (within a family). 1 if not convertible.
+function unitConvFactor(fromU, toU) {
+  if(fromU === toU) return 1;
+  const a = UNIT_GROUPS[fromU], b = UNIT_GROUPS[toU];
+  if(a && b && a.grp === b.grp) return a.f / b.f;
+  return 1;
+}
+
+// Units a user may enter for an ingredient stored in packUnit (e.g. stored in L -> [ml, L]).
+function compatibleUnits(packUnit) {
+  const g = UNIT_GROUPS[packUnit];
+  if(g && g.grp === 'mass') return ['g','kg'];
+  if(g && g.grp === 'vol') return ['ml','L'];
+  return [packUnit];
+}
+
+// Populate the unit dropdown next to qty based on the selected ingredient's pack unit.
+function updateUnitOptions(selectId, unitSelId) {
+  const sel = document.getElementById(selectId);
+  const unitSel = document.getElementById(unitSelId);
+  if(!sel || !unitSel) return;
+  const opt = sel.options[sel.selectedIndex];
+  const packUnit = opt ? opt.getAttribute('data-unit') : null;
+  if(!packUnit) { unitSel.innerHTML = ''; return; }
+  unitSel.innerHTML = compatibleUnits(packUnit).map(function(u){
+    return '<option value="' + u + '"' + (u === packUnit ? ' selected' : '') + '>' + u + '</option>';
+  }).join('');
+}
+
+// What to show for a recipe line: the unit the user typed, or a friendly derived one.
+function ingDisplayQty(ing) {
+  if(ing.dispUnit) return { q: ing.dispQty, u: ing.dispUnit };
+  const u = ing.unit, q = ing.quantity;
+  if(u === 'L' && q < 1) return { q: +(q * 1000).toFixed(3), u: 'ml' };
+  if(u === 'kg' && q < 1) return { q: +(q * 1000).toFixed(3), u: 'g' };
+  return { q: q, u: u };
+}
 
 async function populateIngredientSelect(selectId) {
   const result = await sb.from('ingredients').select('*').order('name');
@@ -3329,10 +3401,12 @@ function renderIngredientsList(ingredients, listId, totalId, isEdit) {
     list.innerHTML = ingredients.map(function(ing, idx){
       const lineCost = ing.cost_per_unit * ing.quantity;
       total += lineCost;
+      const d = ingDisplayQty(ing);
+      const rate = ing.cost_per_unit * unitConvFactor(d.u, ing.unit);
       return '<div style="display:flex;align-items:center;gap:8px;padding:0.5rem 0;border-bottom:1px solid var(--border);">' +
         '<div style="flex:1;">' +
         '<div style="font-size:13px;font-weight:500;color:var(--ink);">' + ing.name + '</div>' +
-        '<div style="font-size:11px;color:var(--ink-soft);">' + ing.quantity + ing.unit + ' × RM' + parseFloat(ing.cost_per_unit).toFixed(4) + '/' + ing.unit + '</div></div>' +
+        '<div style="font-size:11px;color:var(--ink-soft);">' + d.q + d.u + ' × RM' + parseFloat(rate).toFixed(4) + '/' + d.u + '</div></div>' +
         '<div style="text-align:right;margin-right:8px;">' +
         '<div style="font-size:13px;font-weight:500;color:#6b4fa0;">RM ' + lineCost.toFixed(4).replace(/0+$/, '').replace(/\.$/, '') + '</div></div>' +
         '<button onclick="removeIngredientLine(' + idx + ',' + (isEdit?'true':'false') + ')" style="background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:16px;padding:0;">×</button>' +
@@ -3366,11 +3440,15 @@ function addProductIngredient() {
   if(!qty || qty <= 0) { showToast('Please enter quantity!'); return; }
   const opt = sel.options[sel.selectedIndex];
   const cpu = parseFloat(opt.getAttribute('data-cpu'));
-  const unit = opt.getAttribute('data-unit');
+  const baseUnit = opt.getAttribute('data-unit');
+  const unitEl = document.getElementById('prod-ing-unit');
+  const dispUnit = (unitEl && unitEl.value) ? unitEl.value : baseUnit;
+  const baseQty = qty * unitConvFactor(dispUnit, baseUnit);
   const ing = allIngredients.find(function(i){ return i.id === sel.value; });
-  prodIngredients.push({ingredient_id:sel.value, name:ing.name, unit:unit, cost_per_unit:cpu, quantity:qty});
+  prodIngredients.push({ingredient_id:sel.value, name:ing.name, unit:baseUnit, cost_per_unit:cpu, quantity:baseQty, dispQty:qty, dispUnit:dispUnit});
   document.getElementById('prod-ing-qty').value = '';
   sel.value = '';
+  if(unitEl) unitEl.innerHTML = '';
   renderIngredientsList(prodIngredients, 'prod-ingredients-list', 'prod-total-cost', false);
 }
 
@@ -3381,16 +3459,23 @@ function addEditProductIngredient() {
   if(!qty || qty <= 0) { showToast('Please enter quantity!'); return; }
   const opt = sel.options[sel.selectedIndex];
   const cpu = parseFloat(opt.getAttribute('data-cpu'));
-  const unit = opt.getAttribute('data-unit');
+  const baseUnit = opt.getAttribute('data-unit');
+  const unitEl = document.getElementById('edit-prod-ing-unit');
+  const dispUnit = (unitEl && unitEl.value) ? unitEl.value : baseUnit;
+  const baseQty = qty * unitConvFactor(dispUnit, baseUnit);
   const ing = allIngredients.find(function(i){ return i.id === sel.value; });
-  editProdIngredients.push({ingredient_id:sel.value, name:ing.name, unit:unit, cost_per_unit:cpu, quantity:qty});
+  editProdIngredients.push({ingredient_id:sel.value, name:ing.name, unit:baseUnit, cost_per_unit:cpu, quantity:baseQty, dispQty:qty, dispUnit:dispUnit});
   document.getElementById('edit-prod-ing-qty').value = '';
   sel.value = '';
+  if(unitEl) unitEl.innerHTML = '';
   renderIngredientsList(editProdIngredients, 'edit-prod-ingredients-list', 'edit-prod-total-cost', true);
 }
 
 function calcProductMargin() {
-  const cost = prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const ingCost = prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const extra = parseFloat((document.getElementById('prod-extra-cost')||{}).value) || 0;
+  const cost = ingCost + extra;
+  const tc = document.getElementById('prod-total-cost'); if(tc) tc.textContent = 'RM ' + cost.toFixed(2);
   const price = parseFloat(document.getElementById('prod-price').value) || 0;
   const el = document.getElementById('prod-margin-preview');
   if(!el) return;
@@ -3404,7 +3489,10 @@ function calcProductMargin() {
 }
 
 function calcEditProductMargin() {
-  const cost = editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const ingCost = editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const extra = parseFloat((document.getElementById('edit-prod-extra-cost')||{}).value) || 0;
+  const cost = ingCost + extra;
+  const tc = document.getElementById('edit-prod-total-cost'); if(tc) tc.textContent = 'RM ' + cost.toFixed(2);
   const price = parseFloat(document.getElementById('edit-prod-price').value) || 0;
   const el = document.getElementById('edit-prod-margin-preview');
   if(!el) return;
@@ -3472,10 +3560,13 @@ async function saveProduct() {
   const price = parseFloat(document.getElementById('prod-price').value) || 0;
   const notes = document.getElementById('prod-notes').value.trim();
   if(!name) { showToast('Please enter product name!'); return; }
-  const cost = prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const extraCost = parseFloat(document.getElementById('prod-extra-cost').value) || 0;
+  let extraLabel = document.getElementById('prod-extra-label').value.trim();
+  if(extraCost > 0 && !extraLabel) extraLabel = 'Packaging';
+  const cost = prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0) + extraCost;
   const btn = document.getElementById('add-prod-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
-  const result = await sb.from('costing').insert({name:name,category:cat,cost:cost,selling_price:price,notes:notes}).select();
+  const result = await sb.from('costing').insert({name:name,category:cat,cost:cost,selling_price:price,notes:notes,extra_cost:extraCost,extra_label:extraLabel}).select();
   if(result.error) { showToast('Error: ' + result.error.message); btn.disabled=false; btn.textContent='Save product'; return; }
   const prodId = result.data[0].id;
   // Save ingredients
@@ -3487,7 +3578,7 @@ async function saveProduct() {
   }
   btn.disabled = false; btn.textContent = 'Save product';
   showToast(name + ' saved!');
-  ['prod-name','prod-price','prod-notes'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['prod-name','prod-price','prod-notes','prod-extra-label','prod-extra-cost'].forEach(function(id){ document.getElementById(id).value=''; });
   prodIngredients = [];
   renderIngredientsList(prodIngredients, 'prod-ingredients-list', 'prod-total-cost', false);
   document.getElementById('prod-margin-preview').style.display='none';
@@ -3504,6 +3595,10 @@ async function openEditProduct(id) {
   document.getElementById('edit-prod-price').value = p.selling_price || '';
   document.getElementById('edit-prod-notes').value = p.notes || '';
   document.getElementById('edit-prod-margin-preview').style.display = 'none';
+  editProdStoredCost = parseFloat(p.cost) || 0;
+  editProdStoredExtra = parseFloat(p.extra_cost) || 0;
+  document.getElementById('edit-prod-extra-cost').value = editProdStoredExtra > 0 ? editProdStoredExtra : '';
+  document.getElementById('edit-prod-extra-label').value = p.extra_label || '';
   // Load existing ingredients
   const ingResult = await sb.from('costing_ingredients').select('*').eq('costing_id', id);
   const ingData = ingResult.data || [];
@@ -3518,6 +3613,18 @@ async function openEditProduct(id) {
       });
     });
   }
+  // If there's recorded ingredient cost (total minus the fixed cost) but no rows came back,
+  // the recipe failed to load. Warn so a save can't silently wipe it. (Extra-cost-only is fine.)
+  const ingredientCostOnRecord = editProdStoredCost - editProdStoredExtra;
+  const warn = document.getElementById('edit-prod-ing-warn');
+  if(warn) {
+    if(ingredientCostOnRecord > 0.005 && editProdIngredients.length === 0) {
+      warn.innerHTML = '\u26a0 Couldn\u2019t load this product\u2019s saved ingredients (recipe cost on record: RM ' + ingredientCostOnRecord.toFixed(2) + '). Don\u2019t save changes yet — re-add ingredients first, or you may overwrite the saved recipe.';
+      warn.style.display = 'block';
+    } else {
+      warn.style.display = 'none';
+    }
+  }
   renderIngredientsList(editProdIngredients, 'edit-prod-ingredients-list', 'edit-prod-total-cost', true);
   await populateIngredientSelect('edit-prod-ing-select');
   go('s-edit-product');
@@ -3531,10 +3638,20 @@ async function updateProduct() {
   const price = parseFloat(document.getElementById('edit-prod-price').value) || 0;
   const notes = document.getElementById('edit-prod-notes').value.trim();
   if(!name) { showToast('Please enter product name!'); return; }
-  const cost = editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const extraCost = parseFloat(document.getElementById('edit-prod-extra-cost').value) || 0;
+  let extraLabel = document.getElementById('edit-prod-extra-label').value.trim();
+  if(extraCost > 0 && !extraLabel) extraLabel = 'Packaging';
+  // Safety: if this product had recipe cost on record but no ingredients loaded, saving
+  // would delete its recipe. Make the user confirm. (Extra-cost-only products are exempt.)
+  if(editProdIngredients.length === 0 && (editProdStoredCost - editProdStoredExtra) > 0.005) {
+    if(!confirm('This product\u2019s saved ingredients didn\u2019t load. Saving now will remove the recipe and recompute the cost. Continue anyway?')) {
+      return;
+    }
+  }
+  const cost = editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0) + extraCost;
   const btn = document.getElementById('edit-prod-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
-  const result = await sb.from('costing').update({name:name,category:cat,cost:cost,selling_price:price,notes:notes}).eq('id', id);
+  const result = await sb.from('costing').update({name:name,category:cat,cost:cost,selling_price:price,notes:notes,extra_cost:extraCost,extra_label:extraLabel}).eq('id', id);
   if(result.error) { showToast('Error: ' + result.error.message); btn.disabled=false; btn.textContent='Save changes'; return; }
   // Replace ingredients - delete old, insert new
   await fetch(SUPABASE_URL + '/rest/v1/costing_ingredients?costing_id=eq.' + id, {
