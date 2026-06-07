@@ -3328,7 +3328,7 @@ async function deleteIngredient() {
   const name = document.getElementById('edit-ing-name').value;
   if(!confirm('Delete ' + name + '?')) return;
   const result = await fetch(SUPABASE_URL + '/rest/v1/ingredients?id=eq.' + id, {
-    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+(authToken||SUPABASE_KEY),'Prefer':'return=minimal'}
   });
   if(!result.ok) { showToast('Error deleting'); return; }
   showToast(name + ' deleted');
@@ -3711,7 +3711,7 @@ async function updateProduct() {
   if(result.error) { showToast('Error: ' + result.error.message); btn.disabled=false; btn.textContent='Save changes'; return; }
   // Replace ingredients - delete old, insert new
   await fetch(SUPABASE_URL + '/rest/v1/costing_ingredients?costing_id=eq.' + id, {
-    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+(authToken||SUPABASE_KEY),'Prefer':'return=minimal'}
   });
   if(editProdIngredients.length > 0) {
     const ingData = editProdIngredients.map(function(i){
@@ -3732,10 +3732,10 @@ async function deleteProduct() {
   const name = document.getElementById('edit-prod-name').value;
   if(!confirm('Delete ' + name + '?')) return;
   await fetch(SUPABASE_URL + '/rest/v1/costing_ingredients?costing_id=eq.' + id, {
-    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+(authToken||SUPABASE_KEY),'Prefer':'return=minimal'}
   });
   const result = await fetch(SUPABASE_URL + '/rest/v1/costing?id=eq.' + id, {
-    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+(authToken||SUPABASE_KEY),'Prefer':'return=minimal'}
   });
   if(!result.ok) { showToast('Error deleting'); return; }
   showToast(name + ' deleted');
@@ -4164,7 +4164,7 @@ async function addOutletChannel() {
 async function removeOutletChannel(channelId, outletId) {
   await fetch(SUPABASE_URL + '/rest/v1/outlet_channels?id=eq.' + channelId, {
     method: 'DELETE',
-    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal'}
+    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY), 'Prefer': 'return=minimal'}
   });
   renderOutletChannelsList(outletId);
   showToast('Channel removed');
@@ -4276,7 +4276,7 @@ async function deleteOutlet() {
     method: 'DELETE',
     headers: {
       'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY),
       'Prefer': 'return=minimal'
     }
   });
@@ -4477,7 +4477,7 @@ async function removeStaff() {
   if(!confirm('Remove ' + name + '? They will lose access to Tally.')) return;
   const result = await fetch(SUPABASE_URL + '/rest/v1/staff?id=eq.' + id, {
     method: 'DELETE',
-    headers: {'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'}
+    headers: {'apikey':SUPABASE_KEY,'Authorization':'Bearer '+(authToken||SUPABASE_KEY),'Prefer':'return=minimal'}
   });
   if(!result.ok) { showToast('Error removing staff'); return; }
   showToast(name + ' removed');
@@ -4534,7 +4534,7 @@ async function addCustomOption(type) {
 async function removeCustomOption(id, type) {
   await fetch(SUPABASE_URL + '/rest/v1/custom_options?id=eq.' + id, {
     method: 'DELETE',
-    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal'}
+    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY), 'Prefer': 'return=minimal'}
   });
   renderCustomOptionsList(type);
   showToast('Removed');
@@ -4614,7 +4614,7 @@ async function addExpenseItem() {
 async function removeExpenseItem(id) {
   await fetch(SUPABASE_URL + '/rest/v1/custom_options?id=eq.' + id, {
     method: 'DELETE',
-    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal'}
+    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY), 'Prefer': 'return=minimal'}
   });
   renderExpenseItemsList();
   loadExpenseQuickItems();
