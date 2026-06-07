@@ -1191,7 +1191,12 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
+      <div style="display:flex;gap:6px;margin-bottom:0.85rem;">
+        <button id="costing-tab-list" onclick="setCostingTab('list')" style="flex:1;padding:8px;border:1px solid #6b4fa0;background:#6b4fa0;color:#fff;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">Products</button>
+        <button id="costing-tab-rank" onclick="setCostingTab('rank')" style="flex:1;padding:8px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">Margin ranking</button>
+      </div>
       <div id="products-list"><div class="loading">Loading...</div></div>
+      <div id="products-ranking" style="display:none;"></div>
     </div>
   </div>
 </div>
@@ -3505,13 +3510,16 @@ function calcEditProductMargin() {
     '<span style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + profit.toFixed(2) + '</span></div>';
 }
 
+let productsCache = [];
+let costingTab = 'list';
 async function loadProducts() {
   const result = await sb.from('costing').select('*').order('name');
   const data = result.data || [];
+  productsCache = data;
   const el = document.getElementById('products-list');
   if(!el) return;
   if(data.length === 0) {
-    el.innerHTML = '<div class="empty-state" style="padding:2rem;">No products yet.<br/><span style="font-size:12px;">Add your menu items to calculate margins.</span></div>'; return;
+    el.innerHTML = '<div class="empty-state" style="padding:2rem;">No products yet.<br/><span style="font-size:12px;">Add your menu items to calculate margins.</span></div>'; setCostingTab(costingTab); return;
   }
   const totalItems = data.length;
   const avgMargin = data.reduce(function(a,p) {
@@ -3550,6 +3558,51 @@ async function loadProducts() {
         '<div style="height:100%;width:' + barW + '%;background:' + color + ';border-radius:3px;"></div></div>' +
         '</div>';
     });
+  });
+  el.innerHTML = html;
+  setCostingTab(costingTab);
+}
+
+function setCostingTab(tab) {
+  costingTab = tab;
+  const tl = document.getElementById('costing-tab-list');
+  const tr = document.getElementById('costing-tab-rank');
+  const list = document.getElementById('products-list');
+  const rank = document.getElementById('products-ranking');
+  if(!tl || !tr || !list || !rank) return;
+  const on = function(b){ b.style.background='#6b4fa0'; b.style.color='#fff'; b.style.borderColor='#6b4fa0'; };
+  const off = function(b){ b.style.background='#fff'; b.style.color='var(--ink-mid)'; b.style.borderColor='var(--border)'; };
+  if(tab === 'rank') { on(tr); off(tl); list.style.display='none'; rank.style.display='block'; renderProductRanking(); }
+  else { on(tl); off(tr); rank.style.display='none'; list.style.display='block'; }
+}
+
+function renderProductRanking() {
+  const el = document.getElementById('products-ranking');
+  if(!el) return;
+  const priced = productsCache.filter(function(p){ return (parseFloat(p.selling_price)||0) > 0; });
+  if(priced.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:2rem;">Add products with a selling price to see the margin ranking.</div>'; return;
+  }
+  const ranked = priced.map(function(p){
+    const cost = parseFloat(p.cost)||0, price = parseFloat(p.selling_price)||0;
+    return { p:p, price:price, profit:price-cost, margin:((price-cost)/price)*100 };
+  }).sort(function(a,b){ return b.margin - a.margin; });
+  let html = '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:0.9rem;">Sorted by margin · upsell the top, review the bottom.</div>';
+  ranked.forEach(function(r, i){
+    const color = marginColor(r.margin);
+    const barW = Math.min(Math.max(r.margin,0),100);
+    const isTop = i === 0;
+    const isBottom = (i === ranked.length-1) && ranked.length > 1;
+    const tag = isTop ? '<span style="background:var(--matcha-light);color:var(--matcha);font-size:9px;font-weight:600;padding:2px 7px;border-radius:999px;margin-left:7px;letter-spacing:0.03em;">TOP MARGIN</span>'
+      : (isBottom ? '<span style="background:var(--vermillion-light);color:var(--vermillion);font-size:9px;font-weight:600;padding:2px 7px;border-radius:999px;margin-left:7px;letter-spacing:0.03em;">REVIEW</span>' : '');
+    html += '<div onclick="openEditProduct(\'' + r.p.id + '\')" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem;margin-bottom:0.6rem;cursor:pointer;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+      '<div style="font-size:13px;font-weight:500;color:var(--ink);"><span style="display:inline-block;width:20px;color:var(--ink-soft);">' + (i+1) + '</span>' + r.p.name + tag + '</div>' +
+      '<span style="font-size:14px;font-weight:600;color:' + color + ';">' + r.margin.toFixed(1) + '%</span>' +
+      '</div>' +
+      '<div style="height:6px;background:var(--cream-dark);border-radius:3px;overflow:hidden;margin-left:20px;"><div style="height:100%;width:' + barW + '%;background:' + color + ';border-radius:3px;"></div></div>' +
+      '<div style="font-size:11px;color:var(--ink-soft);margin-left:20px;margin-top:3px;">RM ' + r.price.toFixed(2) + ' price · RM ' + r.profit.toFixed(2) + ' profit</div>' +
+      '</div>';
   });
   el.innerHTML = html;
 }
