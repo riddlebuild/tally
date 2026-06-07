@@ -481,6 +481,11 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="menu-text"><strong>Products</strong><span>Menu item costing & margins</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
+      <div class="menu-item" onclick="go('s-margin-ranking')">
+        <div class="menu-icon" style="background:#f0edf8;color:#6b4fa0;"><i class="ti ti-arrows-sort"></i></div>
+        <div class="menu-text"><strong>Margin ranking</strong><span>Highest & lowest margin items</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
     </div>
     </div>
     <div class="staff-hide" id="home-rankings">
@@ -1191,12 +1196,20 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
-      <div style="display:flex;gap:6px;margin-bottom:0.85rem;">
-        <button id="costing-tab-list" onclick="setCostingTab('list')" style="flex:1;padding:8px;border:1px solid #6b4fa0;background:#6b4fa0;color:#fff;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">Products</button>
-        <button id="costing-tab-rank" onclick="setCostingTab('rank')" style="flex:1;padding:8px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">Margin ranking</button>
-      </div>
       <div id="products-list"><div class="loading">Loading...</div></div>
-      <div id="products-ranking" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MARGIN RANKING -->
+<div class="screen" id="s-margin-ranking">
+  <div class="topbar" style="border-bottom-color:#f0edf8;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Margin ranking</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div id="margin-ranking-content"><div class="loading">Loading...</div></div>
     </div>
   </div>
 </div>
@@ -1718,7 +1731,7 @@ function go(id) {
     const role = currentUser.role;
     if((id === 's-dev' || id === 's-add-client' || id === 's-edit-client') && role !== 'developer') { showToast('Restricted'); return; }
     if(role === 'staff') {
-      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-add-product','s-edit-product','s-reserve','s-rankings'];
+      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-margin-ranking','s-add-product','s-edit-product','s-reserve','s-rankings'];
       if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
     }
     if(role === 'admin') {
@@ -1771,6 +1784,7 @@ function go(id) {
   }
   if(id === 's-ingredients') loadIngredients();
   if(id === 's-costing') loadProducts();
+  if(id === 's-margin-ranking') loadMarginRanking();
   if(id === 's-add-product') { prodIngredients = []; ['prod-extra-label','prod-extra-cost'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; }); renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); }
 }
 
@@ -3511,7 +3525,6 @@ function calcEditProductMargin() {
 }
 
 let productsCache = [];
-let costingTab = 'list';
 async function loadProducts() {
   const result = await sb.from('costing').select('*').order('name');
   const data = result.data || [];
@@ -3519,7 +3532,7 @@ async function loadProducts() {
   const el = document.getElementById('products-list');
   if(!el) return;
   if(data.length === 0) {
-    el.innerHTML = '<div class="empty-state" style="padding:2rem;">No products yet.<br/><span style="font-size:12px;">Add your menu items to calculate margins.</span></div>'; setCostingTab(costingTab); return;
+    el.innerHTML = '<div class="empty-state" style="padding:2rem;">No products yet.<br/><span style="font-size:12px;">Add your menu items to calculate margins.</span></div>'; return;
   }
   const totalItems = data.length;
   const avgMargin = data.reduce(function(a,p) {
@@ -3560,24 +3573,16 @@ async function loadProducts() {
     });
   });
   el.innerHTML = html;
-  setCostingTab(costingTab);
 }
 
-function setCostingTab(tab) {
-  costingTab = tab;
-  const tl = document.getElementById('costing-tab-list');
-  const tr = document.getElementById('costing-tab-rank');
-  const list = document.getElementById('products-list');
-  const rank = document.getElementById('products-ranking');
-  if(!tl || !tr || !list || !rank) return;
-  const on = function(b){ b.style.background='#6b4fa0'; b.style.color='#fff'; b.style.borderColor='#6b4fa0'; };
-  const off = function(b){ b.style.background='#fff'; b.style.color='var(--ink-mid)'; b.style.borderColor='var(--border)'; };
-  if(tab === 'rank') { on(tr); off(tl); list.style.display='none'; rank.style.display='block'; renderProductRanking(); }
-  else { on(tl); off(tr); rank.style.display='none'; list.style.display='block'; }
+async function loadMarginRanking() {
+  const result = await sb.from('costing').select('*');
+  productsCache = result.data || [];
+  renderMarginRanking();
 }
 
-function renderProductRanking() {
-  const el = document.getElementById('products-ranking');
+function renderMarginRanking() {
+  const el = document.getElementById('margin-ranking-content');
   if(!el) return;
   const priced = productsCache.filter(function(p){ return (parseFloat(p.selling_price)||0) > 0; });
   if(priced.length === 0) {
