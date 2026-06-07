@@ -1074,6 +1074,11 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div class="pad">
+      <div style="display:flex;gap:6px;margin-bottom:0.85rem;">
+        <button class="ing-sort-chip" data-sort="name" onclick="setIngredientSort('name')" style="flex:1;padding:7px;border:1px solid #6b4fa0;background:#6b4fa0;color:#fff;border-radius:8px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;">A–Z</button>
+        <button class="ing-sort-chip" data-sort="price" onclick="setIngredientSort('price')" style="flex:1;padding:7px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;">Pack price</button>
+        <button class="ing-sort-chip" data-sort="cpu" onclick="setIngredientSort('cpu')" style="flex:1;padding:7px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;">Unit cost</button>
+      </div>
       <div id="ingredients-list"><div class="loading">Loading...</div></div>
     </div>
   </div>
@@ -1091,7 +1096,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> Ingredient details</div>
         <div class="form-row">
           <label class="form-lbl">Ingredient name</label>
-          <input class="inp" id="ing-name" type="text" placeholder="e.g. Flour, Matcha powder, Milk"/>
+          <input class="inp" id="ing-name" type="text" placeholder="e.g. Flour, Matcha powder, Milk" oninput="updateIngIcon()"/>
         </div>
         <div class="form-row-2">
           <div>
@@ -1115,7 +1120,8 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <label class="form-lbl">Pack price (RM)</label>
           <input class="inp" id="ing-price" type="number" inputmode="decimal" placeholder="e.g. 229.00"/>
         </div>
-        <div id="ing-preview" style="display:none;margin-top:0.85rem;padding:0.75rem;background:#f0edf8;border-radius:8px;">
+        <div id="ing-preview" style="display:none;margin-top:0.85rem;padding:0.7rem 0.75rem;background:#f0edf8;border-radius:8px;align-items:center;gap:10px;">
+          <div style="width:34px;height:34px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i id="ing-preview-icon" class="ti ti-package" style="color:#6b4fa0;font-size:17px;"></i></div>
           <div style="font-size:12px;color:#6b4fa0;font-weight:500;" id="ing-preview-text"></div>
         </div>
       </div>
@@ -3137,18 +3143,80 @@ function renderMarginBar(pct, containerId) {
 }
 
 // INGREDIENTS
+let ingredientsCache = [];
+let ingredientSort = 'name';
 async function loadIngredients() {
-  const result = await sb.from('ingredients').select('*').order('name');
-  const data = result.data || [];
+  const result = await sb.from('ingredients').select('*');
+  ingredientsCache = result.data || [];
+  renderIngredients();
+}
+
+// Keyword -> Tabler icon. First matching keyword (substring) wins, so order = priority.
+// Easy to extend: add a keyword to a row, or add a new [icon, [keywords]] row.
+const INGREDIENT_ICONS = [
+  ['ti-grain', ['flour','wheat','rice','grain','starch','corn','oat','cereal','bran','semolina','tapioca']],
+  ['ti-milk', ['milk','cream','dairy','condensed','evaporated','yogurt','yoghurt']],
+  ['ti-cheese', ['cheese','butter','margarine']],
+  ['ti-egg', ['egg']],
+  ['ti-seeding', ['azuki','adzuki','red bean','soy','soya','bean','legume','tofu','edamame','peanut','almond','sesame','nut']],
+  ['ti-leaf', ['matcha','green tea','tea','herb','basil','mint','leaf','spinach','parsley','coriander','cilantro']],
+  ['ti-candy', ['sugar','sweet','chocolate','cocoa','choco','candy','caramel','jam','marshmallow','sprinkle']],
+  ['ti-droplet', ['oil','water','vinegar','sauce','syrup','honey','mirin']],
+  ['ti-salt', ['salt']],
+  ['ti-pepper', ['pepper','chili','chilli','spice','paprika']],
+  ['ti-lemon', ['lemon','lime','citrus','yuzu']],
+  ['ti-cherry', ['cherry','berry','strawberry','blueberry','raspberry','grape']],
+  ['ti-apple', ['apple','banana','mango','peach','pear','fruit']],
+  ['ti-carrot', ['carrot','vegetable','veggie','onion','potato','cabbage']],
+  ['ti-mushroom', ['mushroom']],
+  ['ti-meat', ['meat','beef','pork','chicken','bacon','sausage','ham']],
+  ['ti-fish', ['fish','salmon','tuna','seafood','prawn','shrimp','squid','crab']],
+  ['ti-bread', ['bread','bun','dough','bakery','pastry','croissant','toast']],
+  ['ti-ice-cream', ['ice cream','icecream','gelato','sorbet','soft serve']],
+  ['ti-coffee', ['coffee','espresso','latte','cappuccino','mocha']],
+  ['ti-cake', ['cake','sponge','batter']],
+  ['ti-cookie', ['cookie','biscuit','wafer','cracker']],
+  ['ti-soup', ['soup','broth','stock','dashi']],
+  ['ti-noodles', ['noodle','ramen','udon','soba','pasta','spaghetti']],
+  ['ti-flask', ['vanilla','extract','essence','flavour','flavor','yeast','baking','powder','gelatin','agar']],
+  ['ti-bottle', ['juice','soda','drink','beverage','cola']],
+  ['ti-box', ['box','bag','cup','wrap','packaging','package','container','paper','tray','lid','straw','label','carton','sticker']]
+];
+
+function iconForIngredient(name) {
+  const n = (name || '').toLowerCase();
+  for(let k = 0; k < INGREDIENT_ICONS.length; k++) {
+    const kws = INGREDIENT_ICONS[k][1];
+    for(let j = 0; j < kws.length; j++) { if(n.indexOf(kws[j]) !== -1) return INGREDIENT_ICONS[k][0]; }
+  }
+  return 'ti-package';
+}
+
+function setIngredientSort(key) {
+  ingredientSort = key;
+  document.querySelectorAll('.ing-sort-chip').forEach(function(c) {
+    const active = c.getAttribute('data-sort') === key;
+    c.style.background = active ? '#6b4fa0' : '#fff';
+    c.style.color = active ? '#fff' : 'var(--ink-mid)';
+    c.style.borderColor = active ? '#6b4fa0' : 'var(--border)';
+  });
+  renderIngredients();
+}
+
+function renderIngredients() {
   const el = document.getElementById('ingredients-list');
   if(!el) return;
-  if(data.length === 0) {
+  if(ingredientsCache.length === 0) {
     el.innerHTML = '<div class="empty-state" style="padding:2rem;">No ingredients yet.<br/><span style="font-size:12px;">Add your raw materials and their prices.</span></div>'; return;
   }
+  const data = ingredientsCache.slice();
+  if(ingredientSort === 'price') data.sort(function(a,b){ return (parseFloat(b.pack_price)||0) - (parseFloat(a.pack_price)||0); });
+  else if(ingredientSort === 'cpu') data.sort(function(a,b){ return (parseFloat(b.cost_per_unit)||0) - (parseFloat(a.cost_per_unit)||0); });
+  else data.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
   el.innerHTML = data.map(function(i) {
     const cpu = parseFloat(i.cost_per_unit);
     return '<div onclick="openEditIngredient(\'' + i.id + '\')" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:0.65rem;cursor:pointer;display:flex;align-items:center;gap:12px;">' +
-      '<div style="width:40px;height:40px;border-radius:10px;background:#f0edf8;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ti-package" style="color:#6b4fa0;font-size:18px;"></i></div>' +
+      '<div style="width:40px;height:40px;border-radius:10px;background:#f0edf8;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ' + iconForIngredient(i.name) + '" style="color:#6b4fa0;font-size:18px;"></i></div>' +
       '<div style="flex:1;">' +
       '<div style="font-size:14px;font-weight:500;color:var(--ink);">' + i.name + '</div>' +
       '<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">' + i.pack_size + ' ' + i.pack_unit + ' · RM ' + parseFloat(i.pack_price).toFixed(2) + '</div>' +
@@ -3158,6 +3226,19 @@ async function loadIngredients() {
       '<div style="font-size:10px;color:var(--ink-soft);">per ' + i.pack_unit + '</div>' +
       '</div></div>';
   }).join('');
+}
+
+function updateIngIcon() {
+  const name = (document.getElementById('ing-name').value || '').trim();
+  const prev = document.getElementById('ing-preview');
+  if(!prev) return;
+  if(!name) { prev.style.display = 'none'; return; }
+  const icon = iconForIngredient(name);
+  const ic = document.getElementById('ing-preview-icon');
+  const tx = document.getElementById('ing-preview-text');
+  if(ic) ic.className = 'ti ' + icon;
+  if(tx) tx.textContent = (icon === 'ti-package') ? 'A default icon will be used for this one.' : 'Auto icon picked from the name.';
+  prev.style.display = 'flex';
 }
 
 async function saveIngredient() {
