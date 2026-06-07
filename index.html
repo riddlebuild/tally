@@ -2472,10 +2472,13 @@ async function calcVar() {
   const box = document.getElementById('var-box');
   const txt = document.getElementById('var-txt');
   if(pos === 0 && total === 0) { box.style.display='none'; return; }
-  // Fetch today's expenses
+  // Fetch expenses for the entry being worked on (its own date + outlet when
+  // editing a past day), matching how saveSales computes variance.
   let expTotal = 0;
-  if(currentOutlet && currentOutlet.id !== 'all') {
-    const expResult = await sb.from('expenses').select('amount').eq('outlet_id', currentOutlet.id).eq('date', getToday());
+  const calcOutlet = editingSalesId ? editingSalesOutlet : (currentOutlet ? currentOutlet.id : null);
+  const calcDate = editingSalesId ? editingSalesDate : getToday();
+  if(calcOutlet && calcOutlet !== 'all') {
+    const expResult = await sb.from('expenses').select('amount').eq('outlet_id', calcOutlet).eq('date', calcDate);
     if(expResult.data) expTotal = expResult.data.reduce(function(a,e){ return a + parseFloat(e.amount); }, 0);
   }
   const diff = (total + expTotal) - pos;
