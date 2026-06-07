@@ -1246,16 +1246,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <select class="inp" id="prod-ing-unit" style="width:72px;"></select>
           <button onclick="addProductIngredient()" style="padding:9px 12px;background:#6b4fa0;border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
         </div>
-        <div style="margin-top:0.85rem;font-size:11px;color:var(--ink-soft);">Other cost <span style="font-weight:400;">(optional, e.g. packaging)</span></div>
+        <div style="margin-top:0.85rem;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--ink-soft);">Other cost <span style="font-weight:400;">(optional, e.g. packaging)</span></span>
+          <button type="button" onclick="openOtherCostManager()" title="Manage other costs" style="background:none;border:none;color:#6b4fa0;cursor:pointer;font-size:15px;padding:2px 4px;"><i class="ti ti-settings"></i></button>
+        </div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:0.35rem;">
           <select class="inp" id="prod-extra-label" style="flex:1;min-width:0;" onchange="onExtraLabelChange('prod')">
             <option value="">— no other cost —</option>
-            <option value="Packaging">Packaging</option>
-            <option value="Cup & lid">Cup &amp; lid</option>
-            <option value="Straw">Straw</option>
-            <option value="Carrier bag">Carrier bag</option>
-            <option value="Gas">Gas</option>
-            <option value="Labour">Labour</option>
           </select>
           <input class="inp" id="prod-extra-cost" type="number" inputmode="decimal" placeholder="0.00" style="width:90px;" oninput="calcProductMargin()"/>
         </div>
@@ -1315,16 +1312,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <select class="inp" id="edit-prod-ing-unit" style="width:72px;"></select>
           <button onclick="addEditProductIngredient()" style="padding:9px 12px;background:#6b4fa0;border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
         </div>
-        <div style="margin-top:0.85rem;font-size:11px;color:var(--ink-soft);">Other cost <span style="font-weight:400;">(optional, e.g. packaging)</span></div>
+        <div style="margin-top:0.85rem;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--ink-soft);">Other cost <span style="font-weight:400;">(optional, e.g. packaging)</span></span>
+          <button type="button" onclick="openOtherCostManager()" title="Manage other costs" style="background:none;border:none;color:#6b4fa0;cursor:pointer;font-size:15px;padding:2px 4px;"><i class="ti ti-settings"></i></button>
+        </div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:0.35rem;">
           <select class="inp" id="edit-prod-extra-label" style="flex:1;min-width:0;" onchange="onExtraLabelChange('edit-prod')">
             <option value="">— no other cost —</option>
-            <option value="Packaging">Packaging</option>
-            <option value="Cup & lid">Cup &amp; lid</option>
-            <option value="Straw">Straw</option>
-            <option value="Carrier bag">Carrier bag</option>
-            <option value="Gas">Gas</option>
-            <option value="Labour">Labour</option>
           </select>
           <input class="inp" id="edit-prod-extra-cost" type="number" inputmode="decimal" placeholder="0.00" style="width:90px;" oninput="calcEditProductMargin()"/>
         </div>
@@ -1551,6 +1545,26 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     <div class="vkey vkey-clear" onclick="viewerClear()">clear</div>
     <div class="vkey" onclick="viewerKey('0')">0</div>
     <div class="vkey" onclick="viewerBack()"><i class="ti ti-backspace" style="font-size:20px"></i></div>
+  </div>
+</div>
+
+<!-- OTHER COST MANAGER MODAL -->
+<div id="other-cost-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(20,18,14,0.45);align-items:center;justify-content:center;padding:1.2rem;">
+  <div style="background:#fff;border-radius:16px;max-width:400px;width:100%;max-height:82vh;overflow-y:auto;padding:1.2rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.3rem;">
+      <strong style="font-size:15px;color:var(--ink);">Other costs</strong>
+      <button type="button" onclick="closeOtherCostManager()" style="background:none;border:none;color:var(--ink-soft);font-size:20px;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+    <div style="font-size:12px;color:var(--ink-soft);margin-bottom:0.9rem;line-height:1.5;">Reusable fixed costs (e.g. Packaging) with a default price. Edit the name or amount, then save. They show up in the product "Other cost" dropdown.</div>
+    <div id="oc-manager-list" style="margin-bottom:0.9rem;"></div>
+    <div style="border-top:1px solid var(--border);padding-top:0.85rem;">
+      <div style="font-size:11px;color:var(--ink-soft);margin-bottom:0.4rem;">Add new</div>
+      <div style="display:flex;gap:8px;">
+        <input class="inp" id="oc-new-name" type="text" placeholder="Name" style="flex:1;min-width:0;"/>
+        <input class="inp" id="oc-new-amt" type="number" inputmode="decimal" placeholder="RM" style="width:72px;"/>
+        <button type="button" onclick="addOtherCost()" style="padding:9px 12px;background:#6b4fa0;border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;">Add</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1801,7 +1815,7 @@ function go(id) {
   if(id === 's-ingredients') loadIngredients();
   if(id === 's-costing') loadProducts();
   if(id === 's-margin-ranking') loadMarginRanking();
-  if(id === 's-add-product') { prodIngredients = []; ['prod-extra-label','prod-extra-cost'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; }); renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); }
+  if(id === 's-add-product') { prodIngredients = []; ['prod-extra-label','prod-extra-cost'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; }); renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); loadOtherCostPresets(); }
 }
 
 // PIN functions
@@ -3506,15 +3520,102 @@ function addEditProductIngredient() {
   renderIngredientsList(editProdIngredients, 'edit-prod-ingredients-list', 'edit-prod-total-cost', true);
 }
 
-// Default amounts auto-filled when an "other cost" type is chosen (still editable after).
-const OTHER_COST_DEFAULTS = { 'Packaging': 0.50 };
+// Per-business "other cost" presets (custom_options type='other_cost', value=name, amount=default).
+let otherCostPresets = [];
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+
+async function loadOtherCostPresets() {
+  otherCostPresets = await loadCustomOptions('other_cost');
+  ['prod-extra-label','edit-prod-extra-label'].forEach(function(selId){
+    const sel = document.getElementById(selId);
+    if(!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— no other cost —</option>';
+    otherCostPresets.forEach(function(p){
+      const o = document.createElement('option'); o.value = p.value; o.textContent = p.value; sel.appendChild(o);
+    });
+    sel.value = cur;
+    if(cur && sel.value !== cur){ const o=document.createElement('option'); o.value=cur; o.textContent=cur; sel.appendChild(o); sel.value=cur; }
+  });
+}
+
 function onExtraLabelChange(prefix) {
   const sel = document.getElementById(prefix + '-extra-label');
   const amt = document.getElementById(prefix + '-extra-cost');
   if(!sel || !amt) return;
   if(sel.value === '') { amt.value = ''; }
-  else if(OTHER_COST_DEFAULTS[sel.value] !== undefined) { amt.value = OTHER_COST_DEFAULTS[sel.value]; }
+  else {
+    const preset = otherCostPresets.find(function(p){ return p.value === sel.value; });
+    if(preset && preset.amount !== null && preset.amount !== undefined && preset.amount !== '') amt.value = Number(preset.amount);
+  }
   if(prefix === 'edit-prod') calcEditProductMargin(); else calcProductMargin();
+}
+
+function openOtherCostManager() {
+  const m = document.getElementById('other-cost-modal');
+  if(m) { m.style.display = 'flex'; renderOtherCostManager(); }
+}
+function closeOtherCostManager() {
+  const m = document.getElementById('other-cost-modal');
+  if(m) m.style.display = 'none';
+}
+
+async function renderOtherCostManager() {
+  const list = document.getElementById('oc-manager-list');
+  if(!list) return;
+  const items = await loadCustomOptions('other_cost');
+  otherCostPresets = items;
+  if(!items.length) { list.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);">No other costs yet — add one below.</div>'; return; }
+  list.innerHTML = items.map(function(it){
+    const amtVal = (it.amount === null || it.amount === undefined) ? '' : Number(it.amount);
+    return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:0.5rem;">' +
+      '<input class="inp" id="oc-name-' + it.id + '" value="' + escAttr(it.value) + '" style="flex:1;min-width:0;font-size:12px;padding:7px 9px;"/>' +
+      '<input class="inp" id="oc-amt-' + it.id + '" type="number" inputmode="decimal" value="' + amtVal + '" placeholder="RM" style="width:66px;font-size:12px;padding:7px 9px;"/>' +
+      '<button onclick="saveOtherCost(\'' + it.id + '\')" title="Save" style="background:var(--matcha-light);border:none;border-radius:7px;color:var(--matcha);cursor:pointer;font-size:13px;padding:6px 9px;"><i class="ti ti-check"></i></button>' +
+      '<button onclick="removeOtherCost(\'' + it.id + '\')" title="Remove" style="background:none;border:none;color:var(--vermillion);cursor:pointer;font-size:16px;padding:5px 4px;">&times;</button>' +
+      '</div>';
+  }).join('');
+}
+
+async function addOtherCost() {
+  const nameEl = document.getElementById('oc-new-name');
+  const amtEl = document.getElementById('oc-new-amt');
+  const name = (nameEl.value || '').trim();
+  if(!name) { showToast('Enter a name!'); return; }
+  const amtRaw = (amtEl.value || '').trim();
+  const amount = amtRaw === '' ? null : parseFloat(amtRaw);
+  if(amount !== null && (isNaN(amount) || amount < 0)) { showToast('Enter a valid amount!'); return; }
+  const ins = await sb.from('custom_options').insert({ type: 'other_cost', value: name, amount: amount });
+  if(ins.error) { showToast('Error: ' + ins.error.message); return; }
+  nameEl.value = ''; amtEl.value = '';
+  await renderOtherCostManager();
+  await loadOtherCostPresets();
+  showToast('Added!');
+}
+
+async function saveOtherCost(id) {
+  const nameEl = document.getElementById('oc-name-' + id);
+  const amtEl = document.getElementById('oc-amt-' + id);
+  if(!nameEl || !amtEl) return;
+  const name = (nameEl.value || '').trim();
+  if(!name) { showToast('Name cannot be empty!'); return; }
+  const amtRaw = (amtEl.value || '').trim();
+  const amount = amtRaw === '' ? null : parseFloat(amtRaw);
+  if(amount !== null && (isNaN(amount) || amount < 0)) { showToast('Enter a valid amount!'); return; }
+  const upd = await sb.from('custom_options').update({ value: name, amount: amount }).eq('id', id);
+  if(upd.error) { showToast('Error: ' + upd.error.message); return; }
+  await loadOtherCostPresets();
+  showToast('Saved');
+}
+
+async function removeOtherCost(id) {
+  await fetch(SUPABASE_URL + '/rest/v1/custom_options?id=eq.' + id, {
+    method: 'DELETE',
+    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY), 'Prefer': 'return=minimal'}
+  });
+  await renderOtherCostManager();
+  await loadOtherCostPresets();
+  showToast('Removed');
 }
 
 function calcProductMargin() {
@@ -3686,6 +3787,7 @@ async function openEditProduct(id) {
   editProdStoredCost = parseFloat(p.cost) || 0;
   editProdStoredExtra = parseFloat(p.extra_cost) || 0;
   document.getElementById('edit-prod-extra-cost').value = editProdStoredExtra > 0 ? editProdStoredExtra : '';
+  await loadOtherCostPresets();
   const lblSel = document.getElementById('edit-prod-extra-label');
   if(lblSel) {
     lblSel.value = p.extra_label || '';
