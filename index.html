@@ -571,6 +571,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="card">
         <div class="card-head" style="color:var(--amber);"><i class="ti ti-plus" style="font-size:14px"></i> Add expense</div>
         <div id="exp-edit-banner" style="display:none;margin-bottom:0.85rem;padding:0.6rem 0.8rem;border-radius:8px;font-size:12px;background:var(--amber-light);color:var(--amber);"><span id="exp-edit-text"></span> · <span onclick="cancelExpenseEdit()" style="text-decoration:underline;cursor:pointer;">Cancel</span></div>
+        <div id="exp-quick-items" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:0.6rem;"></div>
         <div class="form-row">
           <label class="form-lbl">Item name</label>
           <input class="inp" id="exp-item" type="text" placeholder="e.g. ice cubes, kitchen towels"/>
@@ -721,6 +722,16 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div style="display:flex;gap:8px;">
           <input class="inp" id="new-wast-reason" type="text" placeholder="e.g. Over-portioned, Wrong order" style="flex:1;"/>
           <button onclick="addCustomOption('wastage_reason')" style="padding:9px 14px;background:var(--rose);border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-head"><i class="ti ti-bolt" style="font-size:14px"></i> Regular expense items</div>
+        <div style="font-size:11px;color:var(--ink-soft);line-height:1.45;margin-bottom:0.6rem;">Daily items staff can tap when logging an expense (e.g. Ice, Sweet potato). Keeps names consistent. Amount pre-fills but stays editable.</div>
+        <div id="exp-items-list" style="margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:8px;">
+          <input class="inp" id="new-exp-item" type="text" placeholder="Item name (e.g. Ice)" style="flex:2;"/>
+          <input class="inp" id="new-exp-item-amt" type="number" inputmode="decimal" placeholder="RM" style="flex:1;min-width:0;"/>
+          <button onclick="addExpenseItem()" style="padding:9px 14px;background:var(--amber);border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
         </div>
       </div>
       <div class="section-lbl" style="margin-top:1.25rem;">Staff management</div>
@@ -1699,7 +1710,7 @@ function go(id) {
   if(id === 's-home') loadHomeStats();
   if(id === 's-expenses') {
     cancelExpenseEdit();
-    loadExpenses(); loadExpenseCategoryOptions();
+    loadExpenses(); loadExpenseCategoryOptions(); loadExpenseQuickItems();
     if(currentUser) { const el = document.getElementById('exp-by'); if(el && !el.value) el.value = currentUser.name; }
   }
   if(id === 's-wastage') {
@@ -3921,6 +3932,7 @@ function openSettings() {
   renderSettingsOutlets();
   renderCustomOptionsList('expense_category');
   renderCustomOptionsList('wastage_reason');
+  renderExpenseItemsList();
   const staffSection = document.getElementById('staff-list');
   const addStaffBtn = document.querySelector('[onclick="go(\'s-add-staff\')"]');
   const isOwner = currentUser.role === 'owner';
@@ -4277,6 +4289,65 @@ async function loadWastageReasonOptions() {
   const current = select.value;
   select.innerHTML = all.map(function(r){ return '<option value="' + r + '">' + r + '</option>'; }).join('');
   if(current) select.value = current;
+}
+
+// --- Regular expense items (quick-tap chips with a pre-filled amount) ---
+async function loadExpenseQuickItems() {
+  const wrap = document.getElementById('exp-quick-items');
+  if(!wrap) return;
+  const items = await loadCustomOptions('expense_item');
+  if(!items.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = items.map(function(it){
+    const amt = (it.amount === null || it.amount === undefined) ? '' : Number(it.amount);
+    const sub = amt === '' ? '' : ' · RM' + amt;
+    return '<button type="button" onclick="pickExpenseItem(' + JSON.stringify(it.value).replace(/"/g,'&quot;') + ',' + (amt === '' ? 'null' : amt) + ')" style="padding:6px 11px;background:var(--amber-light);border:1px solid var(--amber-light);border-radius:999px;color:var(--amber);font-size:12px;font-family:\'DM Sans\',sans-serif;cursor:pointer;white-space:nowrap;font-weight:500;">' + escHtml(it.value) + sub + '</button>';
+  }).join('');
+}
+
+function pickExpenseItem(name, amount) {
+  const itemEl = document.getElementById('exp-item');
+  const amtEl = document.getElementById('exp-amount');
+  if(itemEl) itemEl.value = name;
+  if(amtEl && amount !== null && amount !== undefined && amount !== '') amtEl.value = amount;
+}
+
+async function renderExpenseItemsList() {
+  const list = document.getElementById('exp-items-list');
+  if(!list) return;
+  const items = await loadCustomOptions('expense_item');
+  if(!items.length) { list.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);">No regular items yet.</div>'; return; }
+  list.innerHTML = items.map(function(it){
+    const amt = (it.amount === null || it.amount === undefined) ? '—' : 'RM ' + Number(it.amount).toFixed(2);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);">' +
+      '<span style="font-size:13px;color:var(--ink);">' + escHtml(it.value) + ' <span style="color:var(--ink-soft);font-size:11px;">' + amt + '</span></span>' +
+      '<button onclick="removeExpenseItem(\'' + it.id + '\')" style="background:none;border:none;color:var(--vermillion);cursor:pointer;font-size:12px;padding:2px 6px;">Remove</button>' +
+      '</div>';
+  }).join('');
+}
+
+async function addExpenseItem() {
+  const nameEl = document.getElementById('new-exp-item');
+  const amtEl = document.getElementById('new-exp-item-amt');
+  const name = (nameEl.value || '').trim();
+  if(!name) { showToast('Enter an item name!'); return; }
+  const amtRaw = (amtEl.value || '').trim();
+  const amount = amtRaw === '' ? null : parseFloat(amtRaw);
+  if(amount !== null && (isNaN(amount) || amount < 0)) { showToast('Enter a valid amount!'); return; }
+  await sb.from('custom_options').insert({ type: 'expense_item', value: name, amount: amount });
+  nameEl.value = ''; amtEl.value = '';
+  renderExpenseItemsList();
+  loadExpenseQuickItems();
+  showToast('Added!');
+}
+
+async function removeExpenseItem(id) {
+  await fetch(SUPABASE_URL + '/rest/v1/custom_options?id=eq.' + id, {
+    method: 'DELETE',
+    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal'}
+  });
+  renderExpenseItemsList();
+  loadExpenseQuickItems();
+  showToast('Removed');
 }
 
 function resetApp() {
