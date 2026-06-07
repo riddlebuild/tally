@@ -1248,7 +1248,15 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
         <div style="margin-top:0.85rem;font-size:11px;color:var(--ink-soft);">Other cost <span style="font-weight:400;">(optional, e.g. packaging)</span></div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:0.35rem;">
-          <input class="inp" id="prod-extra-label" type="text" placeholder="Packaging" style="flex:1;min-width:0;"/>
+          <select class="inp" id="prod-extra-label" style="flex:1;min-width:0;" onchange="onExtraLabelChange('prod')">
+            <option value="">— no other cost —</option>
+            <option value="Packaging">Packaging</option>
+            <option value="Cup & lid">Cup &amp; lid</option>
+            <option value="Straw">Straw</option>
+            <option value="Carrier bag">Carrier bag</option>
+            <option value="Gas">Gas</option>
+            <option value="Labour">Labour</option>
+          </select>
           <input class="inp" id="prod-extra-cost" type="number" inputmode="decimal" placeholder="0.00" style="width:90px;" oninput="calcProductMargin()"/>
         </div>
         <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
@@ -1309,7 +1317,15 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
         <div style="margin-top:0.85rem;font-size:11px;color:var(--ink-soft);">Other cost <span style="font-weight:400;">(optional, e.g. packaging)</span></div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:0.35rem;">
-          <input class="inp" id="edit-prod-extra-label" type="text" placeholder="Packaging" style="flex:1;min-width:0;"/>
+          <select class="inp" id="edit-prod-extra-label" style="flex:1;min-width:0;" onchange="onExtraLabelChange('edit-prod')">
+            <option value="">— no other cost —</option>
+            <option value="Packaging">Packaging</option>
+            <option value="Cup & lid">Cup &amp; lid</option>
+            <option value="Straw">Straw</option>
+            <option value="Carrier bag">Carrier bag</option>
+            <option value="Gas">Gas</option>
+            <option value="Labour">Labour</option>
+          </select>
           <input class="inp" id="edit-prod-extra-cost" type="number" inputmode="decimal" placeholder="0.00" style="width:90px;" oninput="calcEditProductMargin()"/>
         </div>
         <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
@@ -3490,6 +3506,17 @@ function addEditProductIngredient() {
   renderIngredientsList(editProdIngredients, 'edit-prod-ingredients-list', 'edit-prod-total-cost', true);
 }
 
+// Default amounts auto-filled when an "other cost" type is chosen (still editable after).
+const OTHER_COST_DEFAULTS = { 'Packaging': 0.50 };
+function onExtraLabelChange(prefix) {
+  const sel = document.getElementById(prefix + '-extra-label');
+  const amt = document.getElementById(prefix + '-extra-cost');
+  if(!sel || !amt) return;
+  if(sel.value === '') { amt.value = ''; }
+  else if(OTHER_COST_DEFAULTS[sel.value] !== undefined) { amt.value = OTHER_COST_DEFAULTS[sel.value]; }
+  if(prefix === 'edit-prod') calcEditProductMargin(); else calcProductMargin();
+}
+
 function calcProductMargin() {
   const ingCost = prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
   const extra = parseFloat((document.getElementById('prod-extra-cost')||{}).value) || 0;
@@ -3659,7 +3686,13 @@ async function openEditProduct(id) {
   editProdStoredCost = parseFloat(p.cost) || 0;
   editProdStoredExtra = parseFloat(p.extra_cost) || 0;
   document.getElementById('edit-prod-extra-cost').value = editProdStoredExtra > 0 ? editProdStoredExtra : '';
-  document.getElementById('edit-prod-extra-label').value = p.extra_label || '';
+  const lblSel = document.getElementById('edit-prod-extra-label');
+  if(lblSel) {
+    lblSel.value = p.extra_label || '';
+    if(p.extra_label && lblSel.value !== p.extra_label) {
+      const o = document.createElement('option'); o.value = p.extra_label; o.textContent = p.extra_label; lblSel.appendChild(o); lblSel.value = p.extra_label;
+    }
+  }
   // Load existing ingredients
   const ingResult = await sb.from('costing_ingredients').select('*').eq('costing_id', id);
   const ingData = ingResult.data || [];
