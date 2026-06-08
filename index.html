@@ -481,11 +481,6 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="menu-text"><strong>Tally Invoices</strong><span>Invoices owed to you &amp; payments</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
-      <div class="menu-item" onclick="go('s-issue')">
-        <div class="menu-icon" style="background:#eef3ec;color:#4a7c59;"><i class="ti ti-file-plus"></i></div>
-        <div class="menu-text"><strong>Issue invoice</strong><span>Create an invoice or quotation PDF</span></div>
-        <i class="ti ti-chevron-right menu-arrow"></i>
-      </div>
       <div class="menu-item" onclick="go('s-invoice-sales')">
         <div class="menu-icon" style="background:#eef3ec;color:#4a7c59;"><i class="ti ti-cash"></i></div>
         <div class="menu-text"><strong>Invoice sales</strong><span>Income received, day by day</span></div>
@@ -499,6 +494,11 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="menu-item" onclick="openInvoices('payable')">
         <div class="menu-icon" style="background:#fcecea;color:#c0392b;"><i class="ti ti-receipt"></i></div>
         <div class="menu-text"><strong>We owe</strong><span>Bills you owe to suppliers</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+      <div class="menu-item" onclick="go('s-issue')">
+        <div class="menu-icon" style="background:#f5ede3;color:#8b5e3c;"><i class="ti ti-file-plus"></i></div>
+        <div class="menu-text"><strong>Issue invoice</strong><span>Create an invoice or quotation PDF</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
     </div>
@@ -3848,6 +3848,7 @@ function renderInvoices() {
       '</div>' +
       paidInfo +
       '<div style="display:flex;gap:8px;margin-top:0.6rem;">' +
+        '<button onclick="editInvoice(\'' + i.id + '\')" style="padding:6px 12px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Edit</button>' +
         (paid
           ? '<button onclick="markUnpaid(\'' + i.id + '\')" style="flex:1;padding:6px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Mark unpaid</button>'
           : '<button onclick="openMarkPaid(\'' + i.id + '\')" style="flex:1;padding:6px;border:1px solid ' + invThemeColor() + ';background:' + invThemeColor() + ';color:#fff;border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Mark paid</button>') +
