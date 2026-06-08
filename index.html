@@ -471,6 +471,18 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       </div>
     </div>
     </div>
+    <div class="staff-hide" id="home-records">
+    <div style="padding:0 1.1rem;">
+      <div class="section-lbl">Records</div>
+    </div>
+    <div class="menu-card" style="margin-bottom:1.25rem;">
+      <div class="menu-item" onclick="go('s-invoices')">
+        <div class="menu-icon" style="background:#eef3ec;color:#4a7c59;"><i class="ti ti-file-invoice"></i></div>
+        <div class="menu-text"><strong>Tally Invoices</strong><span>Track supplier invoices &amp; what you owe</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+    </div>
+    </div>
     <div class="staff-hide" id="home-costing">
     <div style="padding:0 1.1rem;">
       <div class="section-lbl">Costing</div>
@@ -1553,6 +1565,69 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
 </div>
 
+<!-- TALLY INVOICES -->
+<div class="screen" id="s-invoices">
+  <div class="topbar" style="border-bottom-color:#eef3ec;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Tally Invoices</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div style="display:flex;gap:6px;margin-bottom:0.9rem;">
+        <button id="inv-tab-payable" onclick="setInvoiceTab('payable')" style="flex:1;padding:8px;border:1px solid #4a7c59;background:#4a7c59;color:#fff;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">We owe</button>
+        <button id="inv-tab-receivable" onclick="setInvoiceTab('receivable')" style="flex:1;padding:8px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">Owed to us</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:0.9rem;">
+        <div style="flex:1;background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.8rem;">
+          <div style="font-size:11px;color:var(--ink-soft);">Outstanding</div>
+          <div id="inv-outstanding" style="font-size:18px;font-weight:600;color:var(--vermillion);">RM 0.00</div>
+          <div id="inv-outstanding-sub" style="font-size:10px;color:var(--ink-soft);">0 unpaid</div>
+        </div>
+        <div style="flex:1;background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.8rem;">
+          <div style="font-size:11px;color:var(--ink-soft);">Settled</div>
+          <div id="inv-paid" style="font-size:18px;font-weight:600;color:var(--matcha);">RM 0.00</div>
+          <div id="inv-paid-sub" style="font-size:10px;color:var(--ink-soft);">0 paid</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#4a7c59;"><i class="ti ti-file-invoice" style="font-size:14px"></i> <span id="inv-form-title">Add invoice</span></div>
+        <div class="form-row"><label class="form-lbl">Invoice no.</label><input class="inp" id="inv-no" type="text" placeholder="e.g. INV-1023"/></div>
+        <div class="form-row"><label class="form-lbl"><span id="inv-party-label">Supplier</span></label><input class="inp" id="inv-party" type="text" placeholder="e.g. Flour supplier"/></div>
+        <div style="display:flex;gap:8px;">
+          <div class="form-row" style="flex:1;"><label class="form-lbl">Amount (RM)</label><input class="inp" id="inv-amount" type="number" inputmode="decimal" placeholder="0.00"/></div>
+          <div class="form-row" style="flex:1;"><label class="form-lbl">Invoice date</label><input class="inp" id="inv-date" type="date"/></div>
+        </div>
+        <div class="form-row"><label class="form-lbl">Due date <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><input class="inp" id="inv-due" type="date"/></div>
+        <input type="hidden" id="inv-edit-id"/>
+        <div style="display:flex;gap:8px;">
+          <button class="submit-btn" id="inv-save-btn" onclick="saveInvoice()" style="background:#4a7c59;flex:1;">Add invoice</button>
+          <button id="inv-cancel-btn" onclick="cancelInvoiceEdit()" style="display:none;padding:0 16px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Cancel</button>
+        </div>
+      </div>
+      <div class="section-lbl" style="margin-top:0.5rem;">Invoices</div>
+      <div id="invoices-list"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MARK PAID MODAL -->
+<div id="inv-paid-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(20,18,14,0.55);align-items:center;justify-content:center;padding:1.2rem;">
+  <div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:1.2rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+      <strong style="font-size:15px;color:var(--ink);">Mark as paid</strong>
+      <button type="button" onclick="closePaidModal()" style="background:none;border:none;color:var(--ink-soft);font-size:20px;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+    <div id="inv-paid-context" style="font-size:12px;color:var(--ink-soft);margin-bottom:0.9rem;line-height:1.5;"></div>
+    <div class="form-row"><label class="form-lbl">Date</label><input class="inp" id="inv-paid-date" type="date"/></div>
+    <div class="form-row"><label class="form-lbl">Method</label>
+      <select class="inp" id="inv-paid-method"><option value="cash">Cash</option><option value="bank">Bank transfer</option><option value="other">Other</option></select>
+    </div>
+    <div class="form-row"><label class="form-lbl">Amount received (RM)</label><input class="inp" id="inv-paid-amount" type="number" inputmode="decimal" oninput="updatePaidVarianceHint()"/></div>
+    <div id="inv-paid-variance" style="font-size:11px;margin-bottom:0.8rem;min-height:14px;"></div>
+    <button class="submit-btn" onclick="confirmMarkPaid()" style="background:#4a7c59;width:100%;">Confirm paid</button>
+  </div>
+</div>
+
 <!-- DAILY SUMMARY MODAL -->
 <div id="daily-summary-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(20,18,14,0.55);align-items:center;justify-content:center;padding:1.2rem;">
   <div style="background:#fff;border-radius:16px;max-width:430px;width:100%;max-height:90vh;overflow-y:auto;padding:1rem;">
@@ -1781,7 +1856,7 @@ function go(id) {
     const role = currentUser.role;
     if((id === 's-dev' || id === 's-add-client' || id === 's-edit-client') && role !== 'developer') { showToast('Restricted'); return; }
     if(role === 'staff') {
-      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-margin-ranking','s-add-product','s-edit-product','s-reserve','s-rankings'];
+      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-margin-ranking','s-add-product','s-edit-product','s-reserve','s-rankings','s-invoices'];
       if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
     }
     if(role === 'admin') {
@@ -1835,6 +1910,7 @@ function go(id) {
   if(id === 's-ingredients') loadIngredients();
   if(id === 's-costing') loadProducts();
   if(id === 's-margin-ranking') loadMarginRanking();
+  if(id === 's-invoices') { applyInvoiceTabUI(); cancelInvoiceEdit(); const dEl = document.getElementById('inv-date'); if(dEl && !dEl.value) dEl.value = getToday(); loadInvoices(); }
   if(id === 's-add-product') { prodIngredients = []; ['prod-extra-label','prod-extra-cost'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; }); renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); loadOtherCostPresets(); }
 }
 
@@ -2245,7 +2321,7 @@ function applyRoleUI() {
 
   // Viewer (e.g. owner's family) - read-only: stats + Insights only
   if(role === 'viewer') {
-    ['home-daily','home-shift','home-costing','home-rankings','home-summary'].forEach(function(idn){
+    ['home-daily','home-shift','home-costing','home-rankings','home-summary','home-records'].forEach(function(idn){
       const el = document.getElementById(idn); if(el) el.style.display = 'none';
     });
     const rep = document.getElementById('home-reports'); if(rep) rep.style.display = '';
@@ -3538,6 +3614,207 @@ function addEditProductIngredient() {
   sel.value = '';
   if(unitEl) unitEl.innerHTML = '';
   renderIngredientsList(editProdIngredients, 'edit-prod-ingredients-list', 'edit-prod-total-cost', true);
+}
+
+// ===== TALLY INVOICES (payable + receivable, with paid reconcile) =====
+let invoicesCache = [];
+let invoiceTab = 'payable';
+let payingInvoiceId = null;
+
+async function loadInvoices() {
+  const r = await sb.from('invoices').select('*');
+  invoicesCache = r.data || [];
+  renderInvoices();
+}
+
+function applyInvoiceTabUI() {
+  const p = document.getElementById('inv-tab-payable'), r = document.getElementById('inv-tab-receivable');
+  const on = function(b){ if(!b) return; b.style.background='#4a7c59'; b.style.color='#fff'; b.style.borderColor='#4a7c59'; };
+  const off = function(b){ if(!b) return; b.style.background='#fff'; b.style.color='var(--ink-mid)'; b.style.borderColor='var(--border)'; };
+  if(invoiceTab === 'receivable'){ on(r); off(p); } else { on(p); off(r); }
+  const lbl = document.getElementById('inv-party-label'); const partyEl = document.getElementById('inv-party');
+  if(lbl) lbl.textContent = invoiceTab === 'receivable' ? 'Customer' : 'Supplier';
+  if(partyEl) partyEl.placeholder = invoiceTab === 'receivable' ? 'e.g. Cafe ABC' : 'e.g. Flour supplier';
+}
+
+function setInvoiceTab(tab) {
+  invoiceTab = tab;
+  cancelInvoiceEdit();
+  applyInvoiceTabUI();
+  renderInvoices();
+}
+
+function renderInvoices() {
+  const list = document.getElementById('invoices-list');
+  if(!list) return;
+  const data = invoicesCache.filter(function(i){ return (i.direction || 'payable') === invoiceTab; });
+  let outstanding = 0, settled = 0, unpaidCount = 0, paidCount = 0;
+  data.forEach(function(i){
+    const amt = parseFloat(i.amount) || 0;
+    if(i.paid) { settled += amt; paidCount++; } else { outstanding += amt; unpaidCount++; }
+  });
+  const setV = function(id, t){ const e = document.getElementById(id); if(e) e.textContent = t; };
+  setV('inv-outstanding', 'RM ' + outstanding.toFixed(2));
+  setV('inv-outstanding-sub', unpaidCount + ' unpaid');
+  setV('inv-paid', 'RM ' + settled.toFixed(2));
+  setV('inv-paid-sub', paidCount + ' paid');
+  if(data.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:2rem;">No invoices here yet.<br/><span style="font-size:12px;">' + (invoiceTab === 'receivable' ? 'Add a customer invoice above.' : 'Add a supplier invoice above.') + '</span></div>';
+    return;
+  }
+  data.sort(function(a,b){
+    if(!!a.paid !== !!b.paid) return a.paid ? 1 : -1;
+    const da = a.invoice_date || a.created_at || '', db = b.invoice_date || b.created_at || '';
+    if(a.paid) { return db < da ? -1 : (db > da ? 1 : 0); }
+    return da < db ? -1 : (da > db ? 1 : 0);
+  });
+  list.innerHTML = data.map(function(i){
+    const amt = parseFloat(i.amount) || 0;
+    const paid = !!i.paid;
+    const badge = paid
+      ? '<span style="font-size:10px;background:var(--matcha-light);color:var(--matcha);padding:2px 8px;border-radius:999px;">Paid</span>'
+      : '<span style="font-size:10px;background:var(--vermillion-light);color:var(--vermillion);padding:2px 8px;border-radius:999px;">Unpaid</span>';
+    const meta = (i.invoice_no ? escHtml(i.invoice_no) : '') + (i.invoice_no && i.invoice_date ? ' · ' : '') + (i.invoice_date || '');
+    let paidInfo = '';
+    if(paid) {
+      const rec = (i.amount_received === null || i.amount_received === undefined) ? amt : parseFloat(i.amount_received);
+      const diff = rec - amt;
+      const methodTxt = i.paid_method === 'bank' ? 'Bank' : (i.paid_method === 'other' ? 'Other' : 'Cash');
+      let diffTxt = '';
+      if(Math.abs(diff) >= 0.01) diffTxt = ' · <span style="color:' + (diff < 0 ? 'var(--vermillion)' : 'var(--matcha)') + ';">' + (diff < 0 ? 'short RM' + Math.abs(diff).toFixed(2) : 'over RM' + diff.toFixed(2)) + '</span>';
+      paidInfo = '<div style="font-size:11px;color:var(--ink-soft);margin-top:5px;">Received RM ' + rec.toFixed(2) + ' · ' + methodTxt + (i.paid_date ? ' · ' + i.paid_date : '') + diffTxt + '</div>';
+    }
+    return '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem;margin-bottom:0.6rem;">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;cursor:pointer;" onclick="editInvoice(\'' + i.id + '\')">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:14px;font-weight:500;color:var(--ink);">' + escHtml(i.party || '(no name)') + '</div>' +
+          (meta ? '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">' + meta + '</div>' : '') +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0;">' +
+          '<div style="font-size:14px;font-weight:600;color:var(--ink);">RM ' + amt.toFixed(2) + '</div>' +
+          '<div style="margin-top:3px;">' + badge + '</div>' +
+        '</div>' +
+      '</div>' +
+      paidInfo +
+      '<div style="display:flex;gap:8px;margin-top:0.6rem;">' +
+        (paid
+          ? '<button onclick="markUnpaid(\'' + i.id + '\')" style="flex:1;padding:6px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Mark unpaid</button>'
+          : '<button onclick="openMarkPaid(\'' + i.id + '\')" style="flex:1;padding:6px;border:1px solid var(--matcha);background:var(--matcha);color:#fff;border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Mark paid</button>') +
+        '<button onclick="deleteInvoice(\'' + i.id + '\')" style="padding:6px 12px;border:1px solid var(--vermillion-light);background:none;color:var(--vermillion);border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Delete</button>' +
+      '</div>' +
+      '</div>';
+  }).join('');
+}
+
+async function saveInvoice() {
+  const no = (document.getElementById('inv-no').value || '').trim();
+  const party = (document.getElementById('inv-party').value || '').trim();
+  const amount = parseFloat(document.getElementById('inv-amount').value);
+  const date = document.getElementById('inv-date').value || null;
+  const due = document.getElementById('inv-due').value || null;
+  const editId = document.getElementById('inv-edit-id').value;
+  if(!party && !no) { showToast('Enter an invoice no. or name!'); return; }
+  if(!amount || amount <= 0) { showToast('Enter a valid amount!'); return; }
+  const btn = document.getElementById('inv-save-btn');
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Saving...';
+  let res;
+  if(editId) {
+    res = await sb.from('invoices').update({ invoice_no:no, party:party, amount:amount, invoice_date:date, due_date:due }).eq('id', editId);
+  } else {
+    const row = { direction:invoiceTab, invoice_no:no, party:party, amount:amount, invoice_date:date, due_date:due, paid:false };
+    if(currentTenantId) row.tenant_id = currentTenantId;
+    res = await sb.from('invoices').insert(row);
+  }
+  btn.disabled = false; btn.textContent = orig;
+  if(res.error) { showToast('Error: ' + res.error.message); return; }
+  const wasEdit = !!editId;
+  cancelInvoiceEdit();
+  showToast(wasEdit ? 'Updated!' : 'Added!');
+  loadInvoices();
+}
+
+function editInvoice(id) {
+  const inv = invoicesCache.find(function(x){ return x.id === id; });
+  if(!inv) return;
+  invoiceTab = inv.direction || 'payable';
+  applyInvoiceTabUI();
+  renderInvoices();
+  document.getElementById('inv-no').value = inv.invoice_no || '';
+  document.getElementById('inv-party').value = inv.party || '';
+  document.getElementById('inv-amount').value = (inv.amount === null || inv.amount === undefined) ? '' : inv.amount;
+  document.getElementById('inv-date').value = inv.invoice_date || '';
+  document.getElementById('inv-due').value = inv.due_date || '';
+  document.getElementById('inv-edit-id').value = id;
+  document.getElementById('inv-form-title').textContent = 'Edit invoice';
+  document.getElementById('inv-save-btn').textContent = 'Update';
+  document.getElementById('inv-cancel-btn').style.display = '';
+  const sc = document.getElementById('s-invoices').querySelector('div[style*="overflow-y"]');
+  if(sc) sc.scrollTop = 0;
+}
+
+function cancelInvoiceEdit() {
+  ['inv-no','inv-party','inv-amount','inv-due','inv-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  const t = document.getElementById('inv-form-title'); if(t) t.textContent = 'Add invoice';
+  const b = document.getElementById('inv-save-btn'); if(b) b.textContent = 'Add invoice';
+  const c = document.getElementById('inv-cancel-btn'); if(c) c.style.display = 'none';
+}
+
+function openMarkPaid(id) {
+  const inv = invoicesCache.find(function(x){ return x.id === id; });
+  if(!inv) return;
+  payingInvoiceId = id;
+  const amt = parseFloat(inv.amount) || 0;
+  document.getElementById('inv-paid-date').value = getToday();
+  document.getElementById('inv-paid-method').value = 'cash';
+  document.getElementById('inv-paid-amount').value = amt;
+  document.getElementById('inv-paid-context').textContent = (inv.party || 'Invoice') + (inv.invoice_no ? ' · ' + inv.invoice_no : '') + ' · invoice RM ' + amt.toFixed(2);
+  updatePaidVarianceHint();
+  const m = document.getElementById('inv-paid-modal'); if(m) m.style.display = 'flex';
+}
+
+function closePaidModal() { payingInvoiceId = null; const m = document.getElementById('inv-paid-modal'); if(m) m.style.display = 'none'; }
+
+function updatePaidVarianceHint() {
+  const inv = invoicesCache.find(function(x){ return x.id === payingInvoiceId; });
+  const hint = document.getElementById('inv-paid-variance');
+  if(!inv || !hint) return;
+  const amt = parseFloat(inv.amount) || 0;
+  const rec = parseFloat(document.getElementById('inv-paid-amount').value);
+  if(isNaN(rec)) { hint.textContent = ''; return; }
+  const diff = rec - amt;
+  if(Math.abs(diff) < 0.01) { hint.innerHTML = '<span style="color:var(--matcha);">Matches the invoice exactly.</span>'; }
+  else if(diff < 0) { hint.innerHTML = '<span style="color:var(--vermillion);">Short by RM ' + Math.abs(diff).toFixed(2) + ' vs the invoice.</span>'; }
+  else { hint.innerHTML = '<span style="color:var(--matcha);">Over by RM ' + diff.toFixed(2) + ' vs the invoice.</span>'; }
+}
+
+async function confirmMarkPaid() {
+  if(!payingInvoiceId) return;
+  const date = document.getElementById('inv-paid-date').value || null;
+  const method = document.getElementById('inv-paid-method').value || 'cash';
+  const recRaw = document.getElementById('inv-paid-amount').value;
+  const rec = recRaw === '' ? null : parseFloat(recRaw);
+  if(rec !== null && (isNaN(rec) || rec < 0)) { showToast('Enter a valid amount received!'); return; }
+  const upd = await sb.from('invoices').update({ paid:true, paid_date:date, paid_method:method, amount_received:rec }).eq('id', payingInvoiceId);
+  if(upd.error) { showToast('Error: ' + upd.error.message); return; }
+  closePaidModal();
+  showToast('Marked paid');
+  loadInvoices();
+}
+
+async function markUnpaid(id) {
+  const upd = await sb.from('invoices').update({ paid:false, paid_date:null, paid_method:null, amount_received:null }).eq('id', id);
+  if(upd.error) { showToast('Error: ' + upd.error.message); return; }
+  loadInvoices();
+}
+
+async function deleteInvoice(id) {
+  if(!confirm('Delete this invoice?')) return;
+  await fetch(SUPABASE_URL + '/rest/v1/invoices?id=eq.' + id, {
+    method: 'DELETE',
+    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY), 'Prefer': 'return=minimal'}
+  });
+  loadInvoices();
+  showToast('Deleted');
 }
 
 // ===== DAILY SUMMARY (shareable image) =====
