@@ -478,7 +478,17 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     <div class="menu-card" style="margin-bottom:1.25rem;">
       <div class="menu-item" onclick="go('s-invoices')">
         <div class="menu-icon" style="background:#eef3ec;color:#4a7c59;"><i class="ti ti-file-invoice"></i></div>
-        <div class="menu-text"><strong>Tally Invoices</strong><span>Track supplier invoices &amp; what you owe</span></div>
+        <div class="menu-text"><strong>Tally Invoices</strong><span>What you owe &amp; what's owed to you</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+      <div class="menu-item" onclick="go('s-invoice-sales')">
+        <div class="menu-icon" style="background:#eef3ec;color:#4a7c59;"><i class="ti ti-cash"></i></div>
+        <div class="menu-text"><strong>Invoice sales</strong><span>Income from invoices, kept separate</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+      <div class="menu-item" onclick="go('s-invoice-report')">
+        <div class="menu-icon" style="background:#eef3ec;color:#4a7c59;"><i class="ti ti-file-export"></i></div>
+        <div class="menu-text"><strong>Invoice report</strong><span>History, filter &amp; export to PDF</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
     </div>
@@ -1590,7 +1600,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
       <div class="card">
-        <div class="card-head" style="color:#4a7c59;"><i class="ti ti-file-invoice" style="font-size:14px"></i> <span id="inv-form-title">Add invoice</span></div>
+        <div class="card-head" id="inv-form-head" style="color:#4a7c59;"><i class="ti ti-file-invoice" style="font-size:14px"></i> <span id="inv-form-title">Add invoice</span></div>
         <div class="form-row"><label class="form-lbl">Invoice no.</label><input class="inp" id="inv-no" type="text" placeholder="e.g. INV-1023"/></div>
         <div class="form-row"><label class="form-lbl"><span id="inv-party-label">Supplier</span></label><input class="inp" id="inv-party" type="text" placeholder="e.g. Flour supplier"/></div>
         <div style="display:flex;gap:8px;">
@@ -1610,6 +1620,57 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
 </div>
 
+<!-- INVOICE SALES -->
+<div class="screen" id="s-invoice-sales">
+  <div class="topbar" style="border-bottom-color:#eef3ec;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Invoice sales</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div style="font-size:12px;color:var(--ink-soft);margin-bottom:0.9rem;line-height:1.5;">Income from customer invoices (Owed to us). Tracked separately from your daily closing sales.</div>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.1rem;margin-bottom:0.8rem;">
+        <div style="font-size:12px;color:var(--ink-soft);">Invoice sales received</div>
+        <div id="invsale-received" style="font-size:26px;font-weight:700;color:var(--matcha);">RM 0.00</div>
+        <div id="invsale-received-sub" style="font-size:11px;color:var(--ink-soft);margin-top:2px;">0 paid invoices</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.1rem;margin-bottom:0.8rem;">
+        <div style="font-size:12px;color:var(--ink-soft);">Still owed to us</div>
+        <div id="invsale-owed" style="font-size:22px;font-weight:600;color:var(--vermillion);">RM 0.00</div>
+        <div id="invsale-owed-sub" style="font-size:11px;color:var(--ink-soft);margin-top:2px;">0 unpaid invoices</div>
+      </div>
+      <div class="section-lbl" style="margin-top:0.5rem;">Received by method</div>
+      <div id="invsale-methods"></div>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE REPORT -->
+<div class="screen" id="s-invoice-report">
+  <div class="topbar" style="border-bottom-color:#eef3ec;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Invoice report</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div class="pad">
+      <div class="section-lbl">Date range</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0.8rem;">
+        <button class="invrep-range" data-r="1" onclick="setInvReportRange(1)" style="padding:7px 12px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">Today</button>
+        <button class="invrep-range" data-r="7" onclick="setInvReportRange(7)" style="padding:7px 12px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">7 days</button>
+        <button class="invrep-range" data-r="14" onclick="setInvReportRange(14)" style="padding:7px 12px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">14 days</button>
+        <button class="invrep-range" data-r="30" onclick="setInvReportRange(30)" style="padding:7px 12px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">30 days</button>
+        <button class="invrep-range" data-r="0" onclick="setInvReportRange(0)" style="padding:7px 12px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">All</button>
+      </div>
+      <div class="form-row"><label class="form-lbl">Payment method</label>
+        <select class="inp" id="invrep-method" onchange="renderInvoiceReport()"><option value="all">All methods</option><option value="cash">Cash</option><option value="bank">Bank transfer</option><option value="other">Other</option><option value="unpaid">Unpaid only</option></select>
+      </div>
+      <div id="invrep-summary" style="display:flex;gap:8px;margin:0.4rem 0 0.9rem;"></div>
+      <button onclick="exportInvoiceReportPDF()" style="width:100%;padding:11px;background:#6b4fa0;border:none;border-radius:10px;color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;margin-bottom:1rem;"><i class="ti ti-file-type-pdf" style="font-size:15px;"></i> Export PDF</button>
+      <div id="invrep-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- MARK PAID MODAL -->
 <div id="inv-paid-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(20,18,14,0.55);align-items:center;justify-content:center;padding:1.2rem;">
   <div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:1.2rem;">
@@ -1624,7 +1685,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     </div>
     <div class="form-row"><label class="form-lbl">Amount received (RM)</label><input class="inp" id="inv-paid-amount" type="number" inputmode="decimal" oninput="updatePaidVarianceHint()"/></div>
     <div id="inv-paid-variance" style="font-size:11px;margin-bottom:0.8rem;min-height:14px;"></div>
-    <button class="submit-btn" onclick="confirmMarkPaid()" style="background:#4a7c59;width:100%;">Confirm paid</button>
+    <button class="submit-btn" id="inv-paid-confirm-btn" onclick="confirmMarkPaid()" style="background:#4a7c59;width:100%;">Confirm paid</button>
   </div>
 </div>
 
@@ -1856,7 +1917,7 @@ function go(id) {
     const role = currentUser.role;
     if((id === 's-dev' || id === 's-add-client' || id === 's-edit-client') && role !== 'developer') { showToast('Restricted'); return; }
     if(role === 'staff') {
-      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-margin-ranking','s-add-product','s-edit-product','s-reserve','s-rankings','s-invoices'];
+      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-margin-ranking','s-add-product','s-edit-product','s-reserve','s-rankings','s-invoices','s-invoice-sales','s-invoice-report'];
       if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
     }
     if(role === 'admin') {
@@ -1911,6 +1972,8 @@ function go(id) {
   if(id === 's-costing') loadProducts();
   if(id === 's-margin-ranking') loadMarginRanking();
   if(id === 's-invoices') { applyInvoiceTabUI(); cancelInvoiceEdit(); const dEl = document.getElementById('inv-date'); if(dEl && !dEl.value) dEl.value = getToday(); loadInvoices(); }
+  if(id === 's-invoice-sales') loadInvoiceSales();
+  if(id === 's-invoice-report') loadInvoiceReport();
   if(id === 's-add-product') { prodIngredients = []; ['prod-extra-label','prod-extra-cost'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; }); renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); loadOtherCostPresets(); }
 }
 
@@ -3627,11 +3690,17 @@ async function loadInvoices() {
   renderInvoices();
 }
 
+function invThemeColor() { return invoiceTab === 'receivable' ? '#4a7c59' : '#c0392b'; }
+
 function applyInvoiceTabUI() {
   const p = document.getElementById('inv-tab-payable'), r = document.getElementById('inv-tab-receivable');
-  const on = function(b){ if(!b) return; b.style.background='#4a7c59'; b.style.color='#fff'; b.style.borderColor='#4a7c59'; };
-  const off = function(b){ if(!b) return; b.style.background='#fff'; b.style.color='var(--ink-mid)'; b.style.borderColor='var(--border)'; };
-  if(invoiceTab === 'receivable'){ on(r); off(p); } else { on(p); off(r); }
+  const setActive = function(b, color){ if(!b) return; b.style.background=color; b.style.color='#fff'; b.style.borderColor=color; };
+  const setOff = function(b){ if(!b) return; b.style.background='#fff'; b.style.color='var(--ink-mid)'; b.style.borderColor='var(--border)'; };
+  if(invoiceTab === 'receivable'){ setActive(r, '#4a7c59'); setOff(p); }
+  else { setActive(p, '#c0392b'); setOff(r); }
+  const theme = invThemeColor();
+  const head = document.getElementById('inv-form-head'); if(head) head.style.color = theme;
+  const save = document.getElementById('inv-save-btn'); if(save) save.style.background = theme;
   const lbl = document.getElementById('inv-party-label'); const partyEl = document.getElementById('inv-party');
   if(lbl) lbl.textContent = invoiceTab === 'receivable' ? 'Customer' : 'Supplier';
   if(partyEl) partyEl.placeholder = invoiceTab === 'receivable' ? 'e.g. Cafe ABC' : 'e.g. Flour supplier';
@@ -3699,7 +3768,7 @@ function renderInvoices() {
       '<div style="display:flex;gap:8px;margin-top:0.6rem;">' +
         (paid
           ? '<button onclick="markUnpaid(\'' + i.id + '\')" style="flex:1;padding:6px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Mark unpaid</button>'
-          : '<button onclick="openMarkPaid(\'' + i.id + '\')" style="flex:1;padding:6px;border:1px solid var(--matcha);background:var(--matcha);color:#fff;border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Mark paid</button>') +
+          : '<button onclick="openMarkPaid(\'' + i.id + '\')" style="flex:1;padding:6px;border:1px solid ' + invThemeColor() + ';background:' + invThemeColor() + ';color:#fff;border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Mark paid</button>') +
         '<button onclick="deleteInvoice(\'' + i.id + '\')" style="padding:6px 12px;border:1px solid var(--vermillion-light);background:none;color:var(--vermillion);border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Delete</button>' +
       '</div>' +
       '</div>';
@@ -3769,6 +3838,7 @@ function openMarkPaid(id) {
   document.getElementById('inv-paid-amount').value = amt;
   document.getElementById('inv-paid-context').textContent = (inv.party || 'Invoice') + (inv.invoice_no ? ' · ' + inv.invoice_no : '') + ' · invoice RM ' + amt.toFixed(2);
   updatePaidVarianceHint();
+  const cb = document.getElementById('inv-paid-confirm-btn'); if(cb) cb.style.background = invThemeColor();
   const m = document.getElementById('inv-paid-modal'); if(m) m.style.display = 'flex';
 }
 
@@ -3809,12 +3879,208 @@ async function markUnpaid(id) {
 
 async function deleteInvoice(id) {
   if(!confirm('Delete this invoice?')) return;
-  await fetch(SUPABASE_URL + '/rest/v1/invoices?id=eq.' + id, {
-    method: 'DELETE',
-    headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY), 'Prefer': 'return=minimal'}
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/invoices?id=eq.' + id, {
+      method: 'DELETE',
+      headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY), 'Prefer': 'return=representation'}
+    });
+    if(!res.ok) {
+      let msg = 'status ' + res.status;
+      try { const j = await res.json(); if(j && (j.message || j.hint)) msg = j.message || j.hint; } catch(e) {}
+      showToast('Delete failed: ' + msg);
+      return;
+    }
+    let deleted = [];
+    try { deleted = await res.json(); } catch(e) {}
+    if(Array.isArray(deleted) && deleted.length === 0) {
+      showToast('Nothing deleted (permission or row not found).');
+      return;
+    }
+    showToast('Deleted');
+    loadInvoices();
+  } catch(e) {
+    showToast('Delete error: ' + (e && e.message ? e.message : 'network'));
+  }
+}
+
+// ===== INVOICE SALES (income from receivable invoices, separate from closing sales) =====
+async function loadInvoiceSales() {
+  const r = await sb.from('invoices').select('*');
+  const data = (r.data || []).filter(function(i){ return (i.direction || 'payable') === 'receivable'; });
+  let received = 0, owed = 0, paidCount = 0, unpaidCount = 0;
+  const byMethod = { cash:0, bank:0, other:0 };
+  data.forEach(function(i){
+    const amt = parseFloat(i.amount) || 0;
+    if(i.paid) {
+      const rec = (i.amount_received === null || i.amount_received === undefined) ? amt : (parseFloat(i.amount_received) || 0);
+      received += rec; paidCount++;
+      const m = (i.paid_method === 'bank') ? 'bank' : (i.paid_method === 'other' ? 'other' : 'cash');
+      byMethod[m] += rec;
+    } else { owed += amt; unpaidCount++; }
   });
-  loadInvoices();
-  showToast('Deleted');
+  const setV = function(id, t){ const e = document.getElementById(id); if(e) e.textContent = t; };
+  setV('invsale-received', 'RM ' + received.toFixed(2));
+  setV('invsale-received-sub', paidCount + (paidCount === 1 ? ' paid invoice' : ' paid invoices'));
+  setV('invsale-owed', 'RM ' + owed.toFixed(2));
+  setV('invsale-owed-sub', unpaidCount + (unpaidCount === 1 ? ' unpaid invoice' : ' unpaid invoices'));
+  const mEl = document.getElementById('invsale-methods');
+  if(mEl) {
+    if(received <= 0) {
+      mEl.innerHTML = '<div class="empty-state" style="padding:1.2rem;font-size:12px;">No payments received yet.</div>';
+    } else {
+      const rows = [['Cash', byMethod.cash], ['Bank transfer', byMethod.bank], ['Other', byMethod.other]].filter(function(x){ return x[1] > 0; });
+      mEl.innerHTML = rows.map(function(x){
+        return '<div style="display:flex;justify-content:space-between;background:#fff;border:1px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem;margin-bottom:0.5rem;font-size:13px;"><span style="color:var(--ink-mid);">' + x[0] + '</span><span style="font-weight:600;color:var(--ink);">RM ' + x[1].toFixed(2) + '</span></div>';
+      }).join('');
+    }
+  }
+}
+
+// ===== INVOICE REPORT (date range + method filter + PDF export) =====
+let invReportData = [];
+let invReportRange = 7;
+
+async function loadInvoiceReport() {
+  const r = await sb.from('invoices').select('*');
+  invReportData = r.data || [];
+  applyInvReportRangeUI();
+  renderInvoiceReport();
+}
+
+function applyInvReportRangeUI() {
+  document.querySelectorAll('.invrep-range').forEach(function(b){
+    const active = parseInt(b.getAttribute('data-r'), 10) === invReportRange;
+    b.style.background = active ? '#4a7c59' : '#fff';
+    b.style.color = active ? '#fff' : 'var(--ink-mid)';
+    b.style.borderColor = active ? '#4a7c59' : 'var(--border)';
+  });
+}
+
+function setInvReportRange(days) {
+  invReportRange = days;
+  applyInvReportRangeUI();
+  renderInvoiceReport();
+}
+
+function invReportInRange(i) {
+  if(invReportRange === 0) return true;
+  const d = i.invoice_date || (i.created_at ? i.created_at.split('T')[0] : '');
+  if(!d) return false;
+  const from = new Date(); from.setDate(from.getDate() - (invReportRange - 1));
+  return d >= from.toISOString().split('T')[0] && d <= getToday();
+}
+
+function filterInvoiceReport() {
+  const methodEl = document.getElementById('invrep-method');
+  const m = methodEl ? methodEl.value : 'all';
+  return invReportData.filter(function(i){
+    if(!invReportInRange(i)) return false;
+    if(m === 'all') return true;
+    if(m === 'unpaid') return !i.paid;
+    return i.paid && ((i.paid_method || 'cash') === m);
+  });
+}
+
+function renderInvoiceReport() {
+  const list = document.getElementById('invrep-list');
+  const sumEl = document.getElementById('invrep-summary');
+  if(!list) return;
+  const data = filterInvoiceReport();
+  const payable = data.filter(function(i){ return (i.direction || 'payable') === 'payable'; });
+  const receivable = data.filter(function(i){ return (i.direction || 'payable') === 'receivable'; });
+  const sum = function(arr){ return arr.reduce(function(a,i){ return a + (parseFloat(i.amount) || 0); }, 0); };
+  if(sumEl) {
+    sumEl.innerHTML =
+      '<div style="flex:1;background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.7rem;"><div style="font-size:11px;color:var(--ink-soft);">We owe</div><div style="font-size:16px;font-weight:600;color:var(--vermillion);">RM ' + sum(payable).toFixed(2) + '</div><div style="font-size:10px;color:var(--ink-soft);">' + payable.length + ' inv</div></div>' +
+      '<div style="flex:1;background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.7rem;"><div style="font-size:11px;color:var(--ink-soft);">Owed to us</div><div style="font-size:16px;font-weight:600;color:var(--matcha);">RM ' + sum(receivable).toFixed(2) + '</div><div style="font-size:10px;color:var(--ink-soft);">' + receivable.length + ' inv</div></div>';
+  }
+  if(data.length === 0) { list.innerHTML = '<div class="empty-state" style="padding:2rem;">No invoices in this range/filter.</div>'; return; }
+  const section = function(title, arr, color){
+    if(arr.length === 0) return '';
+    arr.sort(function(a,b){ const da = a.invoice_date || '', db = b.invoice_date || ''; return db < da ? -1 : (db > da ? 1 : 0); });
+    return '<div class="section-lbl" style="margin-top:0.6rem;color:' + color + ';">' + title + '</div>' + arr.map(function(i){
+      const amt = parseFloat(i.amount) || 0;
+      const status = i.paid ? ('Paid · ' + (i.paid_method === 'bank' ? 'Bank' : (i.paid_method === 'other' ? 'Other' : 'Cash'))) : 'Unpaid';
+      const statusColor = i.paid ? 'var(--matcha)' : 'var(--vermillion)';
+      return '<div style="display:flex;justify-content:space-between;gap:8px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem;margin-bottom:0.5rem;">' +
+        '<div style="min-width:0;"><div style="font-size:13px;color:var(--ink);font-weight:500;">' + escHtml(i.party || '(no name)') + '</div><div style="font-size:11px;color:var(--ink-soft);">' + (i.invoice_date || '') + (i.invoice_no ? ' · ' + escHtml(i.invoice_no) : '') + '</div></div>' +
+        '<div style="text-align:right;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:var(--ink);">RM ' + amt.toFixed(2) + '</div><div style="font-size:10px;color:' + statusColor + ';">' + status + '</div></div>' +
+        '</div>';
+    }).join('');
+  };
+  list.innerHTML = section('We owe', payable, 'var(--vermillion)') + section('Owed to us', receivable, 'var(--matcha)');
+}
+
+function loadJsPDF() {
+  return new Promise(function(resolve, reject){
+    if(window.jspdf && window.jspdf.jsPDF) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload = function(){ resolve(); };
+    s.onerror = function(){ reject(new Error('load failed')); };
+    document.head.appendChild(s);
+  });
+}
+
+async function exportInvoiceReportPDF() {
+  const data = filterInvoiceReport();
+  if(data.length === 0) { showToast('Nothing to export in this range.'); return; }
+  showToast('Building PDF…');
+  try { await loadJsPDF(); } catch(e) { showToast('Could not load PDF tool — check connection.'); return; }
+  const jsPDF = window.jspdf.jsPDF;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const pageH = 297, mL = 15, mR = 195;
+  let y = 18;
+  const bizCode = (localStorage.getItem('tally_biz_code') || '').toUpperCase();
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(28,26,22);
+  doc.text('Tally — Invoice Report', mL, y); y += 7;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(120,120,120);
+  const rangeTxt = invReportRange === 0 ? 'All time' : (invReportRange === 1 ? 'Today' : ('Last ' + invReportRange + ' days'));
+  const ms = document.getElementById('invrep-method').value;
+  const methodTxt = ms === 'all' ? 'All methods' : (ms === 'unpaid' ? 'Unpaid only' : (ms === 'bank' ? 'Bank transfer' : (ms === 'other' ? 'Other' : 'Cash')));
+  doc.text((bizCode ? bizCode + '  ·  ' : '') + rangeTxt + '  ·  ' + methodTxt, mL, y); y += 5;
+  const now = new Date();
+  doc.text('Generated ' + formatDate(now) + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0'), mL, y); y += 6;
+  doc.setDrawColor(210,205,195); doc.line(mL,y,mR,y); y += 7;
+  const drawSection = function(title, arr, rgb){
+    if(arr.length === 0) return;
+    arr.sort(function(a,b){ const da = a.invoice_date || '', db = b.invoice_date || ''; return da < db ? -1 : (da > db ? 1 : 0); });
+    if(y > pageH - 35) { doc.addPage(); y = 18; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(rgb[0],rgb[1],rgb[2]);
+    doc.text(title, mL, y); y += 5;
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(120,120,120);
+    doc.text('Date', mL, y); doc.text('Party', mL+26, y); doc.text('Invoice', mL+86, y);
+    doc.text('Amount', mR-38, y, {align:'right'}); doc.text('Status', mR, y, {align:'right'}); y += 2;
+    doc.setDrawColor(225,222,215); doc.line(mL,y,mR,y); y += 5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    let subtotal = 0;
+    arr.forEach(function(i){
+      if(y > pageH - 20) { doc.addPage(); y = 18; }
+      const amt = parseFloat(i.amount) || 0; subtotal += amt;
+      const party = (i.party || '(no name)');
+      const partyTrim = party.length > 30 ? party.slice(0,29) + '…' : party;
+      const status = i.paid ? ('Paid ' + (i.paid_method === 'bank' ? 'Bank' : (i.paid_method === 'other' ? 'Other' : 'Cash'))) : 'Unpaid';
+      doc.setTextColor(40,40,40);
+      doc.text((i.invoice_date || '—'), mL, y);
+      doc.text(partyTrim, mL+26, y);
+      doc.text((i.invoice_no || '—').slice(0,16), mL+86, y);
+      doc.text('RM ' + amt.toFixed(2), mR-38, y, {align:'right'});
+      if(i.paid) doc.setTextColor(74,124,89); else doc.setTextColor(192,57,43);
+      doc.text(status, mR, y, {align:'right'});
+      y += 6;
+    });
+    doc.setDrawColor(225,222,215); doc.line(mL, y-2, mR, y-2);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(40,40,40);
+    doc.text('Subtotal', mL, y+3); doc.text('RM ' + subtotal.toFixed(2), mR-38, y+3, {align:'right'});
+    doc.setFont('helvetica','normal');
+    y += 12;
+  };
+  const payable = data.filter(function(i){ return (i.direction || 'payable') === 'payable'; });
+  const receivable = data.filter(function(i){ return (i.direction || 'payable') === 'receivable'; });
+  drawSection('We owe (payable)', payable, [192,57,43]);
+  drawSection('Owed to us (receivable)', receivable, [74,124,89]);
+  doc.save('tally-invoice-report-' + (invReportRange === 0 ? 'all' : invReportRange + 'd') + '.pdf');
+  showToast('PDF ready');
 }
 
 // ===== DAILY SUMMARY (shareable image) =====
