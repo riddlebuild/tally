@@ -415,7 +415,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
     </div>
-    <div id="home-summary" class="staff-hide" style="padding:1rem 1.1rem 0;">
+    <div id="home-summary" class="staff-hide" style="padding:1rem 1.1rem 1.6rem;">
       <button onclick="openDailySummary()" style="width:100%;padding:11px;background:#fff;border:1px solid var(--border);border-radius:12px;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">
         <i class="ti ti-photo-share" style="font-size:16px;color:var(--matcha);"></i> Share daily summary
       </button>
@@ -3561,19 +3561,23 @@ async function openDailySummary() {
       sb.from('wastage').select('*').eq('date', date)
     ]);
     const sales = salesR.data || [], exps = expR.data || [], wast = wastR.data || [];
-    const rows = outlets.map(function(o){
+    const allMode = !currentOutlet || currentOutlet.id === 'all';
+    const scopeOutlets = allMode ? outlets : outlets.filter(function(o){ return o.id === currentOutlet.id; });
+    const inScope = function(arr){ return allMode ? arr : arr.filter(function(x){ return x.outlet_id === currentOutlet.id; }); };
+    const rows = scopeOutlets.map(function(o){
       const oSales = sales.filter(function(s){ return s.outlet_id === o.id; });
       const oExp = exps.filter(function(e){ return e.outlet_id === o.id; }).reduce(function(a,e){ return a + (parseFloat(e.amount)||0); }, 0);
       const ch = oSales.reduce(function(a,s){ return a + channelTotal(s); }, 0);
       return { name: o.name, sales: ch + oExp };
     });
     const totalSales = rows.reduce(function(a,r){ return a + r.sales; }, 0);
-    const totalExp = exps.reduce(function(a,e){ return a + (parseFloat(e.amount)||0); }, 0);
-    const totalVar = sales.reduce(function(a,s){ return a + (parseFloat(s.variance)||0); }, 0);
-    const totalWast = wast.reduce(function(a,w){ return a + (parseFloat(w.estimated_cost)||0); }, 0);
+    const totalExp = inScope(exps).reduce(function(a,e){ return a + (parseFloat(e.amount)||0); }, 0);
+    const totalVar = inScope(sales).reduce(function(a,s){ return a + (parseFloat(s.variance)||0); }, 0);
+    const totalWast = inScope(wast).reduce(function(a,w){ return a + (parseFloat(w.estimated_cost)||0); }, 0);
+    const outletName = allMode ? '' : (scopeOutlets[0] ? scopeOutlets[0].name : (currentOutlet.name || ''));
     const bizCode = (localStorage.getItem('tally_biz_code') || '').toUpperCase();
     if(document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch(e){} }
-    const canvas = drawDailySummary({ date:date, rows:rows, totalSales:totalSales, totalExp:totalExp, totalVar:totalVar, totalWast:totalWast, bizCode:bizCode });
+    const canvas = drawDailySummary({ date:date, allMode:allMode, outletName:outletName, rows:rows, totalSales:totalSales, totalExp:totalExp, totalVar:totalVar, totalWast:totalWast, bizCode:bizCode });
     summaryDataUrl = canvas.toDataURL('image/png');
     wrap.innerHTML = '<img src="' + summaryDataUrl + '" style="max-width:100%;border-radius:10px;border:1px solid var(--border);display:block;"/>';
     canvas.toBlob(function(blob){
@@ -3591,7 +3595,10 @@ function closeDailySummary(){ const m = document.getElementById('daily-summary-m
 
 function drawDailySummary(d) {
   const W = 680, P = 44, scale = 2, rowH = 40, statH = 34;
-  let H = P + 40 + 44 + 30 + 30 + 24 + (d.rows.length * rowH) + 22 + 64 + (3 * statH) + 36 + P;
+  let H = P + 40 + 44 + 30 + 30;
+  if(d.allMode) { H += 24 + (d.rows.length * rowH) + 22 + 64; }
+  else { H += 30 + 64; }
+  H += (3 * statH) + 36 + P;
   const canvas = document.createElement('canvas');
   canvas.width = W * scale; canvas.height = H * scale;
   const ctx = canvas.getContext('2d');
@@ -3609,17 +3616,25 @@ function drawDailySummary(d) {
   ctx.fillText(formatDate(new Date(d.date + 'T00:00:00')), P, y + 16); y += 30;
   ctx.strokeStyle = '#e0d8cc'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(P, y+14); ctx.lineTo(W-P, y+14); ctx.stroke(); y += 30;
-  ctx.fillStyle = '#9a938a'; ctx.font = F('600',12);
-  ctx.fillText('SALES BY OUTLET', P, y + 12); y += 24;
-  d.rows.forEach(function(r){
-    ctx.fillStyle = '#1c1a16'; ctx.font = F('500',19); ctx.textAlign = 'left';
-    ctx.fillText(r.name, P, y + 20);
-    ctx.font = F('600',19); ctx.textAlign = 'right';
-    ctx.fillText('RM ' + r.sales.toFixed(2), W - P, y + 20);
-    y += rowH;
-  });
-  ctx.textAlign = 'left';
-  ctx.strokeStyle = '#e0d8cc'; ctx.beginPath(); ctx.moveTo(P, y+4); ctx.lineTo(W-P, y+4); ctx.stroke(); y += 22;
+  if(d.allMode) {
+    ctx.fillStyle = '#9a938a'; ctx.font = F('600',12);
+    ctx.fillText('SALES BY OUTLET', P, y + 12); y += 24;
+    d.rows.forEach(function(r){
+      ctx.fillStyle = '#1c1a16'; ctx.font = F('500',19); ctx.textAlign = 'left';
+      ctx.fillText(r.name, P, y + 20);
+      ctx.font = F('600',19); ctx.textAlign = 'right';
+      ctx.fillText('RM ' + r.sales.toFixed(2), W - P, y + 20);
+      y += rowH;
+    });
+    ctx.textAlign = 'left';
+    ctx.strokeStyle = '#e0d8cc'; ctx.beginPath(); ctx.moveTo(P, y+4); ctx.lineTo(W-P, y+4); ctx.stroke(); y += 22;
+  } else {
+    ctx.fillStyle = '#4a7c59'; ctx.font = F('600',12); ctx.textAlign = 'left';
+    ctx.fillText('OUTLET', P, y + 12);
+    ctx.fillStyle = '#1c1a16'; ctx.font = F('600',16); ctx.textAlign = 'right';
+    ctx.fillText(d.outletName || '—', W - P, y + 12);
+    ctx.textAlign = 'left'; y += 30;
+  }
   ctx.fillStyle = '#4a7c59'; ctx.font = F('700',22); ctx.textAlign = 'left';
   ctx.fillText('Total sales', P, y + 26);
   ctx.font = F('700',30); ctx.textAlign = 'right';
@@ -3648,7 +3663,7 @@ async function shareDailySummary() {
   if(!summaryBlob) { downloadDailySummary(); return; }
   try {
     const f = new File([summaryBlob], 'tally-daily-summary.png', { type:'image/png' });
-    if(navigator.canShare && navigator.canShare({ files:[f] })) { await navigator.share({ files:[f], title:'Daily summary' }); return; }
+    if(navigator.canShare && navigator.canShare({ files:[f] })) { await navigator.share({ files:[f] }); return; }
   } catch(e) { return; }
   downloadDailySummary();
 }
