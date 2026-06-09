@@ -530,6 +530,18 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       </div>
     </div>
     </div>
+    <div class="staff-hide" id="home-marketing">
+    <div style="padding:0 1.1rem;">
+      <div class="section-lbl">Marketing</div>
+    </div>
+    <div class="menu-card" style="margin-bottom:2rem;">
+      <div class="menu-item" onclick="go('s-promo')">
+        <div class="menu-icon" style="background:#fdeef5;color:#c2407a;"><i class="ti ti-speakerphone"></i></div>
+        <div class="menu-text"><strong>Promo poster</strong><span>Make a promo image to share</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+    </div>
+    </div>
   </div>
 </div>
 
@@ -1819,6 +1831,73 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
 </div>
 
+<!-- PROMO POSTER -->
+<div class="screen" id="s-promo">
+  <div class="topbar" style="border-bottom-color:#fdeef5;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Promo poster</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div style="padding:1rem 1.1rem 2rem;">
+      <div id="promo-preview-wrap" style="display:flex;align-items:center;justify-content:center;margin-bottom:0.9rem;min-height:120px;"><div style="font-size:12px;color:var(--ink-soft);">Building preview…</div></div>
+
+      <div class="card">
+        <div class="card-head" style="color:#c2407a;"><i class="ti ti-template" style="font-size:14px"></i> Template</div>
+        <select class="inp" id="promo-template" onchange="renderPromo()" style="margin-bottom:0;">
+          <option value="discount">Big discount</option>
+          <option value="new">New item</option>
+          <option value="weekend">Weekend special</option>
+          <option value="announce">Announcement</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <div class="card-head" style="color:#c2407a;"><i class="ti ti-palette" style="font-size:14px"></i> Colours</div>
+        <div style="display:flex;gap:18px;align-items:center;margin-bottom:9px;">
+          <label style="font-size:12px;color:var(--ink-mid);display:flex;align-items:center;gap:6px;">Main <input type="color" id="promo-primary" value="#4a7c59" oninput="renderPromo()" style="width:36px;height:30px;border:1px solid var(--border);border-radius:6px;padding:0;cursor:pointer;"/></label>
+          <label style="font-size:12px;color:var(--ink-mid);display:flex;align-items:center;gap:6px;">Accent <input type="color" id="promo-secondary" value="#e8f0e9" oninput="renderPromo()" style="width:36px;height:30px;border:1px solid var(--border);border-radius:6px;padding:0;cursor:pointer;"/></label>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" onclick="setPromoPalette('#4a7c59','#e8f0e9')" style="padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:#4a7c59;color:#fff;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;">Matcha</button>
+          <button type="button" onclick="setPromoPalette('#2d3e57','#e6eaf0')" style="padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:#2d3e57;color:#fff;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;">Navy</button>
+          <button type="button" onclick="setPromoPalette('#7a2e2e','#f3e6e6')" style="padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:#7a2e2e;color:#fff;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;">Maroon</button>
+          <button type="button" onclick="setPromoPalette('#c2407a','#fbe4ef')" style="padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:#c2407a;color:#fff;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;">Pink</button>
+          <button type="button" onclick="setPromoPalette('#333333','#ececec')" style="padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:#333;color:#fff;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;">Charcoal</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head" style="color:#c2407a;"><i class="ti ti-typography" style="font-size:14px"></i> Text</div>
+        <div class="form-row"><label class="form-lbl">Brand / shop name</label><input class="inp" id="promo-brand" type="text" oninput="renderPromo()" placeholder="e.g. Koharu Taiyaki"/></div>
+        <div class="form-row"><label class="form-lbl">Headline</label><input class="inp" id="promo-headline" type="text" oninput="renderPromo()" placeholder="e.g. Weekend Special!"/></div>
+        <div style="display:flex;gap:8px;">
+          <div class="form-row" style="flex:1;"><label class="form-lbl">Price</label><input class="inp" id="promo-price" type="text" oninput="renderPromo()" placeholder="RM5"/></div>
+          <div class="form-row" style="flex:1;"><label class="form-lbl">Old price <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="promo-oldprice" type="text" oninput="renderPromo()" placeholder="RM7"/></div>
+        </div>
+        <div class="form-row"><label class="form-lbl">Detail line <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="promo-detail" type="text" oninput="renderPromo()" placeholder="e.g. Matcha & azuki, freshly made"/></div>
+        <div class="form-row" style="margin-bottom:0;"><label class="form-lbl">Footer / dates <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="promo-footer" type="text" oninput="renderPromo()" placeholder="e.g. 14-15 June only"/></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head" style="color:#c2407a;"><i class="ti ti-badge" style="font-size:14px"></i> Badge &amp; photo</div>
+        <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-mid);margin-bottom:0.6rem;cursor:pointer;"><input type="checkbox" id="promo-badge-on" checked onchange="renderPromo()" style="width:auto;margin:0;"/> Show corner badge</label>
+        <div class="form-row"><label class="form-lbl">Badge text</label><input class="inp" id="promo-badge" type="text" oninput="renderPromo()" placeholder="e.g. 20% OFF"/></div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-lbl">Product photo <span style="color:var(--ink-soft);font-weight:400;">(optional, not saved)</span></label>
+          <input type="file" id="promo-photo" accept="image/*" onchange="onPromoPhoto(this)" style="font-size:12px;color:var(--ink-mid);"/>
+          <button type="button" id="promo-photo-clear" onclick="clearPromoPhoto()" style="display:none;margin-top:7px;padding:6px 10px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--ink-mid);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove photo</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;">
+        <button id="promo-share-btn" onclick="sharePromo()" style="flex:1;padding:13px;background:#c2407a;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;display:none;"><i class="ti ti-share" style="font-size:15px;"></i> Share</button>
+        <button onclick="savePromo()" style="flex:1;padding:13px;background:#6b4fa0;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;"><i class="ti ti-download" style="font-size:15px;"></i> Save image</button>
+      </div>
+      <div style="font-size:11px;color:var(--ink-soft);text-align:center;margin-top:0.7rem;line-height:1.5;">Nothing here is saved to your database. The image is built on your phone and shared out directly.</div>
+    </div>
+  </div>
+</div>
+
 <!-- MARK PAID MODAL -->
 <div id="inv-paid-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(20,18,14,0.55);align-items:center;justify-content:center;padding:1.2rem;">
   <div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:1.2rem;">
@@ -2065,7 +2144,7 @@ function go(id) {
     const role = currentUser.role;
     if((id === 's-dev' || id === 's-add-client' || id === 's-edit-client') && role !== 'developer') { showToast('Restricted'); return; }
     if(role === 'staff') {
-      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-margin-ranking','s-add-product','s-edit-product','s-reserve','s-rankings','s-invoices','s-invoice-sales','s-invoice-report','s-issue'];
+      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-margin-ranking','s-add-product','s-edit-product','s-reserve','s-rankings','s-invoices','s-invoice-sales','s-invoice-report','s-issue','s-promo'];
       if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
     }
     if(role === 'admin') {
@@ -2123,6 +2202,7 @@ function go(id) {
   if(id === 's-invoice-sales') loadInvoiceSales();
   if(id === 's-invoice-report') loadInvoiceReport();
   if(id === 's-issue') loadIssueScreen();
+  if(id === 's-promo') loadPromoScreen();
   if(id === 's-add-product') { prodIngredients = []; ['prod-extra-label','prod-extra-cost'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; }); renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); loadOtherCostPresets(); }
 }
 
@@ -2533,7 +2613,7 @@ function applyRoleUI() {
 
   // Viewer (e.g. owner's family) - read-only: stats + Insights only
   if(role === 'viewer') {
-    ['home-daily','home-shift','home-costing','home-summary','home-records'].forEach(function(idn){
+    ['home-daily','home-shift','home-costing','home-summary','home-records','home-marketing'].forEach(function(idn){
       const el = document.getElementById(idn); if(el) el.style.display = 'none';
     });
     const rep = document.getElementById('home-reports'); if(rep) rep.style.display = '';
@@ -4718,6 +4798,223 @@ async function outputInvoicePDF(d) {
   } catch(e) {}
   doc.save(fname);
   showToast('PDF ready');
+}
+
+// ===== PROMO POSTER (in-memory image, nothing stored) =====
+let promoPhoto = null, promoDataUrl = null, promoBlob = null;
+
+function loadPromoScreen() {
+  const bEl = document.getElementById('promo-brand');
+  if(bEl && !bEl.value) {
+    const code = (localStorage.getItem('tally_biz_code') || '').trim();
+    if(code) bEl.value = code;
+  }
+  renderPromo();
+}
+
+function setPromoPalette(p, s) {
+  const pe = document.getElementById('promo-primary'); if(pe) pe.value = p;
+  const se = document.getElementById('promo-secondary'); if(se) se.value = s;
+  renderPromo();
+}
+
+function onPromoPhoto(input) {
+  const f = input.files && input.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      promoPhoto = img;
+      const c = document.getElementById('promo-photo-clear'); if(c) c.style.display = 'inline-block';
+      renderPromo();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(f);
+}
+
+function clearPromoPhoto() {
+  promoPhoto = null;
+  const i = document.getElementById('promo-photo'); if(i) i.value = '';
+  const c = document.getElementById('promo-photo-clear'); if(c) c.style.display = 'none';
+  renderPromo();
+}
+
+function promoWrapText(ctx, text, x, y, maxW, lineH, maxLines) {
+  const words = (text || '').split(' ');
+  let line = '', yy = y, lines = 0;
+  for(let i = 0; i < words.length; i++) {
+    const test = line ? line + ' ' + words[i] : words[i];
+    if(ctx.measureText(test).width > maxW && line) {
+      ctx.fillText(line, x, yy); line = words[i]; yy += lineH; lines++;
+      if(maxLines && lines >= maxLines) { line = ''; break; }
+    } else { line = test; }
+  }
+  if(line) ctx.fillText(line, x, yy);
+  return yy;
+}
+
+function promoDrawBadge(ctx, cx, cy, r, text, bgCss, fgCss) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.beginPath(); ctx.arc(cx + 4, cy + 6, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = bgCss;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = fgCss; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = "800 50px 'DM Sans', sans-serif";
+  const words = (text || '').toUpperCase().split(' ');
+  const lines = []; let line = '';
+  words.forEach(function(w) {
+    const t = line ? line + ' ' + w : w;
+    if(ctx.measureText(t).width > r * 1.5 && line) { lines.push(line); line = w; } else { line = t; }
+  });
+  if(line) lines.push(line);
+  const lh = 56, startY = cy - ((lines.length - 1) * lh) / 2;
+  lines.forEach(function(ln, i) { ctx.fillText(ln, cx, startY + i * lh); });
+  ctx.restore();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+
+function drawPromo() {
+  const W = 1080, H = 1080;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const val = function(id) { const e = document.getElementById(id); return e ? (e.value || '') : ''; };
+  const tmpl = val('promo-template') || 'discount';
+  const primary = hexToRgb(val('promo-primary')) || [74, 124, 89];
+  const secondary = hexToRgb(val('promo-secondary')) || [232, 240, 233];
+  const pCss = 'rgb(' + primary.join(',') + ')';
+  const sCss = 'rgb(' + secondary.join(',') + ')';
+  const brand = val('promo-brand').trim();
+  const headline = val('promo-headline').trim();
+  const price = val('promo-price').trim();
+  const oldPrice = val('promo-oldprice').trim();
+  const detail = val('promo-detail').trim();
+  const footer = val('promo-footer').trim();
+  const badgeOn = (document.getElementById('promo-badge-on') || {}).checked;
+  const badge = val('promo-badge').trim();
+  const F = function(weight, size) { return weight + ' ' + size + "px 'DM Sans', system-ui, sans-serif"; };
+  const kickers = { discount: 'SPECIAL OFFER', new: 'NEW', weekend: 'WEEKEND SPECIAL', announce: '' };
+  const kicker = kickers[tmpl] || '';
+
+  ctx.fillStyle = pCss; ctx.fillRect(0, 0, W, H);
+  const M = 80;
+  let textTop;
+
+  if(promoPhoto) {
+    const ph = Math.round(H * 0.56);
+    const ir = promoPhoto.width / promoPhoto.height, tr = W / ph;
+    let dw, dh, dx, dy;
+    if(ir > tr) { dh = ph; dw = ph * ir; dx = (W - dw) / 2; dy = 0; }
+    else { dw = W; dh = W / ir; dx = 0; dy = (ph - dh) / 2; }
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, ph); ctx.clip();
+    ctx.drawImage(promoPhoto, dx, dy, dw, dh); ctx.restore();
+    ctx.fillStyle = pCss; ctx.fillRect(0, ph, W, H - ph);
+    ctx.fillStyle = sCss; ctx.fillRect(0, ph, W, 10);
+    textTop = ph + 78;
+  } else {
+    ctx.save(); ctx.globalAlpha = 0.16; ctx.fillStyle = sCss;
+    ctx.beginPath(); ctx.arc(W - 90, H - 60, 380, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(120, 150, 150, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    textTop = 250;
+  }
+
+  let y = textTop;
+
+  if(kicker) {
+    ctx.font = F('700', 30); ctx.textAlign = 'left';
+    const tw = ctx.measureText(kicker).width;
+    ctx.fillStyle = sCss;
+    const padX = 22, padY = 14, bh = 52;
+    ctx.beginPath();
+    const rx = M, ry = y - 38, rw = tw + padX * 2, rr = 26;
+    ctx.moveTo(rx + rr, ry); ctx.arcTo(rx + rw, ry, rx + rw, ry + bh, rr);
+    ctx.arcTo(rx + rw, ry + bh, rx, ry + bh, rr); ctx.arcTo(rx, ry + bh, rx, ry, rr);
+    ctx.arcTo(rx, ry, rx + rw, ry, rr); ctx.fill();
+    ctx.fillStyle = pCss; ctx.fillText(kicker, rx + padX, y);
+    y += 58;
+  }
+
+  if(brand) {
+    ctx.fillStyle = 'rgba(255,255,255,0.82)'; ctx.font = F('700', 30); ctx.textAlign = 'left';
+    ctx.fillText(brand.toUpperCase().slice(0, 38), M, y); y += 56;
+  }
+
+  if(headline) {
+    ctx.fillStyle = '#ffffff'; ctx.font = F('800', 76); ctx.textAlign = 'left';
+    y = promoWrapText(ctx, headline, M, y + 18, W - M * 2, 84, 3) + 30;
+  }
+
+  if(price && tmpl !== 'announce') {
+    ctx.textAlign = 'left'; ctx.fillStyle = '#ffffff'; ctx.font = F('800', 98);
+    ctx.fillText(price, M, y + 78);
+    const pw = ctx.measureText(price).width;
+    if(oldPrice) {
+      ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = F('600', 46);
+      const ox = M + pw + 28, oy = y + 70;
+      ctx.fillText(oldPrice, ox, oy);
+      const ow = ctx.measureText(oldPrice).width;
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(ox - 4, oy - 15); ctx.lineTo(ox + ow + 4, oy - 15); ctx.stroke();
+    }
+    y += 130;
+  } else if(price && tmpl === 'announce') {
+    ctx.textAlign = 'left'; ctx.fillStyle = '#ffffff'; ctx.font = F('700', 56);
+    ctx.fillText(price, M, y + 50); y += 96;
+  }
+
+  if(detail) {
+    ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.font = F('500', 40); ctx.textAlign = 'left';
+    y = promoWrapText(ctx, detail, M, y, W - M * 2, 52, 3) + 12;
+  }
+
+  if(footer) {
+    ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = F('600', 34); ctx.textAlign = 'left';
+    ctx.fillText(footer, M, H - 72);
+  }
+
+  if(badgeOn && badge) {
+    promoDrawBadge(ctx, W - 175, 195, 135, badge, '#ffffff', pCss);
+  }
+
+  return canvas;
+}
+
+function renderPromo() {
+  const canvas = drawPromo();
+  if(!canvas) return;
+  promoDataUrl = canvas.toDataURL('image/png');
+  const wrap = document.getElementById('promo-preview-wrap');
+  if(wrap) wrap.innerHTML = '<img src="' + promoDataUrl + '" style="max-width:100%;max-height:60vh;border-radius:14px;border:1px solid var(--border);display:block;box-shadow:0 4px 18px rgba(20,18,14,0.12);"/>';
+  canvas.toBlob(function(blob) {
+    promoBlob = blob;
+    const btn = document.getElementById('promo-share-btn');
+    if(btn && blob && navigator.canShare) {
+      try {
+        if(navigator.canShare({ files: [new File([blob], 'promo.png', { type: 'image/png' })] })) btn.style.display = 'block';
+      } catch(e) {}
+    }
+  }, 'image/png');
+}
+
+async function sharePromo() {
+  if(!promoBlob) { savePromo(); return; }
+  try {
+    const f = new File([promoBlob], 'tally-promo.png', { type: 'image/png' });
+    if(navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f] }); return; }
+  } catch(e) { return; }
+  savePromo();
+}
+
+function savePromo() {
+  if(!promoDataUrl) return;
+  const a = document.createElement('a');
+  a.href = promoDataUrl; a.download = 'tally-promo.png';
+  document.body.appendChild(a); a.click(); a.remove();
+  showToast('Image saved');
 }
 
 // ===== DAILY SUMMARY (shareable image) =====
