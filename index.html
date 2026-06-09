@@ -1730,7 +1730,12 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="form-row" style="margin-bottom:0;"><label class="form-lbl">Customer address <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><textarea class="inp" id="issue-client-addr" rows="2" placeholder="Address"></textarea></div>
       </div>
       <div class="card">
-        <div class="card-head" style="color:#4a7c59;"><i class="ti ti-list" style="font-size:14px"></i> Items</div>
+        <div class="card-head" style="color:#4a7c59;display:flex;align-items:center;justify-content:space-between;">
+          <span><i class="ti ti-list" style="font-size:14px"></i> Items</span>
+          <button type="button" onclick="openProductCatalog()" title="Saved products" style="background:none;border:none;color:#4a7c59;cursor:pointer;font-size:15px;padding:2px 4px;"><i class="ti ti-settings"></i></button>
+        </div>
+        <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-mid);margin-bottom:0.6rem;cursor:pointer;"><input type="checkbox" id="issue-use-saved" checked onchange="toggleUseSaved()" style="width:auto;margin:0;"/> Suggest from saved products</label>
+        <datalist id="issue-prod-options"></datalist>
         <div style="display:flex;gap:6px;font-size:10px;color:var(--ink-soft);margin-bottom:4px;padding:0 2px;">
           <span style="width:18px;">#</span><span style="flex:3;">Description</span><span style="flex:1;">Qty</span><span style="flex:1.2;">Price</span><span style="flex:1.2;text-align:right;">Total</span><span style="width:20px;"></span>
         </div>
@@ -1784,6 +1789,31 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div style="display:flex;gap:8px;">
         <button class="submit-btn" id="profile-save-btn" onclick="saveProfile()" style="background:#4a7c59;flex:1;">Add profile</button>
         <button id="profile-cancel-btn" onclick="cancelProfileForm()" style="display:none;padding:0 16px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SAVED PRODUCTS CATALOG MODAL -->
+<div id="issue-prod-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(20,18,14,0.55);align-items:center;justify-content:center;padding:1.2rem;">
+  <div style="background:#fff;border-radius:16px;max-width:400px;width:100%;max-height:90vh;overflow-y:auto;padding:1.1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+      <strong style="font-size:15px;color:var(--ink);">Saved products</strong>
+      <button type="button" onclick="closeProductCatalog()" style="background:none;border:none;color:var(--ink-soft);font-size:20px;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+    <div style="font-size:12px;color:var(--ink-soft);margin-bottom:0.8rem;line-height:1.5;">Fixed items you sell often. They'll appear as suggestions under Description.</div>
+    <div id="prodcat-list" style="margin-bottom:0.8rem;"></div>
+    <div style="border-top:1px solid var(--border);padding-top:0.8rem;">
+      <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:0.5rem;" id="prodcat-form-title">Add product</div>
+      <div class="form-row"><label class="form-lbl">Name</label><input class="inp" id="prodcat-name" type="text" placeholder="e.g. Tyre Shine"/></div>
+      <div style="display:flex;gap:8px;">
+        <div class="form-row" style="flex:1.4;"><label class="form-lbl">Price (RM)</label><input class="inp" id="prodcat-price" type="number" inputmode="decimal" placeholder="0.00"/></div>
+        <div class="form-row" style="flex:1;"><label class="form-lbl">Unit <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="prodcat-unit" type="text" placeholder="kg, L, pcs"/></div>
+      </div>
+      <input type="hidden" id="prodcat-edit-id"/>
+      <div style="display:flex;gap:8px;">
+        <button class="submit-btn" id="prodcat-save-btn" onclick="saveCatalogProduct()" style="background:#4a7c59;flex:1;">Add product</button>
+        <button id="prodcat-cancel-btn" onclick="cancelCatalogForm()" style="display:none;padding:0 16px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Cancel</button>
       </div>
     </div>
   </div>
@@ -3526,6 +3556,14 @@ const INGREDIENT_ICONS = [
   ['ti-noodles', ['noodle','ramen','udon','soba','pasta','spaghetti']],
   ['ti-flask', ['vanilla','extract','essence','flavour','flavor','yeast','baking','powder','gelatin','agar']],
   ['ti-bottle', ['juice','soda','drink','beverage','cola']],
+  ['ti-bleach', ['bleach','clorox','chlorine','detergent','disinfect','sanitiz','sanitis','cleaner','cleaning','degreaser','wash','soap','shampoo','foam']],
+  ['ti-flask', ['chemical','reagent','solvent','acid','alkali','alkaline','compound','cde','formula','sodium','chloride','sulphate','sulfate','hydroxide','peroxide','ammonia','enzyme']],
+  ['ti-barrel', ['drum','barrel','bulk','canister','tank','pail','tote']],
+  ['ti-atom', ['catalyst','polymer','resin','silica','silicone','additive','surfactant']],
+  ['ti-flame', ['fuel','petrol','gasoline','diesel','kerosene','thinner','acetone','lacquer','flammable','alcohol','ethanol','methanol']],
+  ['ti-biohazard', ['hazard','toxic','corrosive','caustic','poison']],
+  ['ti-droplet', ['shine','polish','wax','lubricant','grease','glycerin','glycol','coolant','antifreeze','car care','tyre','tire','coating','sealant']],
+  ['ti-bottle', ['spray','liquid','concentrate']],
   ['ti-box', ['box','bag','cup','wrap','packaging','package','container','paper','tray','lid','straw','label','carton','sticker']]
 ];
 
@@ -4234,15 +4272,120 @@ async function exportInvoiceReportPDF() {
 // ===== ISSUE INVOICE / QUOTATION (generator) =====
 let issuerProfilesCache = [];
 let issuedDocsCache = [];
+let savedProductsCache = [];
+
+function refreshIssueProductOptions() {
+  const dl = document.getElementById('issue-prod-options');
+  const use = (document.getElementById('issue-use-saved') || {}).checked;
+  if(!dl) return;
+  if(!use) { dl.innerHTML = ''; return; }
+  dl.innerHTML = savedProductsCache.map(function(p){
+    const price = parseFloat(p.price) || 0;
+    const hint = 'RM ' + price.toFixed(2) + (p.unit ? ' · per ' + p.unit : '');
+    return '<option value="' + escHtml(p.name || '') + '">' + escHtml(hint) + '</option>';
+  }).join('');
+}
+
+function toggleUseSaved() { refreshIssueProductOptions(); }
+
+function onIssueDescInput(input) {
+  const use = (document.getElementById('issue-use-saved') || {}).checked;
+  if(!use) return;
+  const val = (input.value || '').trim().toLowerCase();
+  if(!val) return;
+  const match = savedProductsCache.find(function(p){ return (p.name || '').trim().toLowerCase() === val; });
+  if(!match) return;
+  const row = input.closest('.issue-row');
+  if(!row) return;
+  const priceEl = row.querySelector('.issue-price');
+  if(priceEl) { priceEl.value = parseFloat(match.price) || 0; recalcIssue(); }
+}
+
+function openProductCatalog() { renderProductCatalog(); cancelCatalogForm(); const m = document.getElementById('issue-prod-modal'); if(m) m.style.display = 'flex'; }
+function closeProductCatalog() { const m = document.getElementById('issue-prod-modal'); if(m) m.style.display = 'none'; }
+
+function renderProductCatalog() {
+  const el = document.getElementById('prodcat-list');
+  if(!el) return;
+  if(savedProductsCache.length === 0) { el.innerHTML = '<div style="font-size:12px;color:var(--ink-soft);padding:0.4rem 0;">No saved products yet. Add one below.</div>'; return; }
+  el.innerHTML = savedProductsCache.map(function(p){
+    const price = parseFloat(p.price) || 0;
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--cream);border:1px solid var(--border);border-radius:10px;padding:0.6rem 0.8rem;margin-bottom:0.4rem;">' +
+      '<div style="min-width:0;"><div style="font-size:13px;font-weight:500;color:var(--ink);">' + escHtml(p.name || '(unnamed)') + '</div><div style="font-size:11px;color:var(--ink-soft);">RM ' + price.toFixed(2) + (p.unit ? ' · per ' + escHtml(p.unit) : '') + '</div></div>' +
+      '<div style="flex-shrink:0;display:flex;gap:6px;">' +
+        '<button onclick="editCatalogProduct(\'' + p.id + '\')" style="background:none;border:1px solid var(--border);border-radius:7px;color:var(--ink-mid);font-size:11px;padding:4px 8px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">Edit</button>' +
+        '<button onclick="deleteCatalogProduct(\'' + p.id + '\')" style="background:none;border:1px solid var(--vermillion-light);border-radius:7px;color:var(--vermillion);font-size:11px;padding:4px 8px;cursor:pointer;font-family:\'DM Sans\',sans-serif;">Delete</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function editCatalogProduct(id) {
+  const p = savedProductsCache.find(function(x){ return x.id === id; });
+  if(!p) return;
+  document.getElementById('prodcat-name').value = p.name || '';
+  document.getElementById('prodcat-price').value = (p.price === null || p.price === undefined) ? '' : p.price;
+  document.getElementById('prodcat-unit').value = p.unit || '';
+  document.getElementById('prodcat-edit-id').value = id;
+  document.getElementById('prodcat-form-title').textContent = 'Edit product';
+  document.getElementById('prodcat-save-btn').textContent = 'Update';
+  document.getElementById('prodcat-cancel-btn').style.display = '';
+}
+
+function cancelCatalogForm() {
+  ['prodcat-name','prodcat-price','prodcat-unit','prodcat-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  const t = document.getElementById('prodcat-form-title'); if(t) t.textContent = 'Add product';
+  const b = document.getElementById('prodcat-save-btn'); if(b) b.textContent = 'Add product';
+  const c = document.getElementById('prodcat-cancel-btn'); if(c) c.style.display = 'none';
+}
+
+async function saveCatalogProduct() {
+  const name = (document.getElementById('prodcat-name').value || '').trim();
+  const price = parseFloat(document.getElementById('prodcat-price').value) || 0;
+  const unit = (document.getElementById('prodcat-unit').value || '').trim();
+  const editId = document.getElementById('prodcat-edit-id').value;
+  if(!name) { showToast('Enter a product name!'); return; }
+  let res;
+  if(editId) {
+    res = await sb.from('invoice_products').update({ name:name, price:price, unit:unit }).eq('id', editId);
+  } else {
+    const row = { name:name, price:price, unit:unit };
+    if(currentTenantId) row.tenant_id = currentTenantId;
+    res = await sb.from('invoice_products').insert(row);
+  }
+  if(res.error) { showToast('Error: ' + res.error.message); return; }
+  const cRes = await sb.from('invoice_products').select('*');
+  savedProductsCache = cRes.data || [];
+  renderProductCatalog();
+  refreshIssueProductOptions();
+  cancelCatalogForm();
+  showToast(editId ? 'Updated!' : 'Product added!');
+}
+
+async function deleteCatalogProduct(id) {
+  if(!confirm('Delete this saved product?')) return;
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/invoice_products?id=eq.' + id, {
+      method: 'DELETE', headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY), 'Prefer': 'return=representation'}
+    });
+    if(!res.ok) { let m = 'status ' + res.status; try { const j = await res.json(); if(j && (j.message || j.hint)) m = j.message || j.hint; } catch(e) {} showToast('Delete failed: ' + m); return; }
+    const cRes = await sb.from('invoice_products').select('*');
+    savedProductsCache = cRes.data || [];
+    renderProductCatalog(); refreshIssueProductOptions();
+    showToast('Deleted');
+  } catch(e) { showToast('Delete error: ' + (e && e.message ? e.message : 'network')); }
+}
 
 async function loadIssueScreen() {
-  const [pRes, dRes] = await Promise.all([
+  const [pRes, dRes, cRes] = await Promise.all([
     sb.from('issuer_profiles').select('*'),
-    sb.from('issued_documents').select('*')
+    sb.from('issued_documents').select('*'),
+    sb.from('invoice_products').select('*')
   ]);
   issuerProfilesCache = pRes.data || [];
   issuedDocsCache = dRes.data || [];
+  savedProductsCache = cRes.data || [];
   renderIssuerProfileSelect();
+  refreshIssueProductOptions();
   const dt = document.getElementById('issue-date'); if(dt) dt.value = getToday();
   const ty = document.getElementById('issue-type'); if(ty) ty.value = 'invoice';
   ['issue-client','issue-client-addr','issue-notes'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
@@ -4287,7 +4430,7 @@ function addIssueRow() {
   row.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:6px;';
   row.innerHTML =
     '<span class="issue-no" style="width:18px;font-size:12px;color:var(--ink-soft);"></span>' +
-    '<input class="inp issue-desc" type="text" placeholder="Description" style="flex:3;min-width:0;"/>' +
+    '<input class="inp issue-desc" type="text" placeholder="Description" list="issue-prod-options" oninput="onIssueDescInput(this)" style="flex:3;min-width:0;"/>' +
     '<input class="inp issue-qty" type="number" inputmode="decimal" placeholder="Qty" style="flex:1;min-width:0;" oninput="recalcIssue()"/>' +
     '<input class="inp issue-price" type="number" inputmode="decimal" placeholder="Price" style="flex:1.2;min-width:0;" oninput="recalcIssue()"/>' +
     '<span class="issue-linetotal" style="flex:1.2;font-size:12px;text-align:right;color:var(--ink);">0.00</span>' +
