@@ -1839,7 +1839,9 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div style="padding:1rem 1.1rem 2rem;">
-      <div id="promo-preview-wrap" style="display:flex;align-items:center;justify-content:center;margin-bottom:0.9rem;min-height:120px;"><div style="font-size:12px;color:var(--ink-soft);">Building preview…</div></div>
+      <div id="promo-preview-wrap" style="display:flex;align-items:center;justify-content:center;margin-bottom:0.9rem;">
+        <img id="promo-preview-img" alt="" style="width:100%;max-width:340px;aspect-ratio:1/1;object-fit:contain;border-radius:14px;border:1px solid var(--border);background:var(--cream);box-shadow:0 4px 18px rgba(20,18,14,0.12);display:block;"/>
+      </div>
 
       <div class="card">
         <div class="card-head" style="color:#c2407a;"><i class="ti ti-template" style="font-size:14px"></i> Template</div>
@@ -1886,6 +1888,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <label class="form-lbl">Product photo <span style="color:var(--ink-soft);font-weight:400;">(optional, not saved)</span></label>
           <input type="file" id="promo-photo" accept="image/*" onchange="onPromoPhoto(this)" style="font-size:12px;color:var(--ink-mid);"/>
           <button type="button" id="promo-photo-clear" onclick="clearPromoPhoto()" style="display:none;margin-top:7px;padding:6px 10px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--ink-mid);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;">Remove photo</button>
+        </div>
+        <div class="form-row" id="promo-photo-style-row" style="margin-bottom:0;margin-top:0.7rem;display:none;">
+          <label class="form-lbl">Photo style</label>
+          <select class="inp" id="promo-photo-style" onchange="renderPromo()" style="margin-bottom:0;">
+            <option value="panel">Photo on top, text below</option>
+            <option value="full">Full image, text over it</option>
+          </select>
         </div>
       </div>
 
@@ -4827,6 +4836,7 @@ function onPromoPhoto(input) {
     img.onload = function() {
       promoPhoto = img;
       const c = document.getElementById('promo-photo-clear'); if(c) c.style.display = 'inline-block';
+      const r = document.getElementById('promo-photo-style-row'); if(r) r.style.display = 'block';
       renderPromo();
     };
     img.src = e.target.result;
@@ -4838,6 +4848,7 @@ function clearPromoPhoto() {
   promoPhoto = null;
   const i = document.getElementById('promo-photo'); if(i) i.value = '';
   const c = document.getElementById('promo-photo-clear'); if(c) c.style.display = 'none';
+  const r = document.getElementById('promo-photo-style-row'); if(r) r.style.display = 'none';
   renderPromo();
 }
 
@@ -4876,6 +4887,15 @@ function promoDrawBadge(ctx, cx, cy, r, text, bgCss, fgCss) {
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 }
 
+function promoCover(ctx, img, x, y, w, h) {
+  const ir = img.width / img.height, tr = w / h;
+  let dw, dh, dx, dy;
+  if(ir > tr) { dh = h; dw = h * ir; dx = x + (w - dw) / 2; dy = y; }
+  else { dw = w; dh = w / ir; dx = x; dy = y + (h - dh) / 2; }
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.drawImage(img, dx, dy, dw, dh); ctx.restore();
+}
+
 function drawPromo() {
   const W = 1080, H = 1080;
   const canvas = document.createElement('canvas');
@@ -4899,18 +4919,23 @@ function drawPromo() {
   const kickers = { discount: 'SPECIAL OFFER', new: 'NEW', weekend: 'WEEKEND SPECIAL', announce: '' };
   const kicker = kickers[tmpl] || '';
 
+  const photoStyle = val('promo-photo-style') || 'panel';
   ctx.fillStyle = pCss; ctx.fillRect(0, 0, W, H);
   const M = 80;
-  let textTop;
+  let textTop, hlMax = 3, detMax = 3;
 
-  if(promoPhoto) {
+  if(promoPhoto && photoStyle === 'full') {
+    promoCover(ctx, promoPhoto, 0, 0, W, H);
+    const gt = ctx.createLinearGradient(0, 0, 0, H * 0.30);
+    gt.addColorStop(0, 'rgba(0,0,0,0.45)'); gt.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gt; ctx.fillRect(0, 0, W, H * 0.30);
+    const gb = ctx.createLinearGradient(0, H * 0.32, 0, H);
+    gb.addColorStop(0, 'rgba(0,0,0,0)'); gb.addColorStop(0.5, 'rgba(0,0,0,0.5)'); gb.addColorStop(1, 'rgba(0,0,0,0.88)');
+    ctx.fillStyle = gb; ctx.fillRect(0, H * 0.32, W, H * 0.68);
+    textTop = Math.round(H * 0.46); hlMax = 2; detMax = 1;
+  } else if(promoPhoto) {
     const ph = Math.round(H * 0.56);
-    const ir = promoPhoto.width / promoPhoto.height, tr = W / ph;
-    let dw, dh, dx, dy;
-    if(ir > tr) { dh = ph; dw = ph * ir; dx = (W - dw) / 2; dy = 0; }
-    else { dw = W; dh = W / ir; dx = 0; dy = (ph - dh) / 2; }
-    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, ph); ctx.clip();
-    ctx.drawImage(promoPhoto, dx, dy, dw, dh); ctx.restore();
+    promoCover(ctx, promoPhoto, 0, 0, W, ph);
     ctx.fillStyle = pCss; ctx.fillRect(0, ph, W, H - ph);
     ctx.fillStyle = sCss; ctx.fillRect(0, ph, W, 10);
     textTop = ph + 78;
@@ -4945,7 +4970,7 @@ function drawPromo() {
 
   if(headline) {
     ctx.fillStyle = '#ffffff'; ctx.font = F('800', 76); ctx.textAlign = 'left';
-    y = promoWrapText(ctx, headline, M, y + 18, W - M * 2, 84, 3) + 30;
+    y = promoWrapText(ctx, headline, M, y + 18, W - M * 2, 84, hlMax) + 30;
   }
 
   if(price && tmpl !== 'announce') {
@@ -4968,7 +4993,7 @@ function drawPromo() {
 
   if(detail) {
     ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.font = F('500', 40); ctx.textAlign = 'left';
-    y = promoWrapText(ctx, detail, M, y, W - M * 2, 52, 3) + 12;
+    y = promoWrapText(ctx, detail, M, y, W - M * 2, 52, detMax) + 12;
   }
 
   if(footer) {
@@ -4987,8 +5012,8 @@ function renderPromo() {
   const canvas = drawPromo();
   if(!canvas) return;
   promoDataUrl = canvas.toDataURL('image/png');
-  const wrap = document.getElementById('promo-preview-wrap');
-  if(wrap) wrap.innerHTML = '<img src="' + promoDataUrl + '" style="max-width:100%;max-height:60vh;border-radius:14px;border:1px solid var(--border);display:block;box-shadow:0 4px 18px rgba(20,18,14,0.12);"/>';
+  const img = document.getElementById('promo-preview-img');
+  if(img) img.src = promoDataUrl;
   canvas.toBlob(function(blob) {
     promoBlob = blob;
     const btn = document.getElementById('promo-share-btn');
