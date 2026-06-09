@@ -469,6 +469,11 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="menu-text"><strong>Insights</strong><span>Trends, patterns, all outlets</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
+      <div class="menu-item" onclick="go('s-rankings')">
+        <div class="menu-icon" style="background:var(--rose-light);color:var(--rose);"><i class="ti ti-trophy"></i></div>
+        <div class="menu-text"><strong>Wastage leaderboard</strong><span>Who's wasting the most</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
     </div>
     </div>
     <div class="staff-hide" id="home-records">
@@ -521,18 +526,6 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="menu-item" onclick="go('s-margin-ranking')">
         <div class="menu-icon" style="background:#f0edf8;color:#6b4fa0;"><i class="ti ti-arrows-sort"></i></div>
         <div class="menu-text"><strong>Margin ranking</strong><span>Highest & lowest margin items</span></div>
-        <i class="ti ti-chevron-right menu-arrow"></i>
-      </div>
-    </div>
-    </div>
-    <div class="staff-hide" id="home-rankings">
-    <div style="padding:0 1.1rem;">
-      <div class="section-lbl">Rankings</div>
-    </div>
-    <div class="menu-card" style="margin-bottom:2rem;">
-      <div class="menu-item" onclick="go('s-rankings')">
-        <div class="menu-icon" style="background:var(--rose-light);color:var(--rose);"><i class="ti ti-trophy"></i></div>
-        <div class="menu-text"><strong>Wastage leaderboard</strong><span>Who's wasting the most</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
     </div>
@@ -1275,13 +1268,28 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
       <div class="card">
-        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> Ingredients used</div>
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> <span id="prod-cost-head">Ingredients used</span></div>
+        <div class="form-row">
+          <label class="form-lbl">Costing method</label>
+          <select class="inp" id="prod-mode" onchange="setProductMode('prod')">
+            <option value="recipe">Made from ingredients</option>
+            <option value="resale">Bought to resell (buy &amp; sell)</option>
+          </select>
+        </div>
+        <div id="prod-recipe-section">
         <div id="prod-ingredients-list"></div>
         <div style="display:flex;gap:8px;margin-top:0.75rem;flex-wrap:wrap;">
           <select class="inp" id="prod-ing-select" style="flex:1 1 100%;" onchange="updateUnitOptions('prod-ing-select','prod-ing-unit')"></select>
           <input class="inp" id="prod-ing-qty" type="number" inputmode="decimal" placeholder="Qty" style="flex:1;min-width:0;"/>
           <select class="inp" id="prod-ing-unit" style="width:72px;"></select>
           <button onclick="addProductIngredient()" style="padding:9px 12px;background:#6b4fa0;border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
+        </div>
+        </div>
+        <div id="prod-resale-section" style="display:none;">
+          <div class="form-row" style="margin-bottom:0;">
+            <label class="form-lbl">Cost price — what you pay (RM)</label>
+            <input class="inp" id="prod-buy-cost" type="number" inputmode="decimal" placeholder="0.00" oninput="calcProductMargin()"/>
+          </div>
         </div>
         <div style="margin-top:0.85rem;display:flex;align-items:center;justify-content:space-between;">
           <span style="font-size:11px;color:var(--ink-soft);">Other cost <span style="font-weight:400;">(optional, e.g. packaging)</span></span>
@@ -1340,14 +1348,29 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
       </div>
       <div class="card">
-        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> Ingredients used</div>
+        <div class="card-head" style="color:#6b4fa0;"><i class="ti ti-package" style="font-size:14px"></i> <span id="edit-prod-cost-head">Ingredients used</span></div>
+        <div class="form-row">
+          <label class="form-lbl">Costing method</label>
+          <select class="inp" id="edit-prod-mode" onchange="setProductMode('edit-prod')">
+            <option value="recipe">Made from ingredients</option>
+            <option value="resale">Bought to resell (buy &amp; sell)</option>
+          </select>
+        </div>
         <div id="edit-prod-ing-warn" style="display:none;background:var(--vermillion-light);border-radius:8px;padding:0.6rem 0.7rem;margin-bottom:0.6rem;font-size:11px;color:var(--vermillion);line-height:1.45;"></div>
+        <div id="edit-prod-recipe-section">
         <div id="edit-prod-ingredients-list"></div>
         <div style="display:flex;gap:8px;margin-top:0.75rem;flex-wrap:wrap;">
           <select class="inp" id="edit-prod-ing-select" style="flex:1 1 100%;" onchange="updateUnitOptions('edit-prod-ing-select','edit-prod-ing-unit')"></select>
           <input class="inp" id="edit-prod-ing-qty" type="number" inputmode="decimal" placeholder="Qty" style="flex:1;min-width:0;"/>
           <select class="inp" id="edit-prod-ing-unit" style="width:72px;"></select>
           <button onclick="addEditProductIngredient()" style="padding:9px 12px;background:#6b4fa0;border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;white-space:nowrap;">+ Add</button>
+        </div>
+        </div>
+        <div id="edit-prod-resale-section" style="display:none;">
+          <div class="form-row" style="margin-bottom:0;">
+            <label class="form-lbl">Cost price — what you pay (RM)</label>
+            <input class="inp" id="edit-prod-buy-cost" type="number" inputmode="decimal" placeholder="0.00" oninput="calcEditProductMargin()"/>
+          </div>
         </div>
         <div style="margin-top:0.85rem;display:flex;align-items:center;justify-content:space-between;">
           <span style="font-size:11px;color:var(--ink-soft);">Other cost <span style="font-weight:400;">(optional, e.g. packaging)</span></span>
@@ -2480,7 +2503,7 @@ function applyRoleUI() {
 
   // Viewer (e.g. owner's family) - read-only: stats + Insights only
   if(role === 'viewer') {
-    ['home-daily','home-shift','home-costing','home-rankings','home-summary','home-records'].forEach(function(idn){
+    ['home-daily','home-shift','home-costing','home-summary','home-records'].forEach(function(idn){
       const el = document.getElementById(idn); if(el) el.style.display = 'none';
     });
     const rep = document.getElementById('home-reports'); if(rep) rep.style.display = '';
@@ -4787,10 +4810,24 @@ async function removeOtherCost(id) {
   showToast('Removed');
 }
 
+function setProductMode(prefix) {
+  const m = (document.getElementById(prefix + '-mode') || {}).value || 'recipe';
+  const recipe = document.getElementById(prefix + '-recipe-section');
+  const resale = document.getElementById(prefix + '-resale-section');
+  const head = document.getElementById(prefix + '-cost-head');
+  if(recipe) recipe.style.display = (m === 'resale') ? 'none' : '';
+  if(resale) resale.style.display = (m === 'resale') ? '' : 'none';
+  if(head) head.textContent = (m === 'resale') ? 'Cost to buy' : 'Ingredients used';
+  if(prefix === 'edit-prod') calcEditProductMargin(); else calcProductMargin();
+}
+
 function calcProductMargin() {
-  const ingCost = prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const mode = (document.getElementById('prod-mode') || {}).value || 'recipe';
+  const baseCost = (mode === 'resale')
+    ? (parseFloat((document.getElementById('prod-buy-cost') || {}).value) || 0)
+    : prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
   const extra = parseFloat((document.getElementById('prod-extra-cost')||{}).value) || 0;
-  const cost = ingCost + extra;
+  const cost = baseCost + extra;
   const tc = document.getElementById('prod-total-cost'); if(tc) tc.textContent = 'RM ' + cost.toFixed(2);
   const price = parseFloat(document.getElementById('prod-price').value) || 0;
   const el = document.getElementById('prod-margin-preview');
@@ -4805,9 +4842,12 @@ function calcProductMargin() {
 }
 
 function calcEditProductMargin() {
-  const ingCost = editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const mode = (document.getElementById('edit-prod-mode') || {}).value || 'recipe';
+  const baseCost = (mode === 'resale')
+    ? (parseFloat((document.getElementById('edit-prod-buy-cost') || {}).value) || 0)
+    : editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
   const extra = parseFloat((document.getElementById('edit-prod-extra-cost')||{}).value) || 0;
-  const cost = ingCost + extra;
+  const cost = baseCost + extra;
   const tc = document.getElementById('edit-prod-total-cost'); if(tc) tc.textContent = 'RM ' + cost.toFixed(2);
   const price = parseFloat(document.getElementById('edit-prod-price').value) || 0;
   const el = document.getElementById('edit-prod-margin-preview');
@@ -4822,10 +4862,41 @@ function calcEditProductMargin() {
 }
 
 let productsCache = [];
+
+// Recompute each product's cost live from CURRENT ingredient prices + its recipe,
+// so raw-material price changes reflect everywhere without re-opening each product.
+async function enrichProductCosts(products) {
+  try {
+    const [ingRes, ciRes] = await Promise.all([
+      sb.from('ingredients').select('*'),
+      sb.from('costing_ingredients').select('*')
+    ]);
+    const priceById = {};
+    (ingRes.data || []).forEach(function(i){ priceById[i.id] = parseFloat(i.cost_per_unit) || 0; });
+    const recipeMap = {};
+    (ciRes.data || []).forEach(function(ci){
+      const cpu = priceById[ci.ingredient_id];
+      if(cpu === undefined) return;
+      recipeMap[ci.costing_id] = (recipeMap[ci.costing_id] || 0) + cpu * (parseFloat(ci.quantity) || 0);
+    });
+    products.forEach(function(p){
+      if((p.product_type || 'recipe') === 'resale') return; // resale: cost is the buy price, not recomputed
+      const stored = parseFloat(p.cost) || 0;
+      const extra = parseFloat(p.extra_cost) || 0;
+      const recipe = recipeMap[p.id] || 0;
+      const hadRecipe = (stored - extra) > 0.005;
+      // Use the freshly computed cost. Safety: if a product has recipe cost on record
+      // but no recipe rows loaded, keep the stored cost so it doesn't wrongly drop.
+      if(recipe > 0 || !hadRecipe) { p.cost = recipe + extra; }
+    });
+  } catch(e) {}
+}
+
 async function loadProducts() {
   const result = await sb.from('costing').select('*').order('name');
   const data = result.data || [];
   productsCache = data;
+  await enrichProductCosts(data);
   const el = document.getElementById('products-list');
   if(!el) return;
   if(data.length === 0) {
@@ -4875,6 +4946,7 @@ async function loadProducts() {
 async function loadMarginRanking() {
   const result = await sb.from('costing').select('*');
   productsCache = result.data || [];
+  await enrichProductCosts(productsCache);
   renderMarginRanking();
 }
 
@@ -4918,14 +4990,16 @@ async function saveProduct() {
   const extraCost = parseFloat(document.getElementById('prod-extra-cost').value) || 0;
   let extraLabel = document.getElementById('prod-extra-label').value.trim();
   if(extraCost > 0 && !extraLabel) extraLabel = 'Packaging';
-  const cost = prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0) + extraCost;
+  const mode = document.getElementById('prod-mode').value || 'recipe';
+  const baseCost = (mode === 'resale') ? (parseFloat(document.getElementById('prod-buy-cost').value) || 0) : prodIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const cost = baseCost + extraCost;
   const btn = document.getElementById('add-prod-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
-  const result = await sb.from('costing').insert({name:name,category:cat,cost:cost,selling_price:price,notes:notes,extra_cost:extraCost,extra_label:extraLabel}).select();
+  const result = await sb.from('costing').insert({name:name,category:cat,cost:cost,selling_price:price,notes:notes,extra_cost:extraCost,extra_label:extraLabel,product_type:mode}).select();
   if(result.error) { showToast('Error: ' + result.error.message); btn.disabled=false; btn.textContent='Save product'; return; }
   const prodId = result.data[0].id;
-  // Save ingredients
-  if(prodIngredients.length > 0) {
+  // Save ingredients (recipe mode only)
+  if(mode === 'recipe' && prodIngredients.length > 0) {
     const ingData = prodIngredients.map(function(i){
       const row = {costing_id:prodId, ingredient_id:i.ingredient_id, quantity:i.quantity};
       if(currentTenantId) row.tenant_id = currentTenantId;
@@ -4936,8 +5010,10 @@ async function saveProduct() {
   }
   btn.disabled = false; btn.textContent = 'Save product';
   showToast(name + ' saved!');
-  ['prod-name','prod-price','prod-notes','prod-extra-label','prod-extra-cost'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['prod-name','prod-price','prod-notes','prod-extra-label','prod-extra-cost','prod-buy-cost'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value=''; });
   prodIngredients = [];
+  const modeSel = document.getElementById('prod-mode'); if(modeSel) modeSel.value = 'recipe';
+  setProductMode('prod');
   renderIngredientsList(prodIngredients, 'prod-ingredients-list', 'prod-total-cost', false);
   document.getElementById('prod-margin-preview').style.display='none';
   go('s-costing');
@@ -4978,12 +5054,20 @@ async function openEditProduct(id) {
       });
     });
   }
+  const ptype = p.product_type || 'recipe';
+  document.getElementById('edit-prod-mode').value = ptype;
+  if(ptype === 'resale') {
+    const bc = editProdStoredCost - editProdStoredExtra;
+    document.getElementById('edit-prod-buy-cost').value = bc > 0 ? bc.toFixed(2) : '';
+  } else {
+    document.getElementById('edit-prod-buy-cost').value = '';
+  }
   // If there's recorded ingredient cost (total minus the fixed cost) but no rows came back,
-  // the recipe failed to load. Warn so a save can't silently wipe it. (Extra-cost-only is fine.)
+  // the recipe failed to load. Warn so a save can't silently wipe it. (Recipe products only.)
   const ingredientCostOnRecord = editProdStoredCost - editProdStoredExtra;
   const warn = document.getElementById('edit-prod-ing-warn');
   if(warn) {
-    if(ingredientCostOnRecord > 0.005 && editProdIngredients.length === 0) {
+    if(ptype === 'recipe' && ingredientCostOnRecord > 0.005 && editProdIngredients.length === 0) {
       warn.innerHTML = '\u26a0 Couldn\u2019t load this product\u2019s saved ingredients (recipe cost on record: RM ' + ingredientCostOnRecord.toFixed(2) + '). Don\u2019t save changes yet — re-add ingredients first, or you may overwrite the saved recipe.';
       warn.style.display = 'block';
     } else {
@@ -4992,6 +5076,7 @@ async function openEditProduct(id) {
   }
   renderIngredientsList(editProdIngredients, 'edit-prod-ingredients-list', 'edit-prod-total-cost', true);
   await populateIngredientSelect('edit-prod-ing-select');
+  setProductMode('edit-prod');
   go('s-edit-product');
   setTimeout(calcEditProductMargin, 100);
 }
@@ -5006,17 +5091,18 @@ async function updateProduct() {
   const extraCost = parseFloat(document.getElementById('edit-prod-extra-cost').value) || 0;
   let extraLabel = document.getElementById('edit-prod-extra-label').value.trim();
   if(extraCost > 0 && !extraLabel) extraLabel = 'Packaging';
-  // Safety: if this product had recipe cost on record but no ingredients loaded, saving
-  // would delete its recipe. Make the user confirm. (Extra-cost-only products are exempt.)
-  if(editProdIngredients.length === 0 && (editProdStoredCost - editProdStoredExtra) > 0.005) {
+  const mode = document.getElementById('edit-prod-mode').value || 'recipe';
+  // Safety (recipe products only): if recipe cost on record but no rows loaded, confirm before wiping.
+  if(mode === 'recipe' && editProdIngredients.length === 0 && (editProdStoredCost - editProdStoredExtra) > 0.005) {
     if(!confirm('This product\u2019s saved ingredients didn\u2019t load. Saving now will remove the recipe and recompute the cost. Continue anyway?')) {
       return;
     }
   }
-  const cost = editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0) + extraCost;
+  const baseCost = (mode === 'resale') ? (parseFloat(document.getElementById('edit-prod-buy-cost').value) || 0) : editProdIngredients.reduce(function(a,i){ return a + i.cost_per_unit * i.quantity; }, 0);
+  const cost = baseCost + extraCost;
   const btn = document.getElementById('edit-prod-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
-  const result = await sb.from('costing').update({name:name,category:cat,cost:cost,selling_price:price,notes:notes,extra_cost:extraCost,extra_label:extraLabel}).eq('id', id);
+  const result = await sb.from('costing').update({name:name,category:cat,cost:cost,selling_price:price,notes:notes,extra_cost:extraCost,extra_label:extraLabel,product_type:mode}).eq('id', id);
   if(result.error) { showToast('Error: ' + result.error.message); btn.disabled=false; btn.textContent='Save changes'; return; }
   // Replace ingredients - delete old, insert new
   await fetch(SUPABASE_URL + '/rest/v1/costing_ingredients?costing_id=eq.' + id, {
