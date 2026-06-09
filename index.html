@@ -1893,7 +1893,11 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
           <label class="form-lbl">Photo style</label>
           <select class="inp" id="promo-photo-style" onchange="renderPromo()" style="margin-bottom:0;">
             <option value="panel">Photo on top, text below</option>
+            <option value="bottom">Photo below, text on top</option>
             <option value="full">Full image, text over it</option>
+            <option value="band">Full image, text on a bar</option>
+            <option value="framed">Framed photo, text below</option>
+            <option value="circle">Round photo, text below</option>
           </select>
         </div>
       </div>
@@ -1902,6 +1906,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <button id="promo-share-btn" onclick="sharePromo()" style="flex:1;padding:13px;background:#c2407a;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;display:none;"><i class="ti ti-share" style="font-size:15px;"></i> Share</button>
         <button onclick="savePromo()" style="flex:1;padding:13px;background:#6b4fa0;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;"><i class="ti ti-download" style="font-size:15px;"></i> Save image</button>
       </div>
+      <button onclick="resetPromo()" style="width:100%;margin-top:9px;padding:11px;background:none;border:1px solid var(--border);border-radius:12px;color:var(--ink-mid);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;"><i class="ti ti-refresh" style="font-size:14px;"></i> Reset poster</button>
       <div style="font-size:11px;color:var(--ink-soft);text-align:center;margin-top:0.7rem;line-height:1.5;">Nothing here is saved to your database. The image is built on your phone and shared out directly.</div>
     </div>
   </div>
@@ -4852,18 +4857,70 @@ function clearPromoPhoto() {
   renderPromo();
 }
 
-function promoWrapText(ctx, text, x, y, maxW, lineH, maxLines) {
+function resetPromo() {
+  if(!confirm('Reset the poster? This clears all text and removes the photo.')) return;
+  ['promo-headline','promo-price','promo-oldprice','promo-detail','promo-footer','promo-badge','promo-brand'].forEach(function(id) {
+    const e = document.getElementById(id); if(e) e.value = '';
+  });
+  const t = document.getElementById('promo-template'); if(t) t.value = 'discount';
+  const ps = document.getElementById('promo-photo-style'); if(ps) ps.value = 'panel';
+  const b = document.getElementById('promo-badge-on'); if(b) b.checked = true;
+  const pe = document.getElementById('promo-primary'); if(pe) pe.value = '#4a7c59';
+  const se = document.getElementById('promo-secondary'); if(se) se.value = '#e8f0e9';
+  clearPromoPhoto();
+  loadPromoScreen();
+  showToast('Poster reset');
+}
+
+function promoWrapLines(ctx, text, maxW, maxLines) {
   const words = (text || '').split(' ');
-  let line = '', yy = y, lines = 0;
+  const lines = []; let line = '';
   for(let i = 0; i < words.length; i++) {
     const test = line ? line + ' ' + words[i] : words[i];
     if(ctx.measureText(test).width > maxW && line) {
-      ctx.fillText(line, x, yy); line = words[i]; yy += lineH; lines++;
-      if(maxLines && lines >= maxLines) { line = ''; break; }
+      lines.push(line); line = words[i];
+      if(maxLines && lines.length >= maxLines) { line = ''; break; }
     } else { line = test; }
   }
-  if(line) ctx.fillText(line, x, yy);
-  return yy;
+  if(line) lines.push(line);
+  if(maxLines && lines.length > maxLines) lines.length = maxLines;
+  return lines;
+}
+
+function promoRoundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function promoKickerPill(ctx, x, top, text, bgCss, fgCss) {
+  ctx.font = "700 30px 'DM Sans', sans-serif";
+  const tw = ctx.measureText(text).width;
+  const padX = 24, bh = 52, rw = tw + padX * 2;
+  ctx.fillStyle = bgCss;
+  promoRoundRect(ctx, x, top, rw, bh, 26); ctx.fill();
+  ctx.fillStyle = fgCss; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  ctx.fillText(text, x + padX, top + bh / 2 + 2);
+  ctx.textBaseline = 'top';
+}
+
+function promoPriceRow(ctx, x, top, price, oldPrice, F) {
+  ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+  ctx.fillStyle = '#ffffff'; ctx.font = F('800', 98);
+  ctx.fillText(price, x, top);
+  const pw = ctx.measureText(price).width;
+  if(oldPrice) {
+    ctx.font = F('600', 46); ctx.fillStyle = 'rgba(255,255,255,0.62)';
+    const ox = x + pw + 28, oy = top + 30;
+    ctx.fillText(oldPrice, ox, oy);
+    const ow = ctx.measureText(oldPrice).width;
+    ctx.strokeStyle = 'rgba(255,255,255,0.82)'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(ox - 4, oy + 24); ctx.lineTo(ox + ow + 4, oy + 24); ctx.stroke();
+  }
 }
 
 function promoDrawBadge(ctx, cx, cy, r, text, bgCss, fgCss) {
@@ -4919,92 +4976,109 @@ function drawPromo() {
   const kickers = { discount: 'SPECIAL OFFER', new: 'NEW', weekend: 'WEEKEND SPECIAL', announce: '' };
   const kicker = kickers[tmpl] || '';
 
-  const photoStyle = val('promo-photo-style') || 'panel';
-  ctx.fillStyle = pCss; ctx.fillRect(0, 0, W, H);
+  const photoStyle = promoPhoto ? (val('promo-photo-style') || 'panel') : 'none';
   const M = 80;
-  let textTop, hlMax = 3, detMax = 3;
+  ctx.fillStyle = pCss; ctx.fillRect(0, 0, W, H);
 
-  if(promoPhoto && photoStyle === 'full') {
-    promoCover(ctx, promoPhoto, 0, 0, W, H);
-    const gt = ctx.createLinearGradient(0, 0, 0, H * 0.30);
-    gt.addColorStop(0, 'rgba(0,0,0,0.45)'); gt.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = gt; ctx.fillRect(0, 0, W, H * 0.30);
-    const gb = ctx.createLinearGradient(0, H * 0.32, 0, H);
-    gb.addColorStop(0, 'rgba(0,0,0,0)'); gb.addColorStop(0.5, 'rgba(0,0,0,0.5)'); gb.addColorStop(1, 'rgba(0,0,0,0.88)');
-    ctx.fillStyle = gb; ctx.fillRect(0, H * 0.32, W, H * 0.68);
-    textTop = Math.round(H * 0.46); hlMax = 2; detMax = 1;
-  } else if(promoPhoto) {
-    const ph = Math.round(H * 0.56);
-    promoCover(ctx, promoPhoto, 0, 0, W, ph);
-    ctx.fillStyle = pCss; ctx.fillRect(0, ph, W, H - ph);
-    ctx.fillStyle = sCss; ctx.fillRect(0, ph, W, 10);
-    textTop = ph + 78;
-  } else {
+  let regionTop, regionBottom, footerY = H - 58, hlMax = 3, detMax = 3;
+
+  function accentBlobs() {
     ctx.save(); ctx.globalAlpha = 0.16; ctx.fillStyle = sCss;
     ctx.beginPath(); ctx.arc(W - 90, H - 60, 380, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(120, 150, 150, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
-    textTop = 250;
   }
 
-  let y = textTop;
-
-  if(kicker) {
-    ctx.font = F('700', 30); ctx.textAlign = 'left';
-    const tw = ctx.measureText(kicker).width;
-    ctx.fillStyle = sCss;
-    const padX = 22, padY = 14, bh = 52;
-    ctx.beginPath();
-    const rx = M, ry = y - 38, rw = tw + padX * 2, rr = 26;
-    ctx.moveTo(rx + rr, ry); ctx.arcTo(rx + rw, ry, rx + rw, ry + bh, rr);
-    ctx.arcTo(rx + rw, ry + bh, rx, ry + bh, rr); ctx.arcTo(rx, ry + bh, rx, ry, rr);
-    ctx.arcTo(rx, ry, rx + rw, ry, rr); ctx.fill();
-    ctx.fillStyle = pCss; ctx.fillText(kicker, rx + padX, y);
-    y += 58;
+  if(photoStyle === 'full') {
+    promoCover(ctx, promoPhoto, 0, 0, W, H);
+    let g = ctx.createLinearGradient(0, 0, 0, H * 0.30);
+    g.addColorStop(0, 'rgba(0,0,0,0.45)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H * 0.30);
+    g = ctx.createLinearGradient(0, H * 0.32, 0, H);
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.5, 'rgba(0,0,0,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0.88)');
+    ctx.fillStyle = g; ctx.fillRect(0, H * 0.32, W, H * 0.68);
+    regionTop = Math.round(H * 0.46); regionBottom = H - 96; hlMax = 2; detMax = 1;
+  } else if(photoStyle === 'band') {
+    promoCover(ctx, promoPhoto, 0, 0, W, H);
+    const bandTop = Math.round(H * 0.62);
+    ctx.fillStyle = pCss; ctx.fillRect(0, bandTop, W, H - bandTop);
+    ctx.fillStyle = sCss; ctx.fillRect(0, bandTop, W, 8);
+    regionTop = bandTop + 34; regionBottom = H - 88; hlMax = 2; detMax = 1;
+  } else if(photoStyle === 'bottom') {
+    const photoTop = Math.round(H * 0.48);
+    promoCover(ctx, promoPhoto, 0, photoTop, W, H - photoTop);
+    ctx.fillStyle = sCss; ctx.fillRect(0, photoTop - 8, W, 8);
+    regionTop = 80; regionBottom = photoTop - 86; footerY = photoTop - 44; hlMax = 2; detMax = 2;
+  } else if(photoStyle === 'circle') {
+    accentBlobs();
+    const cx = W / 2, cy = Math.round(H * 0.30), r = Math.round(H * 0.225);
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+    promoCover(ctx, promoPhoto, cx - r, cy - r, r * 2, r * 2); ctx.restore();
+    ctx.strokeStyle = sCss; ctx.lineWidth = 14; ctx.beginPath(); ctx.arc(cx, cy, r + 2, 0, Math.PI * 2); ctx.stroke();
+    regionTop = cy + r + 56; regionBottom = H - 96; hlMax = 2; detMax = 2;
+  } else if(photoStyle === 'framed') {
+    const fm = 70, fy = 78, fw = W - fm * 2, fh = Math.round(H * 0.46), fr = 30;
+    promoRoundRect(ctx, fm, fy, fw, fh, fr); ctx.save(); ctx.clip();
+    promoCover(ctx, promoPhoto, fm, fy, fw, fh); ctx.restore();
+    ctx.strokeStyle = sCss; ctx.lineWidth = 12; promoRoundRect(ctx, fm, fy, fw, fh, fr); ctx.stroke();
+    regionTop = fy + fh + 46; regionBottom = H - 96; hlMax = 2; detMax = 2;
+  } else if(photoStyle === 'panel') {
+    const ph = Math.round(H * 0.56);
+    promoCover(ctx, promoPhoto, 0, 0, W, ph);
+    ctx.fillStyle = pCss; ctx.fillRect(0, ph, W, H - ph);
+    ctx.fillStyle = sCss; ctx.fillRect(0, ph, W, 10);
+    regionTop = ph + 40; regionBottom = H - 96;
+  } else {
+    accentBlobs();
+    regionTop = 170; regionBottom = H - 104;
   }
 
-  if(brand) {
-    ctx.fillStyle = 'rgba(255,255,255,0.82)'; ctx.font = F('700', 30); ctx.textAlign = 'left';
-    ctx.fillText(brand.toUpperCase().slice(0, 38), M, y); y += 56;
-  }
-
+  // ---- measured, vertically-centred text block (all left-aligned at margin M) ----
+  const items = [], GAP = 24;
+  if(kicker) items.push({ h: 54, draw: function(top) { promoKickerPill(ctx, M, top, kicker, sCss, pCss); } });
+  if(brand) items.push({ h: 42, draw: function(top) {
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.font = F('700', 30); ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+    ctx.fillText(brand.toUpperCase().slice(0, 38), M, top);
+  } });
   if(headline) {
-    ctx.fillStyle = '#ffffff'; ctx.font = F('800', 76); ctx.textAlign = 'left';
-    y = promoWrapText(ctx, headline, M, y + 18, W - M * 2, 84, hlMax) + 30;
+    ctx.font = F('800', 76);
+    const hlLines = promoWrapLines(ctx, headline, W - M * 2, hlMax);
+    items.push({ h: hlLines.length * 84, draw: function(top) {
+      ctx.fillStyle = '#ffffff'; ctx.font = F('800', 76); ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+      hlLines.forEach(function(ln, i) { ctx.fillText(ln, M, top + i * 84); });
+    } });
   }
-
   if(price && tmpl !== 'announce') {
-    ctx.textAlign = 'left'; ctx.fillStyle = '#ffffff'; ctx.font = F('800', 98);
-    ctx.fillText(price, M, y + 78);
-    const pw = ctx.measureText(price).width;
-    if(oldPrice) {
-      ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = F('600', 46);
-      const ox = M + pw + 28, oy = y + 70;
-      ctx.fillText(oldPrice, ox, oy);
-      const ow = ctx.measureText(oldPrice).width;
-      ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 5;
-      ctx.beginPath(); ctx.moveTo(ox - 4, oy - 15); ctx.lineTo(ox + ow + 4, oy - 15); ctx.stroke();
-    }
-    y += 130;
+    items.push({ h: 112, draw: function(top) { promoPriceRow(ctx, M, top, price, oldPrice, F); } });
   } else if(price && tmpl === 'announce') {
-    ctx.textAlign = 'left'; ctx.fillStyle = '#ffffff'; ctx.font = F('700', 56);
-    ctx.fillText(price, M, y + 50); y += 96;
+    items.push({ h: 70, draw: function(top) {
+      ctx.fillStyle = '#ffffff'; ctx.font = F('700', 56); ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+      ctx.fillText(price, M, top);
+    } });
+  }
+  if(detail) {
+    ctx.font = F('500', 40);
+    const dLines = promoWrapLines(ctx, detail, W - M * 2, detMax);
+    items.push({ h: dLines.length * 52, draw: function(top) {
+      ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.font = F('500', 40); ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+      dLines.forEach(function(ln, i) { ctx.fillText(ln, M, top + i * 52); });
+    } });
   }
 
-  if(detail) {
-    ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.font = F('500', 40); ctx.textAlign = 'left';
-    y = promoWrapText(ctx, detail, M, y, W - M * 2, 52, detMax) + 12;
-  }
+  let totalH = 0;
+  items.forEach(function(it, i) { totalH += it.h; if(i < items.length - 1) totalH += GAP; });
+  const regionH = regionBottom - regionTop;
+  let cursor = regionTop + Math.max(0, (regionH - totalH) / 2);
+  items.forEach(function(it) { it.draw(cursor); cursor += it.h + GAP; });
 
   if(footer) {
-    ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = F('600', 34); ctx.textAlign = 'left';
-    ctx.fillText(footer, M, H - 72);
+    ctx.fillStyle = 'rgba(255,255,255,0.82)'; ctx.font = F('600', 34); ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+    ctx.fillText(footer, M, footerY);
   }
 
-  if(badgeOn && badge) {
-    promoDrawBadge(ctx, W - 175, 195, 135, badge, '#ffffff', pCss);
-  }
+  if(badgeOn && badge) promoDrawBadge(ctx, W - 175, 195, 135, badge, '#ffffff', pCss);
 
+  ctx.textBaseline = 'alphabetic';
   return canvas;
 }
 
