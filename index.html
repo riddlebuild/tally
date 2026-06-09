@@ -1740,6 +1740,23 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="form-row"><label class="form-lbl">Company no. <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><input class="inp" id="profile-no" type="text" placeholder="e.g. 202401234567"/></div>
       <div class="form-row"><label class="form-lbl">Address</label><textarea class="inp" id="profile-addr" rows="2" placeholder="Business address"></textarea></div>
       <div class="form-row"><label class="form-lbl">Phone <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><input class="inp" id="profile-phone" type="text" placeholder="e.g. 012-3456789"/></div>
+      <div class="form-row"><label class="form-lbl">Bank / payment details <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><textarea class="inp" id="profile-bank" rows="3" placeholder="Bank: Maybank&#10;Acc: 1234567890&#10;Name: Koharu Taiyaki"></textarea></div>
+      <div class="form-row" style="margin-bottom:0.6rem;">
+        <label class="form-lbl" style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="profile-fancy" checked style="width:auto;margin:0;"/> Fancy design (coloured)</label>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Invoice colours</label>
+        <div style="display:flex;gap:14px;align-items:center;margin-bottom:7px;">
+          <label style="font-size:12px;color:var(--ink-mid);display:flex;align-items:center;gap:5px;">Primary <input type="color" id="profile-primary" value="#4a7c59" style="width:34px;height:28px;border:1px solid var(--border);border-radius:6px;padding:0;cursor:pointer;"/></label>
+          <label style="font-size:12px;color:var(--ink-mid);display:flex;align-items:center;gap:5px;">Secondary <input type="color" id="profile-secondary" value="#e8f0e9" style="width:34px;height:28px;border:1px solid var(--border);border-radius:6px;padding:0;cursor:pointer;"/></label>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" onclick="setProfilePalette('#4a7c59','#e8f0e9')" style="padding:5px 10px;border:1px solid var(--border);background:#fff;border-radius:7px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--ink-mid);">Matcha</button>
+          <button type="button" onclick="setProfilePalette('#2d3e57','#e6eaf0')" style="padding:5px 10px;border:1px solid var(--border);background:#fff;border-radius:7px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--ink-mid);">Navy</button>
+          <button type="button" onclick="setProfilePalette('#7a2e2e','#f3e6e6')" style="padding:5px 10px;border:1px solid var(--border);background:#fff;border-radius:7px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--ink-mid);">Maroon</button>
+          <button type="button" onclick="setProfilePalette('#333333','#ececec')" style="padding:5px 10px;border:1px solid var(--border);background:#fff;border-radius:7px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--ink-mid);">Charcoal</button>
+        </div>
+      </div>
       <input type="hidden" id="profile-edit-id"/>
       <div style="display:flex;gap:8px;">
         <button class="submit-btn" id="profile-save-btn" onclick="saveProfile()" style="background:#4a7c59;flex:1;">Add profile</button>
@@ -4280,6 +4297,20 @@ function recalcIssue() {
   return grand;
 }
 
+function setProfilePalette(p, s) {
+  const pe = document.getElementById('profile-primary'); if(pe) pe.value = p;
+  const se = document.getElementById('profile-secondary'); if(se) se.value = s;
+}
+
+function hexToRgb(hex) {
+  if(!hex) return null;
+  hex = String(hex).replace('#','');
+  if(hex.length === 3) hex = hex.split('').map(function(c){ return c + c; }).join('');
+  const n = parseInt(hex, 16);
+  if(isNaN(n)) return null;
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
 function openProfileModal() { renderProfileList(); cancelProfileForm(); const m = document.getElementById('issue-profile-modal'); if(m) m.style.display = 'flex'; }
 function closeProfileModal() { const m = document.getElementById('issue-profile-modal'); if(m) m.style.display = 'none'; }
 
@@ -4304,6 +4335,10 @@ function editProfile(id) {
   document.getElementById('profile-no').value = p.company_no || '';
   document.getElementById('profile-addr').value = p.address || '';
   document.getElementById('profile-phone').value = p.phone || '';
+  document.getElementById('profile-bank').value = p.bank_details || '';
+  document.getElementById('profile-fancy').checked = (p.fancy !== false);
+  document.getElementById('profile-primary').value = p.primary_color || '#4a7c59';
+  document.getElementById('profile-secondary').value = p.secondary_color || '#e8f0e9';
   document.getElementById('profile-edit-id').value = id;
   document.getElementById('profile-form-title').textContent = 'Edit profile';
   document.getElementById('profile-save-btn').textContent = 'Update';
@@ -4311,7 +4346,10 @@ function editProfile(id) {
 }
 
 function cancelProfileForm() {
-  ['profile-name','profile-no','profile-addr','profile-phone','profile-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  ['profile-name','profile-no','profile-addr','profile-phone','profile-bank','profile-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  const fancy = document.getElementById('profile-fancy'); if(fancy) fancy.checked = true;
+  const pc = document.getElementById('profile-primary'); if(pc) pc.value = '#4a7c59';
+  const sc = document.getElementById('profile-secondary'); if(sc) sc.value = '#e8f0e9';
   const t = document.getElementById('profile-form-title'); if(t) t.textContent = 'Add profile';
   const b = document.getElementById('profile-save-btn'); if(b) b.textContent = 'Add profile';
   const c = document.getElementById('profile-cancel-btn'); if(c) c.style.display = 'none';
@@ -4322,13 +4360,17 @@ async function saveProfile() {
   const no = (document.getElementById('profile-no').value || '').trim();
   const addr = (document.getElementById('profile-addr').value || '').trim();
   const phone = (document.getElementById('profile-phone').value || '').trim();
+  const bank = (document.getElementById('profile-bank').value || '').trim();
+  const fancy = document.getElementById('profile-fancy').checked;
+  const primary = document.getElementById('profile-primary').value || '#4a7c59';
+  const secondary = document.getElementById('profile-secondary').value || '#e8f0e9';
   const editId = document.getElementById('profile-edit-id').value;
   if(!name) { showToast('Enter a company name!'); return; }
   let res;
   if(editId) {
-    res = await sb.from('issuer_profiles').update({ name:name, company_no:no, address:addr, phone:phone }).eq('id', editId);
+    res = await sb.from('issuer_profiles').update({ name:name, company_no:no, address:addr, phone:phone, bank_details:bank, fancy:fancy, primary_color:primary, secondary_color:secondary }).eq('id', editId);
   } else {
-    const row = { name:name, company_no:no, address:addr, phone:phone };
+    const row = { name:name, company_no:no, address:addr, phone:phone, bank_details:bank, fancy:fancy, primary_color:primary, secondary_color:secondary };
     if(currentTenantId) row.tenant_id = currentTenantId;
     res = await sb.from('issuer_profiles').insert(row);
   }
@@ -4390,36 +4432,68 @@ async function generateInvoicePDF() {
 async function outputInvoicePDF(d) {
   const jsPDF = window.jspdf.jsPDF;
   const doc = new jsPDF({ unit:'mm', format:'a4' });
-  const pageH = 297, mL = 15, mR = 195;
-  let leftY = 20, rightY = 20;
-  doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(28,26,22);
-  doc.text(d.profile.name || '', mL, leftY); leftY += 7;
-  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(110,110,110);
-  if(d.profile.company_no) { doc.text('Co. No: ' + d.profile.company_no, mL, leftY); leftY += 4.5; }
-  if(d.profile.address) { doc.splitTextToSize(d.profile.address, 95).forEach(function(ln){ doc.text(ln, mL, leftY); leftY += 4.5; }); }
-  if(d.profile.phone) { doc.text('Tel: ' + d.profile.phone, mL, leftY); leftY += 4.5; }
-  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(74,124,89);
-  doc.text(d.type === 'quotation' ? 'QUOTATION' : 'INVOICE', mR, rightY, {align:'right'}); rightY += 8;
-  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(40,40,40);
-  doc.text('No:  ' + d.docNo, mR, rightY, {align:'right'}); rightY += 5;
-  doc.text('Date: ' + d.issueDate, mR, rightY, {align:'right'}); rightY += 5;
-  let y = Math.max(leftY, rightY) + 4;
-  doc.setDrawColor(210,205,195); doc.line(mL, y, mR, y); y += 7;
-  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(110,110,110);
+  const pageW = 210, pageH = 297, mL = 15, mR = 195;
+  const fancy = d.profile.fancy !== false;
+  const primary = hexToRgb(d.profile.primary_color) || [74,124,89];
+  const secondary = hexToRgb(d.profile.secondary_color) || [232,240,233];
+  const ink = [28,26,22], grey = [110,110,110];
+  const docTitle = d.type === 'quotation' ? 'QUOTATION' : 'INVOICE';
+  let y;
+
+  if(fancy) {
+    doc.setFillColor(primary[0],primary[1],primary[2]);
+    doc.rect(0, 0, pageW, 30, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold'); doc.setFontSize(18);
+    doc.text(d.profile.name || '', mL, 14);
+    doc.setFontSize(18);
+    doc.text(docTitle, mR, 14, {align:'right'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+    doc.text('No: ' + d.docNo, mR, 21, {align:'right'});
+    doc.text('Date: ' + d.issueDate, mR, 26, {align:'right'});
+    y = 38;
+    doc.setTextColor(grey[0],grey[1],grey[2]); doc.setFontSize(9);
+    if(d.profile.company_no) { doc.text('Co. No: ' + d.profile.company_no, mL, y); y += 4.4; }
+    if(d.profile.address) { doc.splitTextToSize(d.profile.address, 95).forEach(function(ln){ doc.text(ln, mL, y); y += 4.4; }); }
+    if(d.profile.phone) { doc.text('Tel: ' + d.profile.phone, mL, y); y += 4.4; }
+    y += 4;
+  } else {
+    let leftY = 20, rightY = 20;
+    doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(ink[0],ink[1],ink[2]);
+    doc.text(d.profile.name || '', mL, leftY); leftY += 7;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(grey[0],grey[1],grey[2]);
+    if(d.profile.company_no) { doc.text('Co. No: ' + d.profile.company_no, mL, leftY); leftY += 4.5; }
+    if(d.profile.address) { doc.splitTextToSize(d.profile.address, 95).forEach(function(ln){ doc.text(ln, mL, leftY); leftY += 4.5; }); }
+    if(d.profile.phone) { doc.text('Tel: ' + d.profile.phone, mL, leftY); leftY += 4.5; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(primary[0],primary[1],primary[2]);
+    doc.text(docTitle, mR, rightY, {align:'right'}); rightY += 8;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(40,40,40);
+    doc.text('No:  ' + d.docNo, mR, rightY, {align:'right'}); rightY += 5;
+    doc.text('Date: ' + d.issueDate, mR, rightY, {align:'right'}); rightY += 5;
+    y = Math.max(leftY, rightY) + 4;
+    doc.setDrawColor(210,205,195); doc.line(mL, y, mR, y); y += 7;
+  }
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(grey[0],grey[1],grey[2]);
   doc.text('BILL TO', mL, y); y += 5;
-  doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(28,26,22);
+  doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(ink[0],ink[1],ink[2]);
   doc.text(d.client || '—', mL, y); y += 5;
-  if(d.clientAddr) { doc.setFontSize(9); doc.setTextColor(110,110,110); doc.splitTextToSize(d.clientAddr, 95).forEach(function(ln){ doc.text(ln, mL, y); y += 4.5; }); }
+  if(d.clientAddr) { doc.setFontSize(9); doc.setTextColor(grey[0],grey[1],grey[2]); doc.splitTextToSize(d.clientAddr, 95).forEach(function(ln){ doc.text(ln, mL, y); y += 4.5; }); }
   y += 4;
+
   const cNo = mL, cDesc = mL + 10, cQty = 128, cPrice = 158, cAmt = mR;
-  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(110,110,110);
-  doc.text('#', cNo, y); doc.text('DESCRIPTION', cDesc, y); doc.text('QTY', cQty, y, {align:'right'}); doc.text('PRICE', cPrice, y, {align:'right'}); doc.text('AMOUNT', cAmt, y, {align:'right'}); y += 2;
-  doc.setDrawColor(225,222,215); doc.line(mL, y, mR, y); y += 5;
+  if(fancy) { doc.setFillColor(secondary[0],secondary[1],secondary[2]); doc.rect(mL - 3, y - 4, (mR - mL) + 6, 7, 'F'); }
+  doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.setTextColor(fancy ? ink[0] : grey[0], fancy ? ink[1] : grey[1], fancy ? ink[2] : grey[2]);
+  doc.text('#', cNo, y); doc.text('DESCRIPTION', cDesc, y); doc.text('QTY', cQty, y, {align:'right'}); doc.text('PRICE', cPrice, y, {align:'right'}); doc.text('AMOUNT', cAmt, y, {align:'right'});
+  y += fancy ? 5 : 2;
+  if(!fancy) { doc.setDrawColor(225,222,215); doc.line(mL, y, mR, y); y += 5; }
   doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(40,40,40);
   d.items.forEach(function(it, idx){
     const descLines = doc.splitTextToSize(it.description || '', 88);
     const rowH = Math.max(6, descLines.length * 5);
-    if(y + rowH > pageH - 40) { doc.addPage(); y = 20; }
+    if(y + rowH > pageH - 55) { doc.addPage(); y = 20; }
     doc.text(String(idx + 1), cNo, y);
     descLines.forEach(function(ln, i){ doc.text(ln, cDesc, y + i * 5); });
     doc.text(String(it.qty), cQty, y, {align:'right'});
@@ -4427,15 +4501,47 @@ async function outputInvoicePDF(d) {
     doc.text(it.total.toFixed(2), cAmt, y, {align:'right'});
     y += rowH;
   });
-  doc.setDrawColor(210,205,195); doc.line(mL, y, mR, y); y += 7;
-  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(28,26,22);
-  doc.text('Grand Total', cPrice, y, {align:'right'});
-  doc.setTextColor(74,124,89);
-  doc.text('RM ' + d.grand.toFixed(2), cAmt, y, {align:'right'}); y += 10;
-  if(d.notes) { doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90,90,90); doc.splitTextToSize(d.notes, mR - mL).forEach(function(ln){ if(y > pageH - 20) { doc.addPage(); y = 20; } doc.text(ln, mL, y); y += 4.5; }); }
-  if(y < pageH - 16) y = pageH - 16;
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(150,150,150);
-  doc.text('Generated with Tally', mL, y);
+  y += 2;
+  if(fancy) {
+    const bx = 120, bw = mR - bx, bh = 9;
+    if(y + bh > pageH - 45) { doc.addPage(); y = 20; }
+    doc.setFillColor(primary[0],primary[1],primary[2]);
+    doc.rect(bx, y - 1, bw, bh, 'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('Grand Total', bx + 3, y + 5);
+    doc.text('RM ' + d.grand.toFixed(2), mR - 3, y + 5, {align:'right'});
+    y += bh + 5;
+  } else {
+    doc.setDrawColor(210,205,195); doc.line(mL, y, mR, y); y += 7;
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(ink[0],ink[1],ink[2]);
+    doc.text('Grand Total', cPrice, y, {align:'right'});
+    doc.setTextColor(primary[0],primary[1],primary[2]);
+    doc.text('RM ' + d.grand.toFixed(2), cAmt, y, {align:'right'}); y += 10;
+  }
+
+  if(d.notes) {
+    if(y > pageH - 50) { doc.addPage(); y = 20; }
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90,90,90);
+    doc.splitTextToSize(d.notes, mR - mL).forEach(function(ln){ if(y > pageH - 45) { doc.addPage(); y = 20; } doc.text(ln, mL, y); y += 4.5; });
+    y += 2;
+  }
+
+  if(d.profile.bank_details) {
+    const bankAnchor = pageH - 42;
+    let by = Math.max(y + 4, bankAnchor);
+    if(by > pageH - 22) { doc.addPage(); y = 20; by = pageH - 42; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(grey[0],grey[1],grey[2]);
+    doc.text('PAYMENT DETAILS', mL, by); by += 4.6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(60,60,60);
+    doc.splitTextToSize(d.profile.bank_details, 95).forEach(function(ln){ doc.text(ln, mL, by); by += 4.4; });
+  }
+
+  doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(150,150,150);
+  doc.text('This is a computer-generated document. No signature is required.', pageW / 2, pageH - 12, {align:'center'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(175,175,175);
+  doc.text('Generated with Tally', pageW / 2, pageH - 8, {align:'center'});
+
   const fname = (d.docNo || (d.type === 'quotation' ? 'quotation' : 'invoice')) + '.pdf';
   try {
     const blob = doc.output('blob');
