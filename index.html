@@ -3766,7 +3766,9 @@ function renderIngredients() {
       '<div style="text-align:right;">' +
       '<div style="font-size:13px;font-weight:500;color:#6b4fa0;">RM ' + cpu.toFixed(4).replace(/\.?0+$/, '') + '</div>' +
       '<div style="font-size:10px;color:var(--ink-soft);">per ' + i.pack_unit + '</div>' +
-      '</div></div>';
+      '</div>' +
+      '<i class="ti ti-pencil" onclick="event.stopPropagation();openEditIngredient(\'' + i.id + '\')" style="font-size:15px;color:var(--ink-soft);margin-left:2px;cursor:pointer;flex-shrink:0;padding:4px;"></i>' +
+      '</div>';
   }).join('');
 }
 
@@ -4081,7 +4083,7 @@ function renderProjectsList() {
         '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft);margin-top:3px;"><span>RM ' + roll.billed.toFixed(2) + ' of RM ' + budget.toFixed(2) + '</span><span style="color:' + (over ? '#c0392b' : 'var(--ink-soft)') + ';">' + (over ? ('over by RM ' + (roll.billed - budget).toFixed(2)) : ('RM ' + (budget - roll.billed).toFixed(2) + ' left')) + '</span></div></div>';
     }
     return '<div onclick="openProjectDetail(\'' + p.id + '\')" style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:0.9rem 1rem;margin-bottom:0.7rem;cursor:pointer;">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><strong style="font-size:14px;color:var(--ink);">' + escHtml(p.name || '(untitled)') + '</strong><i class="ti ti-chevron-right" style="color:var(--ink-soft);"></i></div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><strong style="font-size:14px;color:var(--ink);">' + escHtml(p.name || '(untitled)') + '</strong><span style="display:flex;align-items:center;gap:10px;flex-shrink:0;"><i class="ti ti-pencil" onclick="event.stopPropagation();editProject(\'' + p.id + '\')" style="color:var(--ink-soft);cursor:pointer;padding:2px;font-size:15px;"></i><i class="ti ti-chevron-right" style="color:var(--ink-soft);"></i></span></div>' +
       '<div style="display:flex;gap:14px;font-size:12px;margin-top:0.5rem;flex-wrap:wrap;">' +
         '<span style="color:var(--ink-mid);">Billed <strong>RM ' + roll.billed.toFixed(2) + '</strong></span>' +
         '<span style="color:#4a7c59;">Paid RM ' + roll.paid.toFixed(2) + '</span>' +
@@ -5718,7 +5720,7 @@ async function loadProducts() {
       const barW = Math.min(Math.max(margin, 0), 100);
       html += '<div onclick="openEditProduct(\'' + p.id + '\')" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:0.65rem;cursor:pointer;">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
-        '<div style="font-size:14px;font-weight:500;color:var(--ink);">' + p.name + '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;min-width:0;"><span style="font-size:14px;font-weight:500;color:var(--ink);">' + p.name + '</span><i class="ti ti-pencil" onclick="event.stopPropagation();openEditProduct(\'' + p.id + '\')" style="font-size:14px;color:var(--ink-soft);cursor:pointer;padding:2px;flex-shrink:0;"></i></div>' +
         '<div style="text-align:right;">' +
         '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + price.toFixed(2) + '</div>' +
         '<div style="font-size:11px;color:var(--ink-soft);">cost RM ' + cost.toFixed(2) + '</div></div></div>' +
