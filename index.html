@@ -501,14 +501,21 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="menu-text"><strong>We owe</strong><span>Bills you owe to suppliers</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
-      <div class="menu-item" onclick="go('s-projects')">
-        <div class="menu-icon" style="background:#e8f0f4;color:#3f6e8c;"><i class="ti ti-folder"></i></div>
-        <div class="menu-text"><strong>Projects</strong><span>Track spend &amp; budget per project</span></div>
-        <i class="ti ti-chevron-right menu-arrow"></i>
-      </div>
       <div class="menu-item" onclick="go('s-issue')">
         <div class="menu-icon" style="background:#f5ede3;color:#8b5e3c;"><i class="ti ti-file-plus"></i></div>
         <div class="menu-text"><strong>Issue invoice</strong><span>Create an invoice or quotation PDF</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+    </div>
+    </div>
+    <div class="staff-hide" id="home-projects">
+    <div style="padding:0 1.1rem;">
+      <div class="section-lbl">Projects</div>
+    </div>
+    <div class="menu-card" style="margin-bottom:2rem;">
+      <div class="menu-item" onclick="go('s-projects')">
+        <div class="menu-icon" style="background:#e8f0f4;color:#3f6e8c;"><i class="ti ti-folder"></i></div>
+        <div class="menu-text"><strong>Projects</strong><span>Track spend &amp; budget per project</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
     </div>
@@ -535,18 +542,6 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       </div>
     </div>
     </div>
-    <div class="staff-hide" id="home-marketing">
-    <div style="padding:0 1.1rem;">
-      <div class="section-lbl">Marketing</div>
-    </div>
-    <div class="menu-card" style="margin-bottom:2rem;">
-      <div class="menu-item" onclick="go('s-promo')">
-        <div class="menu-icon" style="background:#fdeef5;color:#c2407a;"><i class="ti ti-speakerphone"></i></div>
-        <div class="menu-text"><strong>Promo poster</strong><span>Make a promo image to share</span></div>
-        <i class="ti ti-chevron-right menu-arrow"></i>
-      </div>
-    </div>
-    </div>
     <div class="staff-hide" id="home-tools">
     <div style="padding:0 1.1rem;">
       <div class="section-lbl">Tools</div>
@@ -555,6 +550,18 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="menu-item" onclick="go('s-counters')">
         <div class="menu-icon" style="background:#e3f1ef;color:#2f8f83;"><i class="ti ti-box"></i></div>
         <div class="menu-text"><strong>Inventory</strong><span>Tally stock &amp; track value</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+    </div>
+    </div>
+    <div class="staff-hide" id="home-marketing">
+    <div style="padding:0 1.1rem;">
+      <div class="section-lbl">Marketing</div>
+    </div>
+    <div class="menu-card" style="margin-bottom:2rem;">
+      <div class="menu-item" onclick="go('s-promo')">
+        <div class="menu-icon" style="background:#fdeef5;color:#c2407a;"><i class="ti ti-speakerphone"></i></div>
+        <div class="menu-text"><strong>Promo poster</strong><span>Make a promo image to share</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
     </div>
@@ -2726,7 +2733,7 @@ function applyRoleUI() {
 
   // Viewer (e.g. owner's family) - read-only: stats + Insights only
   if(role === 'viewer') {
-    ['home-daily','home-shift','home-costing','home-summary','home-records','home-marketing','home-tools'].forEach(function(idn){
+    ['home-daily','home-shift','home-costing','home-summary','home-records','home-projects','home-marketing','home-tools'].forEach(function(idn){
       const el = document.getElementById(idn); if(el) el.style.display = 'none';
     });
     const rep = document.getElementById('home-reports'); if(rep) rep.style.display = '';
