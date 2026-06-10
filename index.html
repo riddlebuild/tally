@@ -547,6 +547,18 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       </div>
     </div>
     </div>
+    <div class="staff-hide" id="home-tools">
+    <div style="padding:0 1.1rem;">
+      <div class="section-lbl">Tools</div>
+    </div>
+    <div class="menu-card" style="margin-bottom:2rem;">
+      <div class="menu-item" onclick="go('s-counters')">
+        <div class="menu-icon" style="background:#e3f1ef;color:#2f8f83;"><i class="ti ti-box"></i></div>
+        <div class="menu-text"><strong>Inventory</strong><span>Tally stock &amp; track value</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+    </div>
+    </div>
   </div>
 </div>
 
@@ -1837,6 +1849,36 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
 </div>
 
+<!-- INVENTORY -->
+<div class="screen" id="s-counters">
+  <div class="topbar" style="border-bottom-color:#e3f1ef;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Inventory</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div style="padding:1rem 1.1rem 2rem;">
+      <div style="font-size:12px;color:var(--ink-soft);line-height:1.5;margin-bottom:0.9rem;">Add items you want to track. Tap + / − or type the quantity. Add a cost per unit and Tally shows your stock value.</div>
+      <div id="inv-total"></div>
+      <div id="counters-list"><div class="loading">Loading...</div></div>
+      <div class="card" style="margin-top:1rem;">
+        <div class="card-head" style="color:#2f8f83;"><i class="ti ti-plus" style="font-size:14px"></i> <span id="cnt-form-title">New item</span></div>
+        <div class="form-row"><label class="form-lbl">Item name</label><input class="inp" id="cnt-name" type="text" placeholder="e.g. Flour 1kg"/></div>
+        <div style="display:flex;gap:8px;">
+          <div class="form-row" style="flex:1;"><label class="form-lbl">Quantity <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="cnt-start" type="number" inputmode="numeric" placeholder="0"/></div>
+          <div class="form-row" style="flex:1;"><label class="form-lbl">Cost/unit RM <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="cnt-cost" type="number" inputmode="decimal" placeholder="0.00"/></div>
+        </div>
+        <div class="form-row"><label class="form-lbl">Step <span style="color:var(--ink-soft);font-weight:400;">(opt, default 1)</span></label><input class="inp" id="cnt-step" type="number" inputmode="numeric" placeholder="1"/></div>
+        <input type="hidden" id="cnt-edit-id"/>
+        <div style="display:flex;gap:8px;">
+          <button class="submit-btn" id="cnt-save-btn" onclick="saveCounter()" style="background:#2f8f83;flex:1;">Add item</button>
+          <button id="cnt-cancel-btn" onclick="cancelCounterForm()" style="display:none;padding:0 16px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Cancel</button>
+          <button id="cnt-delete-btn" onclick="deleteCounter()" style="display:none;padding:0 16px;background:none;border:1px solid var(--vermillion-light);border-radius:10px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- PROJECTS -->
 <div class="screen" id="s-projects">
   <div class="topbar" style="border-bottom-color:#e8f0f4;">
@@ -2205,7 +2247,7 @@ function go(id) {
     const role = currentUser.role;
     if((id === 's-dev' || id === 's-add-client' || id === 's-edit-client') && role !== 'developer') { showToast('Restricted'); return; }
     if(role === 'staff') {
-      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-margin-ranking','s-add-product','s-edit-product','s-reserve','s-rankings','s-invoices','s-invoice-sales','s-invoice-report','s-issue','s-promo','s-projects','s-project-detail'];
+      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-margin-ranking','s-add-product','s-edit-product','s-reserve','s-rankings','s-invoices','s-invoice-sales','s-invoice-report','s-issue','s-promo','s-projects','s-project-detail','s-counters'];
       if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
     }
     if(role === 'admin') {
@@ -2266,6 +2308,7 @@ function go(id) {
   if(id === 's-invoice-report') loadInvoiceReport();
   if(id === 's-issue') loadIssueScreen();
   if(id === 's-promo') loadPromoScreen();
+  if(id === 's-counters') loadCountersScreen();
   if(id === 's-projects') loadProjectsScreen();
   if(id === 's-project-detail') loadProjectDetail();
   if(id === 's-add-product') { prodIngredients = []; ['prod-extra-label','prod-extra-cost'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; }); renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); loadOtherCostPresets(); }
@@ -2678,7 +2721,7 @@ function applyRoleUI() {
 
   // Viewer (e.g. owner's family) - read-only: stats + Insights only
   if(role === 'viewer') {
-    ['home-daily','home-shift','home-costing','home-summary','home-records','home-marketing'].forEach(function(idn){
+    ['home-daily','home-shift','home-costing','home-summary','home-records','home-marketing','home-tools'].forEach(function(idn){
       const el = document.getElementById(idn); if(el) el.style.display = 'none';
     });
     const rep = document.getElementById('home-reports'); if(rep) rep.style.display = '';
@@ -5065,6 +5108,188 @@ async function outputInvoicePDF(d) {
   } catch(e) {}
   doc.save(fname);
   showToast('PDF ready');
+}
+
+// ===== COUNTERS (tap to count anything) =====
+let countersCache = [];
+
+async function loadCountersScreen() {
+  cancelCounterForm();
+  const r = await sb.from('counters').select('*');
+  countersCache = r.data || [];
+  countersCache.sort(function(a, b){ return (a.created_at || '').localeCompare(b.created_at || ''); });
+  renderCounters();
+}
+
+function renderCounters() {
+  const el = document.getElementById('counters-list');
+  if(!el) return;
+  if(countersCache.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:1.5rem;">No items yet.<br/><span style="font-size:12px;">Add one below — e.g. "Flour 1kg".</span></div>';
+    recomputeInventoryTotal();
+    return;
+  }
+  el.innerHTML = countersCache.map(function(c) {
+    const step = parseInt(c.step) || 1;
+    const val = parseInt(c.count) || 0;
+    const cost = parseFloat(c.cost) || 0;
+    const lineTxt = cost > 0 ? ('RM ' + fmtMoney(cost) + ' &times; ' + val + ' = RM ' + fmtMoney(cost * val)) : '';
+    return '<div style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:1rem;margin-bottom:0.8rem;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
+        '<strong style="font-size:14px;color:var(--ink);min-width:0;">' + escHtml(c.name || '(untitled)') + '</strong>' +
+        '<i class="ti ti-pencil" onclick="editCounter(\'' + c.id + '\')" style="color:var(--ink-soft);cursor:pointer;padding:2px;flex-shrink:0;"></i>' +
+      '</div>' +
+      '<input type="number" inputmode="numeric" id="cnt-val-' + c.id + '" value="' + val + '" onchange="setCounter(\'' + c.id + '\', this.value)" style="width:100%;text-align:center;font-size:42px;font-weight:700;color:var(--ink);border:none;background:transparent;outline:none;font-family:\'DM Sans\',sans-serif;margin:0.3rem 0;padding:0;" />' +
+      '<div style="display:flex;gap:10px;">' +
+        '<button onclick="adjustCounter(\'' + c.id + '\',-' + step + ')" style="flex:1;padding:14px;font-size:24px;font-weight:600;background:var(--cream-dark);border:none;border-radius:12px;color:var(--ink);cursor:pointer;">&minus;</button>' +
+        '<button onclick="adjustCounter(\'' + c.id + '\',' + step + ')" style="flex:1;padding:14px;font-size:24px;font-weight:600;background:#2f8f83;border:none;border-radius:12px;color:#fff;cursor:pointer;">+</button>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:0.6rem;">' +
+        '<span id="cnt-line-' + c.id + '" style="font-size:12px;color:#2f8f83;font-weight:600;">' + lineTxt + '</span>' +
+        '<span onclick="resetCounter(\'' + c.id + '\')" style="font-size:11px;color:var(--ink-soft);cursor:pointer;text-decoration:underline;flex-shrink:0;">Reset to 0</span>' +
+      '</div>' +
+      (step !== 1 ? '<div style="text-align:center;font-size:10px;color:var(--ink-soft);margin-top:3px;">steps of ' + step + '</div>' : '') +
+    '</div>';
+  }).join('');
+  recomputeInventoryTotal();
+}
+
+function fmtMoney(n) {
+  return (Number(n) || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function recomputeInventoryTotal() {
+  const el = document.getElementById('inv-total');
+  if(!el) return;
+  let total = 0, hasCost = false;
+  countersCache.forEach(function(c) {
+    const cost = parseFloat(c.cost) || 0;
+    const qty = parseInt(c.count) || 0;
+    if(cost > 0) { hasCost = true; total += cost * qty; }
+  });
+  el.innerHTML = hasCost
+    ? '<div style="background:#2f8f83;border-radius:14px;padding:0.9rem 1rem;margin-bottom:0.9rem;color:#fff;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;opacity:0.9;">Total stock value</span><strong style="font-size:20px;">RM ' + fmtMoney(total) + '</strong></div>'
+    : '';
+}
+
+function updateCounterCardValue(id) {
+  const c = countersCache.find(function(x){ return x.id === id; });
+  if(!c) return;
+  const cost = parseFloat(c.cost) || 0;
+  const qty = parseInt(c.count) || 0;
+  const line = document.getElementById('cnt-line-' + id);
+  if(line) line.innerHTML = cost > 0 ? ('RM ' + fmtMoney(cost) + ' &times; ' + qty + ' = RM ' + fmtMoney(cost * qty)) : '';
+  recomputeInventoryTotal();
+}
+
+function adjustCounter(id, delta) {
+  const c = countersCache.find(function(x){ return x.id === id; });
+  if(!c) return;
+  let val = (parseInt(c.count) || 0) + delta;
+  if(val < 0) val = 0;
+  c.count = val;
+  const inp = document.getElementById('cnt-val-' + id);
+  if(inp) inp.value = val;
+  persistCounter(id, val);
+  updateCounterCardValue(id);
+}
+
+function setCounter(id, raw) {
+  const c = countersCache.find(function(x){ return x.id === id; });
+  if(!c) return;
+  let val = parseInt(raw);
+  if(isNaN(val)) val = 0;
+  if(val < 0) val = 0;
+  c.count = val;
+  const inp = document.getElementById('cnt-val-' + id);
+  if(inp) inp.value = val;
+  persistCounter(id, val);
+  updateCounterCardValue(id);
+}
+
+function resetCounter(id) {
+  const c = countersCache.find(function(x){ return x.id === id; });
+  if(!c) return;
+  if(!confirm('Reset "' + (c.name || 'this item') + '" to 0?')) return;
+  c.count = 0;
+  const inp = document.getElementById('cnt-val-' + id);
+  if(inp) inp.value = 0;
+  persistCounter(id, 0);
+  updateCounterCardValue(id);
+}
+
+async function persistCounter(id, val) {
+  const res = await sb.from('counters').update({ count: val }).eq('id', id);
+  if(res.error) showToast('Save failed: ' + res.error.message);
+}
+
+function editCounter(id) {
+  const c = countersCache.find(function(x){ return x.id === id; });
+  if(!c) return;
+  document.getElementById('cnt-name').value = c.name || '';
+  document.getElementById('cnt-start').value = (parseInt(c.count) || 0);
+  document.getElementById('cnt-step').value = (parseInt(c.step) || 1);
+  document.getElementById('cnt-cost').value = (parseFloat(c.cost) > 0 ? c.cost : '');
+  document.getElementById('cnt-edit-id').value = id;
+  document.getElementById('cnt-form-title').textContent = 'Edit item';
+  document.getElementById('cnt-save-btn').textContent = 'Update';
+  document.getElementById('cnt-cancel-btn').style.display = '';
+  document.getElementById('cnt-delete-btn').style.display = '';
+  const sc = document.getElementById('s-counters').querySelector('div[style*="overflow-y"]');
+  if(sc) sc.scrollTop = sc.scrollHeight;
+}
+
+function cancelCounterForm() {
+  ['cnt-name','cnt-start','cnt-step','cnt-cost','cnt-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  const t = document.getElementById('cnt-form-title'); if(t) t.textContent = 'New item';
+  const b = document.getElementById('cnt-save-btn'); if(b) b.textContent = 'Add item';
+  const c = document.getElementById('cnt-cancel-btn'); if(c) c.style.display = 'none';
+  const d = document.getElementById('cnt-delete-btn'); if(d) d.style.display = 'none';
+}
+
+async function saveCounter() {
+  const name = (document.getElementById('cnt-name').value || '').trim();
+  const start = parseInt(document.getElementById('cnt-start').value);
+  const step = parseInt(document.getElementById('cnt-step').value);
+  const cost = parseFloat(document.getElementById('cnt-cost').value);
+  const editId = document.getElementById('cnt-edit-id').value;
+  if(!name) { showToast('Enter an item name!'); return; }
+  const stepVal = (!isNaN(step) && step > 0) ? step : 1;
+  const costVal = (!isNaN(cost) && cost >= 0) ? cost : 0;
+  let res;
+  if(editId) {
+    const upd = { name: name, step: stepVal, cost: costVal };
+    if(!isNaN(start)) upd.count = start;
+    res = await sb.from('counters').update(upd).eq('id', editId);
+  } else {
+    const row = { name: name, count: (!isNaN(start) ? start : 0), step: stepVal, cost: costVal };
+    if(currentTenantId) row.tenant_id = currentTenantId;
+    res = await sb.from('counters').insert(row);
+  }
+  if(res.error) { showToast('Error: ' + res.error.message); return; }
+  const r = await sb.from('counters').select('*');
+  countersCache = r.data || [];
+  countersCache.sort(function(a, b){ return (a.created_at || '').localeCompare(b.created_at || ''); });
+  cancelCounterForm();
+  renderCounters();
+  showToast(editId ? 'Item updated!' : 'Item added!');
+}
+
+async function deleteCounter() {
+  const id = document.getElementById('cnt-edit-id').value;
+  if(!id) return;
+  if(!confirm('Delete this counter?')) return;
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/counters?id=eq.' + id, {
+      method: 'DELETE', headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY), 'Prefer': 'return=representation'}
+    });
+    if(!res.ok) { let m = 'status ' + res.status; try { const j = await res.json(); if(j && (j.message || j.hint)) m = j.message || j.hint; } catch(e) {} showToast('Delete failed: ' + m); return; }
+    const r = await sb.from('counters').select('*');
+    countersCache = r.data || [];
+    cancelCounterForm();
+    renderCounters();
+    showToast('Counter deleted');
+  } catch(e) { showToast('Delete error: ' + (e && e.message ? e.message : 'network')); }
 }
 
 // ===== PROMO POSTER (in-memory image, nothing stored) =====
