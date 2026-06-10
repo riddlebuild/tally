@@ -2005,7 +2005,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 <div id="inv-paid-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(20,18,14,0.55);align-items:center;justify-content:center;padding:1.2rem;">
   <div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:1.2rem;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
-      <strong style="font-size:15px;color:var(--ink);">Mark as paid</strong>
+      <strong style="font-size:15px;color:var(--ink);">Record payment</strong>
       <button type="button" onclick="closePaidModal()" style="background:none;border:none;color:var(--ink-soft);font-size:20px;cursor:pointer;line-height:1;">&times;</button>
     </div>
     <div id="inv-paid-context" style="font-size:12px;color:var(--ink-soft);margin-bottom:0.9rem;line-height:1.5;"></div>
@@ -2013,9 +2013,14 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
     <div class="form-row"><label class="form-lbl">Method</label>
       <select class="inp" id="inv-paid-method"><option value="cash">Cash</option><option value="bank">Bank transfer</option><option value="other">Other</option></select>
     </div>
-    <div class="form-row"><label class="form-lbl" id="inv-paid-amount-label">Amount received (RM)</label><input class="inp" id="inv-paid-amount" type="number" inputmode="decimal" oninput="updatePaidVarianceHint()"/></div>
+    <div class="form-row"><label class="form-lbl" id="inv-paid-amount-label">Amount paid now (RM)</label><input class="inp" id="inv-paid-amount" type="number" inputmode="decimal" oninput="updatePaidVarianceHint()"/></div>
+    <div style="display:flex;gap:6px;margin:-0.3rem 0 0.6rem;">
+      <button type="button" onclick="setPaidQuick('half')" style="flex:1;padding:7px;font-size:11px;border:1px solid var(--border);background:#fff;border-radius:8px;color:var(--ink-mid);cursor:pointer;font-family:'DM Sans',sans-serif;">50% deposit</button>
+      <button type="button" onclick="setPaidQuick('remaining')" style="flex:1;padding:7px;font-size:11px;border:1px solid var(--border);background:#fff;border-radius:8px;color:var(--ink-mid);cursor:pointer;font-family:'DM Sans',sans-serif;">Pay remaining</button>
+    </div>
     <div id="inv-paid-variance" style="font-size:11px;margin-bottom:0.8rem;min-height:14px;"></div>
-    <button class="submit-btn" id="inv-paid-confirm-btn" onclick="confirmMarkPaid()" style="background:#4a7c59;width:100%;">Confirm paid</button>
+    <button class="submit-btn" id="inv-paid-confirm-btn" onclick="confirmMarkPaid()" style="background:#4a7c59;width:100%;">Record payment</button>
+    <div id="inv-paid-clear-wrap" style="text-align:center;margin-top:0.7rem;display:none;"><span onclick="clearInvoicePayments()" style="font-size:11px;color:var(--ink-soft);text-decoration:underline;cursor:pointer;">Clear all payments on this invoice</span></div>
   </div>
 </div>
 
@@ -4035,6 +4040,7 @@ let invoiceTab = 'payable';
 let payingInvoiceId = null;
 let projectsCache = [];
 let pendingProjectId = null;
+let pendingEditInvoiceId = null;
 let pendingEditProjectId = null;
 let currentProjectId = null;
 
@@ -4045,7 +4051,10 @@ async function loadInvoices() {
   populateInvoiceProjectSelect();
   if(pendingProjectId) { const ps = document.getElementById('inv-project'); if(ps) ps.value = pendingProjectId; pendingProjectId = null; }
   renderInvoices();
+  if(pendingEditInvoiceId) { const eid = pendingEditInvoiceId; pendingEditInvoiceId = null; editInvoice(eid); }
 }
+
+function openInvoiceForEdit(id) { pendingEditInvoiceId = id; openInvoices('payable'); }
 
 function invThemeColor() { return invoiceTab === 'receivable' ? '#4a7c59' : '#c0392b'; }
 
@@ -4092,7 +4101,7 @@ function projectRollup(pid) {
     if((i.direction || 'payable') === 'payable' && i.project_id === pid) {
       const amt = parseFloat(i.amount) || 0;
       billed += amt; count++;
-      if(i.paid) { const r = parseFloat(i.amount_received); paid += (isNaN(r) ? amt : r); }
+      paid += Math.max(0, parseFloat(i.amount_received) || 0);
     }
   });
   return { billed: billed, paid: paid, outstanding: Math.max(0, billed - paid), count: count };
@@ -4123,14 +4132,14 @@ function renderProjectsList() {
     if(budget > 0) {
       const pct = Math.min(100, Math.round(roll.billed / budget * 100));
       budgetLine = '<div style="margin-top:0.55rem;"><div style="height:8px;background:var(--cream-dark);border-radius:6px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:' + (over ? '#c0392b' : '#3f6e8c') + ';"></div></div>' +
-        '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft);margin-top:3px;"><span>RM ' + roll.billed.toFixed(2) + ' of RM ' + budget.toFixed(2) + '</span><span style="color:' + (over ? '#c0392b' : 'var(--ink-soft)') + ';">' + (over ? ('over by RM ' + (roll.billed - budget).toFixed(2)) : ('RM ' + (budget - roll.billed).toFixed(2) + ' left')) + '</span></div></div>';
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft);margin-top:3px;"><span>RM ' + fmtMoney(roll.billed) + ' of RM ' + fmtMoney(budget) + '</span><span style="color:' + (over ? '#c0392b' : 'var(--ink-soft)') + ';">' + (over ? ('over by RM ' + fmtMoney(roll.billed - budget)) : ('RM ' + fmtMoney(budget - roll.billed) + ' left')) + '</span></div></div>';
     }
     return '<div onclick="openProjectDetail(\'' + p.id + '\')" style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:0.9rem 1rem;margin-bottom:0.7rem;cursor:pointer;">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><strong style="font-size:14px;color:var(--ink);">' + escHtml(p.name || '(untitled)') + '</strong><span style="display:flex;align-items:center;gap:10px;flex-shrink:0;"><i class="ti ti-pencil" onclick="event.stopPropagation();editProject(\'' + p.id + '\')" style="color:var(--ink-soft);cursor:pointer;padding:2px;font-size:15px;"></i><i class="ti ti-chevron-right" style="color:var(--ink-soft);"></i></span></div>' +
       '<div style="display:flex;gap:14px;font-size:12px;margin-top:0.5rem;flex-wrap:wrap;">' +
-        '<span style="color:var(--ink-mid);">Billed <strong>RM ' + roll.billed.toFixed(2) + '</strong></span>' +
-        '<span style="color:#4a7c59;">Paid RM ' + roll.paid.toFixed(2) + '</span>' +
-        '<span style="color:#c0392b;">Owe RM ' + roll.outstanding.toFixed(2) + '</span>' +
+        '<span style="color:var(--ink-mid);">Billed <strong>RM ' + fmtMoney(roll.billed) + '</strong></span>' +
+        '<span style="color:#4a7c59;">Paid RM ' + fmtMoney(roll.paid) + '</span>' +
+        '<span style="color:#c0392b;">Owe RM ' + fmtMoney(roll.outstanding) + '</span>' +
         '<span style="color:var(--ink-soft);">' + roll.count + ' invoice' + (roll.count === 1 ? '' : 's') + '</span>' +
       '</div>' + budgetLine + '</div>';
   }).join('');
@@ -4160,15 +4169,15 @@ function renderProjectDetail() {
   if(budget > 0) {
     const pct = Math.min(100, Math.round(roll.billed / budget * 100));
     bar = '<div style="height:10px;background:var(--cream-dark);border-radius:6px;overflow:hidden;margin:0.7rem 0 0.3rem;"><div style="height:100%;width:' + pct + '%;background:' + (over ? '#c0392b' : '#3f6e8c') + ';"></div></div>' +
-      '<div style="font-size:12px;color:' + (over ? '#c0392b' : 'var(--ink-soft)') + ';">' + (over ? ('Over budget by RM ' + (roll.billed - budget).toFixed(2)) : ('RM ' + (budget - roll.billed).toFixed(2) + ' of RM ' + budget.toFixed(2) + ' left')) + '</div>';
+      '<div style="font-size:12px;color:' + (over ? '#c0392b' : 'var(--ink-soft)') + ';">' + (over ? ('Over budget by RM ' + fmtMoney(roll.billed - budget)) : ('RM ' + fmtMoney(budget - roll.billed) + ' of RM ' + fmtMoney(budget) + ' left')) + '</div>';
   }
   if(sumEl) sumEl.innerHTML =
     '<div class="card" style="margin-bottom:1rem;">' +
     (p.notes ? '<div style="font-size:12px;color:var(--ink-mid);margin-bottom:0.7rem;">' + escHtml(p.notes) + '</div>' : '') +
     '<div style="display:flex;justify-content:space-between;gap:8px;text-align:center;">' +
-      '<div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--ink);">RM ' + roll.billed.toFixed(2) + '</div><div style="font-size:11px;color:var(--ink-soft);">Billed</div></div>' +
-      '<div style="flex:1;"><div style="font-size:17px;font-weight:600;color:#4a7c59;">RM ' + roll.paid.toFixed(2) + '</div><div style="font-size:11px;color:var(--ink-soft);">Paid</div></div>' +
-      '<div style="flex:1;"><div style="font-size:17px;font-weight:600;color:#c0392b;">RM ' + roll.outstanding.toFixed(2) + '</div><div style="font-size:11px;color:var(--ink-soft);">Still owe</div></div>' +
+      '<div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--ink);">RM ' + fmtMoney(roll.billed) + '</div><div style="font-size:11px;color:var(--ink-soft);">Billed</div></div>' +
+      '<div style="flex:1;"><div style="font-size:17px;font-weight:600;color:#4a7c59;">RM ' + fmtMoney(roll.paid) + '</div><div style="font-size:11px;color:var(--ink-soft);">Paid</div></div>' +
+      '<div style="flex:1;"><div style="font-size:17px;font-weight:600;color:#c0392b;">RM ' + fmtMoney(roll.outstanding) + '</div><div style="font-size:11px;color:var(--ink-soft);">Still owe</div></div>' +
     '</div>' + bar +
     '<div style="display:flex;gap:8px;margin-top:0.9rem;">' +
       '<button onclick="addInvoiceToProject(\'' + p.id + '\')" style="flex:1;padding:10px;background:#3f6e8c;border:none;border-radius:10px;color:#fff;font-size:13px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">+ Add an invoice</button>' +
@@ -4181,13 +4190,19 @@ function renderProjectDetail() {
     } else {
       listEl.innerHTML = invs.map(function(i) {
         const amt = parseFloat(i.amount) || 0;
-        const paidBadge = i.paid
+        const paidSoFar = Math.max(0, parseFloat(i.amount_received) || 0);
+        const owe = Math.max(0, amt - paidSoFar);
+        const fullyPaid = amt > 0 && owe <= 0.005;
+        const partPaid = paidSoFar > 0.005 && !fullyPaid;
+        const badge = fullyPaid
           ? '<span style="font-size:10px;background:#eef3ec;color:#4a7c59;padding:2px 7px;border-radius:20px;">Paid</span>'
-          : '<span style="font-size:10px;background:#fcecea;color:#c0392b;padding:2px 7px;border-radius:20px;">Unpaid</span>';
+          : (partPaid ? '<span style="font-size:10px;background:#fbeede;color:#b07a1e;padding:2px 7px;border-radius:20px;">Part paid</span>' : '<span style="font-size:10px;background:#fcecea;color:#c0392b;padding:2px 7px;border-radius:20px;">Unpaid</span>');
         const sub = (i.invoice_date ? formatDate(i.invoice_date) : '') + ((i.invoice_no && i.party) ? ' · ' + escHtml(i.invoice_no) : '');
-        return '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.7rem 0.9rem;margin-bottom:0.5rem;">' +
-          '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;"><strong style="font-size:13px;color:var(--ink);">' + escHtml(i.party || i.invoice_no || 'Invoice') + '</strong><span style="font-weight:600;font-size:13px;color:var(--ink);">RM ' + amt.toFixed(2) + '</span></div>' +
-          '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:3px;"><span style="font-size:11px;color:var(--ink-soft);">' + sub + '</span>' + paidBadge + '</div>' +
+        const oweLine = partPaid ? '<div style="font-size:11px;color:var(--vermillion);margin-top:3px;">paid RM ' + fmtMoney(paidSoFar) + ' · owe RM ' + fmtMoney(owe) + '</div>' : '';
+        return '<div onclick="openInvoiceForEdit(\'' + i.id + '\')" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.7rem 0.9rem;margin-bottom:0.5rem;cursor:pointer;">' +
+          '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;"><strong style="font-size:13px;color:var(--ink);">' + escHtml(i.party || i.invoice_no || 'Invoice') + '</strong><span style="font-weight:600;font-size:13px;color:var(--ink);">RM ' + fmtMoney(amt) + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:3px;"><span style="font-size:11px;color:var(--ink-soft);">' + sub + '</span>' + badge + '</div>' +
+          oweLine +
         '</div>';
       }).join('');
     }
@@ -4264,41 +4279,52 @@ function renderInvoices() {
   const list = document.getElementById('invoices-list');
   if(!list) return;
   const data = invoicesCache.filter(function(i){ return (i.direction || 'payable') === invoiceTab; });
-  let outstanding = 0, settled = 0, unpaidCount = 0, paidCount = 0;
+  let outstanding = 0, settled = 0, openCount = 0, settledCount = 0;
   data.forEach(function(i){
     const amt = parseFloat(i.amount) || 0;
-    if(i.paid) { settled += amt; paidCount++; } else { outstanding += amt; unpaidCount++; }
+    const paidSoFar = Math.max(0, parseFloat(i.amount_received) || 0);
+    const owe = Math.max(0, amt - paidSoFar);
+    settled += Math.min(paidSoFar, amt);
+    outstanding += owe;
+    if(amt > 0 && owe <= 0.005) settledCount++; else openCount++;
   });
   const setV = function(id, t){ const e = document.getElementById(id); if(e) e.textContent = t; };
-  setV('inv-outstanding', 'RM ' + outstanding.toFixed(2));
-  setV('inv-outstanding-sub', unpaidCount + ' unpaid');
-  setV('inv-paid', 'RM ' + settled.toFixed(2));
-  setV('inv-paid-sub', paidCount + ' paid');
+  setV('inv-outstanding', 'RM ' + fmtMoney(outstanding));
+  setV('inv-outstanding-sub', openCount + ' open');
+  setV('inv-paid', 'RM ' + fmtMoney(settled));
+  setV('inv-paid-sub', settledCount + ' settled');
   if(data.length === 0) {
     list.innerHTML = '<div class="empty-state" style="padding:2rem;">No invoices here yet.<br/><span style="font-size:12px;">' + (invoiceTab === 'receivable' ? 'Add a customer invoice above.' : 'Add a supplier invoice above.') + '</span></div>';
     return;
   }
   data.sort(function(a,b){
-    if(!!a.paid !== !!b.paid) return a.paid ? 1 : -1;
+    const aFull = (parseFloat(a.amount)||0) > 0 && (parseFloat(a.amount)||0) - Math.max(0, parseFloat(a.amount_received)||0) <= 0.005;
+    const bFull = (parseFloat(b.amount)||0) > 0 && (parseFloat(b.amount)||0) - Math.max(0, parseFloat(b.amount_received)||0) <= 0.005;
+    if(aFull !== bFull) return aFull ? 1 : -1;
     const da = a.invoice_date || a.created_at || '', db = b.invoice_date || b.created_at || '';
-    if(a.paid) { return db < da ? -1 : (db > da ? 1 : 0); }
+    if(aFull) { return db < da ? -1 : (db > da ? 1 : 0); }
     return da < db ? -1 : (da > db ? 1 : 0);
   });
   list.innerHTML = data.map(function(i){
     const amt = parseFloat(i.amount) || 0;
-    const paid = !!i.paid;
-    const badge = paid
-      ? '<span style="font-size:10px;background:var(--matcha-light);color:var(--matcha);padding:2px 8px;border-radius:999px;">Paid</span>'
-      : '<span style="font-size:10px;background:var(--vermillion-light);color:var(--vermillion);padding:2px 8px;border-radius:999px;">Unpaid</span>';
+    const paidSoFar = Math.max(0, parseFloat(i.amount_received) || 0);
+    const owe = Math.max(0, amt - paidSoFar);
+    const fullyPaid = amt > 0 && owe <= 0.005;
+    const partPaid = paidSoFar > 0.005 && !fullyPaid;
+    let badge;
+    if(fullyPaid) badge = '<span style="font-size:10px;background:var(--matcha-light);color:var(--matcha);padding:2px 8px;border-radius:999px;">Paid</span>';
+    else if(partPaid) badge = '<span style="font-size:10px;background:#fbeede;color:#b07a1e;padding:2px 8px;border-radius:999px;">Part paid</span>';
+    else badge = '<span style="font-size:10px;background:var(--vermillion-light);color:var(--vermillion);padding:2px 8px;border-radius:999px;">Unpaid</span>';
     const meta = (i.invoice_no ? escHtml(i.invoice_no) : '') + (i.invoice_no && i.invoice_date ? ' · ' : '') + (i.invoice_date || '');
-    let paidInfo = '';
-    if(paid) {
-      const rec = (i.amount_received === null || i.amount_received === undefined) ? amt : parseFloat(i.amount_received);
-      const diff = rec - amt;
-      const methodTxt = i.paid_method === 'bank' ? 'Bank' : (i.paid_method === 'other' ? 'Other' : 'Cash');
+    const methodTxt = i.paid_method === 'bank' ? 'Bank' : (i.paid_method === 'other' ? 'Other' : 'Cash');
+    let payInfo = '';
+    if(fullyPaid) {
+      const diff = paidSoFar - amt;
       let diffTxt = '';
-      if(Math.abs(diff) >= 0.01) diffTxt = ' · <span style="color:' + (diff < 0 ? 'var(--vermillion)' : 'var(--matcha)') + ';">' + (diff < 0 ? 'short RM' + Math.abs(diff).toFixed(2) : 'over RM' + diff.toFixed(2)) + '</span>';
-      paidInfo = '<div style="font-size:11px;color:var(--ink-soft);margin-top:5px;">Received RM ' + rec.toFixed(2) + ' · ' + methodTxt + (i.paid_date ? ' · ' + i.paid_date : '') + diffTxt + '</div>';
+      if(diff >= 0.01) diffTxt = ' · <span style="color:var(--matcha);">over RM' + fmtMoney(diff) + '</span>';
+      payInfo = '<div style="font-size:11px;color:var(--ink-soft);margin-top:5px;">Paid RM ' + fmtMoney(paidSoFar) + ' · ' + methodTxt + (i.paid_date ? ' · ' + i.paid_date : '') + diffTxt + '</div>';
+    } else if(partPaid) {
+      payInfo = '<div style="font-size:11px;color:var(--ink-soft);margin-top:5px;">Paid RM ' + fmtMoney(paidSoFar) + ' · <span style="color:var(--vermillion);">owe RM ' + fmtMoney(owe) + '</span></div>';
     }
     return '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem;margin-bottom:0.6rem;">' +
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;cursor:pointer;" onclick="editInvoice(\'' + i.id + '\')">' +
@@ -4308,16 +4334,16 @@ function renderInvoices() {
           (i.notes ? '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;font-style:italic;">' + escHtml(i.notes) + '</div>' : '') +
         '</div>' +
         '<div style="text-align:right;flex-shrink:0;">' +
-          '<div style="font-size:14px;font-weight:600;color:var(--ink);">RM ' + amt.toFixed(2) + '</div>' +
+          '<div style="font-size:14px;font-weight:600;color:var(--ink);">RM ' + fmtMoney(amt) + '</div>' +
           '<div style="margin-top:3px;">' + badge + '</div>' +
         '</div>' +
       '</div>' +
-      paidInfo +
+      payInfo +
       '<div style="display:flex;gap:8px;margin-top:0.6rem;">' +
         '<button onclick="editInvoice(\'' + i.id + '\')" style="padding:6px 12px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Edit</button>' +
-        (paid
+        (fullyPaid
           ? '<button onclick="markUnpaid(\'' + i.id + '\')" style="flex:1;padding:6px;border:1px solid var(--border);background:#fff;color:var(--ink-mid);border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Mark unpaid</button>'
-          : '<button onclick="openMarkPaid(\'' + i.id + '\')" style="flex:1;padding:6px;border:1px solid ' + invThemeColor() + ';background:' + invThemeColor() + ';color:#fff;border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Mark paid</button>') +
+          : '<button onclick="openMarkPaid(\'' + i.id + '\')" style="flex:1;padding:6px;border:1px solid ' + invThemeColor() + ';background:' + invThemeColor() + ';color:#fff;border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">' + (partPaid ? 'Add payment' : 'Record payment') + '</button>') +
         '<button onclick="deleteInvoice(\'' + i.id + '\')" style="padding:6px 12px;border:1px solid var(--vermillion-light);background:none;color:var(--vermillion);border-radius:8px;font-size:11px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">Delete</button>' +
       '</div>' +
       '</div>';
@@ -4386,14 +4412,38 @@ function openMarkPaid(id) {
   if(!inv) return;
   payingInvoiceId = id;
   const amt = parseFloat(inv.amount) || 0;
+  const alreadyPaid = Math.max(0, parseFloat(inv.amount_received) || 0);
+  const remaining = Math.max(0, amt - alreadyPaid);
   document.getElementById('inv-paid-date').value = getToday();
   document.getElementById('inv-paid-method').value = 'cash';
-  document.getElementById('inv-paid-amount').value = amt;
-  document.getElementById('inv-paid-context').textContent = (inv.party || 'Invoice') + (inv.invoice_no ? ' · ' + inv.invoice_no : '') + ' · invoice RM ' + amt.toFixed(2);
+  document.getElementById('inv-paid-amount').value = remaining;
+  document.getElementById('inv-paid-context').textContent = (inv.party || 'Invoice') + (inv.invoice_no ? ' · ' + inv.invoice_no : '') + ' · invoice RM ' + fmtMoney(amt) + (alreadyPaid > 0.005 ? ' · paid RM ' + fmtMoney(alreadyPaid) + ' · owe RM ' + fmtMoney(remaining) : '');
   updatePaidVarianceHint();
-  const lbl = document.getElementById('inv-paid-amount-label'); if(lbl) lbl.textContent = (invoiceTab === 'payable') ? 'Amount paid (RM)' : 'Amount received (RM)';
+  const lbl = document.getElementById('inv-paid-amount-label'); if(lbl) lbl.textContent = (invoiceTab === 'payable') ? 'Amount paid now (RM)' : 'Amount received now (RM)';
   const cb = document.getElementById('inv-paid-confirm-btn'); if(cb) cb.style.background = invThemeColor();
+  const cw = document.getElementById('inv-paid-clear-wrap'); if(cw) cw.style.display = (alreadyPaid > 0.005) ? 'block' : 'none';
   const m = document.getElementById('inv-paid-modal'); if(m) m.style.display = 'flex';
+}
+
+function setPaidQuick(kind) {
+  const inv = invoicesCache.find(function(x){ return x.id === payingInvoiceId; });
+  if(!inv) return;
+  const amt = parseFloat(inv.amount) || 0;
+  const alreadyPaid = Math.max(0, parseFloat(inv.amount_received) || 0);
+  let v;
+  if(kind === 'half') v = Math.round(amt * 0.5 * 100) / 100;
+  else v = Math.max(0, Math.round((amt - alreadyPaid) * 100) / 100);
+  const el = document.getElementById('inv-paid-amount');
+  if(el) el.value = v;
+  updatePaidVarianceHint();
+}
+
+function clearInvoicePayments() {
+  if(!payingInvoiceId) return;
+  if(!confirm('Clear all recorded payments on this invoice?')) return;
+  const id = payingInvoiceId;
+  closePaidModal();
+  markUnpaid(id);
 }
 
 function closePaidModal() { payingInvoiceId = null; const m = document.getElementById('inv-paid-modal'); if(m) m.style.display = 'none'; }
@@ -4403,25 +4453,31 @@ function updatePaidVarianceHint() {
   const hint = document.getElementById('inv-paid-variance');
   if(!inv || !hint) return;
   const amt = parseFloat(inv.amount) || 0;
-  const rec = parseFloat(document.getElementById('inv-paid-amount').value);
-  if(isNaN(rec)) { hint.textContent = ''; return; }
-  const diff = rec - amt;
-  if(Math.abs(diff) < 0.01) { hint.innerHTML = '<span style="color:var(--matcha);">Matches the invoice exactly.</span>'; }
-  else if(diff < 0) { hint.innerHTML = '<span style="color:var(--vermillion);">Short by RM ' + Math.abs(diff).toFixed(2) + ' vs the invoice.</span>'; }
-  else { hint.innerHTML = '<span style="color:var(--matcha);">Over by RM ' + diff.toFixed(2) + ' vs the invoice.</span>'; }
+  const alreadyPaid = Math.max(0, parseFloat(inv.amount_received) || 0);
+  const entered = parseFloat(document.getElementById('inv-paid-amount').value);
+  if(isNaN(entered)) { hint.textContent = ''; return; }
+  const remaining = amt - (alreadyPaid + entered);
+  if(Math.abs(remaining) < 0.01) { hint.innerHTML = '<span style="color:var(--matcha);">This settles the invoice in full.</span>'; }
+  else if(remaining > 0) { hint.innerHTML = '<span style="color:var(--vermillion);">RM ' + fmtMoney(remaining) + ' will still be owing after this.</span>'; }
+  else { hint.innerHTML = '<span style="color:var(--matcha);">RM ' + fmtMoney(Math.abs(remaining)) + ' more than the invoice total.</span>'; }
 }
 
 async function confirmMarkPaid() {
   if(!payingInvoiceId) return;
+  const inv = invoicesCache.find(function(x){ return x.id === payingInvoiceId; });
+  if(!inv) return;
+  const amt = parseFloat(inv.amount) || 0;
+  const alreadyPaid = Math.max(0, parseFloat(inv.amount_received) || 0);
   const date = document.getElementById('inv-paid-date').value || null;
   const method = document.getElementById('inv-paid-method').value || 'cash';
-  const recRaw = document.getElementById('inv-paid-amount').value;
-  const rec = recRaw === '' ? null : parseFloat(recRaw);
-  if(rec !== null && (isNaN(rec) || rec < 0)) { showToast('Enter a valid amount received!'); return; }
-  const upd = await sb.from('invoices').update({ paid:true, paid_date:date, paid_method:method, amount_received:rec }).eq('id', payingInvoiceId);
+  const entered = parseFloat(document.getElementById('inv-paid-amount').value);
+  if(isNaN(entered) || entered < 0) { showToast('Enter a valid amount!'); return; }
+  const newPaid = Math.round((alreadyPaid + entered) * 100) / 100;
+  const fully = amt > 0 && newPaid >= amt - 0.005;
+  const upd = await sb.from('invoices').update({ paid: fully, paid_date: date, paid_method: method, amount_received: newPaid }).eq('id', payingInvoiceId);
   if(upd.error) { showToast('Error: ' + upd.error.message); return; }
   closePaidModal();
-  showToast('Marked paid');
+  showToast(fully ? 'Invoice settled' : 'Payment recorded');
   loadInvoices();
 }
 
