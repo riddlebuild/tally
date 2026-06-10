@@ -1869,12 +1869,18 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div id="counters-list"><div class="loading">Loading...</div></div>
       <div class="card" style="margin-top:1rem;">
         <div class="card-head" style="color:#2f8f83;"><i class="ti ti-plus" style="font-size:14px"></i> <span id="cnt-form-title">New item</span></div>
-        <div class="form-row"><label class="form-lbl">Item name</label><input class="inp" id="cnt-name" type="text" placeholder="e.g. Flour 1kg"/></div>
+        <div class="form-row"><label class="form-lbl">Item name</label><input class="inp" id="cnt-name" type="text" placeholder="e.g. Flour"/></div>
         <div style="display:flex;gap:8px;">
           <div class="form-row" style="flex:1;"><label class="form-lbl">Quantity <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="cnt-start" type="number" inputmode="numeric" placeholder="0"/></div>
-          <div class="form-row" style="flex:1;"><label class="form-lbl">Cost/unit RM <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="cnt-cost" type="number" inputmode="decimal" placeholder="0.00"/></div>
+          <div class="form-row" style="flex:1;"><label class="form-lbl">Unit <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="cnt-unit" type="text" list="cnt-unit-options" placeholder="kg, L, pcs"/></div>
         </div>
-        <div class="form-row"><label class="form-lbl">Step <span style="color:var(--ink-soft);font-weight:400;">(opt, default 1)</span></label><input class="inp" id="cnt-step" type="number" inputmode="numeric" placeholder="1"/></div>
+        <div style="display:flex;gap:8px;">
+          <div class="form-row" style="flex:1;"><label class="form-lbl">Cost/unit RM <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="cnt-cost" type="number" inputmode="decimal" placeholder="0.00"/></div>
+          <div class="form-row" style="flex:1;"><label class="form-lbl">Step <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="cnt-step" type="number" inputmode="numeric" placeholder="1"/></div>
+        </div>
+        <div class="form-row"><label class="form-lbl">Category <span style="color:var(--ink-soft);font-weight:400;">(opt — groups items)</span></label><input class="inp" id="cnt-category" type="text" list="cnt-cat-options" placeholder="e.g. Dry goods, Packaging"/></div>
+        <datalist id="cnt-unit-options"><option value="pcs"></option><option value="kg"></option><option value="g"></option><option value="L"></option><option value="ml"></option><option value="box"></option><option value="pack"></option><option value="bottle"></option><option value="carton"></option></datalist>
+        <datalist id="cnt-cat-options"></datalist>
         <input type="hidden" id="cnt-edit-id"/>
         <div style="display:flex;gap:8px;">
           <button class="submit-btn" id="cnt-save-btn" onclick="saveCounter()" style="background:#2f8f83;flex:1;">Add item</button>
@@ -5175,6 +5181,8 @@ async function outputInvoicePDF(d) {
 
 // ===== COUNTERS (tap to count anything) =====
 let countersCache = [];
+let invCollapsed = {};
+let invLastGroups = [];
 
 async function loadCountersScreen() {
   cancelCounterForm();
@@ -5184,37 +5192,85 @@ async function loadCountersScreen() {
   renderCounters();
 }
 
+function renderCounterCard(c) {
+  const step = parseInt(c.step) || 1;
+  const val = parseInt(c.count) || 0;
+  const cost = parseFloat(c.cost) || 0;
+  const unit = (c.unit || '').trim();
+  const lineTxt = cost > 0 ? ('RM ' + fmtMoney(cost) + (unit ? ' / ' + escHtml(unit) : '') + ' &times; ' + val + ' = RM ' + fmtMoney(cost * val)) : '';
+  return '<div style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:1rem;margin-bottom:0.6rem;">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
+      '<strong style="font-size:14px;color:var(--ink);min-width:0;">' + escHtml(c.name || '(untitled)') + '</strong>' +
+      '<i class="ti ti-pencil" onclick="editCounter(\'' + c.id + '\')" style="color:var(--ink-soft);cursor:pointer;padding:2px;flex-shrink:0;"></i>' +
+    '</div>' +
+    '<input type="number" inputmode="numeric" id="cnt-val-' + c.id + '" value="' + val + '" onchange="setCounter(\'' + c.id + '\', this.value)" style="width:100%;text-align:center;font-size:42px;font-weight:700;color:var(--ink);border:none;background:transparent;outline:none;font-family:\'DM Sans\',sans-serif;margin:0.3rem 0 0;padding:0;" />' +
+    (unit ? '<div style="text-align:center;font-size:11px;color:var(--ink-soft);margin-bottom:0.4rem;">' + escHtml(unit) + '</div>' : '<div style="height:0.4rem;"></div>') +
+    '<div style="display:flex;gap:10px;">' +
+      '<button onclick="adjustCounter(\'' + c.id + '\',-' + step + ')" style="flex:1;padding:14px;font-size:24px;font-weight:600;background:var(--cream-dark);border:none;border-radius:12px;color:var(--ink);cursor:pointer;">&minus;</button>' +
+      '<button onclick="adjustCounter(\'' + c.id + '\',' + step + ')" style="flex:1;padding:14px;font-size:24px;font-weight:600;background:#2f8f83;border:none;border-radius:12px;color:#fff;cursor:pointer;">+</button>' +
+    '</div>' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:0.6rem;">' +
+      '<span id="cnt-line-' + c.id + '" style="font-size:12px;color:#2f8f83;font-weight:600;">' + lineTxt + '</span>' +
+      '<span onclick="resetCounter(\'' + c.id + '\')" style="font-size:11px;color:var(--ink-soft);cursor:pointer;text-decoration:underline;flex-shrink:0;">Reset to 0</span>' +
+    '</div>' +
+    (step !== 1 ? '<div style="text-align:center;font-size:10px;color:var(--ink-soft);margin-top:3px;">steps of ' + step + '</div>' : '') +
+  '</div>';
+}
+
 function renderCounters() {
   const el = document.getElementById('counters-list');
+  refreshCatOptions();
   if(!el) return;
+  recomputeInventoryTotal();
   if(countersCache.length === 0) {
-    el.innerHTML = '<div class="empty-state" style="padding:1.5rem;">No items yet.<br/><span style="font-size:12px;">Add one below — e.g. "Flour 1kg".</span></div>';
-    recomputeInventoryTotal();
+    el.innerHTML = '<div class="empty-state" style="padding:1.5rem;">No items yet.<br/><span style="font-size:12px;">Add one below — e.g. "Flour".</span></div>';
+    invLastGroups = [];
     return;
   }
-  el.innerHTML = countersCache.map(function(c) {
-    const step = parseInt(c.step) || 1;
-    const val = parseInt(c.count) || 0;
-    const cost = parseFloat(c.cost) || 0;
-    const lineTxt = cost > 0 ? ('RM ' + fmtMoney(cost) + ' &times; ' + val + ' = RM ' + fmtMoney(cost * val)) : '';
-    return '<div style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:1rem;margin-bottom:0.8rem;">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
-        '<strong style="font-size:14px;color:var(--ink);min-width:0;">' + escHtml(c.name || '(untitled)') + '</strong>' +
-        '<i class="ti ti-pencil" onclick="editCounter(\'' + c.id + '\')" style="color:var(--ink-soft);cursor:pointer;padding:2px;flex-shrink:0;"></i>' +
-      '</div>' +
-      '<input type="number" inputmode="numeric" id="cnt-val-' + c.id + '" value="' + val + '" onchange="setCounter(\'' + c.id + '\', this.value)" style="width:100%;text-align:center;font-size:42px;font-weight:700;color:var(--ink);border:none;background:transparent;outline:none;font-family:\'DM Sans\',sans-serif;margin:0.3rem 0;padding:0;" />' +
-      '<div style="display:flex;gap:10px;">' +
-        '<button onclick="adjustCounter(\'' + c.id + '\',-' + step + ')" style="flex:1;padding:14px;font-size:24px;font-weight:600;background:var(--cream-dark);border:none;border-radius:12px;color:var(--ink);cursor:pointer;">&minus;</button>' +
-        '<button onclick="adjustCounter(\'' + c.id + '\',' + step + ')" style="flex:1;padding:14px;font-size:24px;font-weight:600;background:#2f8f83;border:none;border-radius:12px;color:#fff;cursor:pointer;">+</button>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:0.6rem;">' +
-        '<span id="cnt-line-' + c.id + '" style="font-size:12px;color:#2f8f83;font-weight:600;">' + lineTxt + '</span>' +
-        '<span onclick="resetCounter(\'' + c.id + '\')" style="font-size:11px;color:var(--ink-soft);cursor:pointer;text-decoration:underline;flex-shrink:0;">Reset to 0</span>' +
-      '</div>' +
-      (step !== 1 ? '<div style="text-align:center;font-size:10px;color:var(--ink-soft);margin-top:3px;">steps of ' + step + '</div>' : '') +
-    '</div>';
+  const anyCat = countersCache.some(function(c){ return (c.category || '').trim() !== ''; });
+  if(!anyCat) {
+    el.innerHTML = countersCache.map(renderCounterCard).join('');
+    invLastGroups = [];
+    return;
+  }
+  const groups = {};
+  countersCache.forEach(function(c){
+    const cat = (c.category || '').trim() || 'Other';
+    (groups[cat] = groups[cat] || []).push(c);
+  });
+  const names = Object.keys(groups).sort(function(a, b){
+    if(a === 'Other') return 1;
+    if(b === 'Other') return -1;
+    return a.localeCompare(b);
+  });
+  invLastGroups = names;
+  el.innerHTML = names.map(function(cat, idx){
+    const items = groups[cat];
+    let subtotal = 0, hasCost = false;
+    items.forEach(function(c){ const co = parseFloat(c.cost) || 0; if(co > 0){ hasCost = true; subtotal += co * (parseInt(c.count) || 0); } });
+    const collapsed = !!invCollapsed[cat];
+    const header = '<div onclick="toggleInvCategory(' + idx + ')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--cream-dark);border-radius:10px;padding:0.6rem 0.85rem;margin-bottom:0.5rem;cursor:pointer;">' +
+      '<span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink);min-width:0;"><i class="ti ti-chevron-' + (collapsed ? 'right' : 'down') + '" style="font-size:15px;color:var(--ink-soft);flex-shrink:0;"></i><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(cat) + '</span><span style="font-weight:400;color:var(--ink-soft);font-size:11px;flex-shrink:0;">(' + items.length + ')</span></span>' +
+      (hasCost ? '<span style="font-size:12px;color:#2f8f83;font-weight:600;flex-shrink:0;">RM ' + fmtMoney(subtotal) + '</span>' : '') +
+      '</div>';
+    const body = collapsed ? '' : items.map(renderCounterCard).join('');
+    return '<div style="margin-bottom:0.7rem;">' + header + body + '</div>';
   }).join('');
-  recomputeInventoryTotal();
+}
+
+function toggleInvCategory(idx) {
+  const cat = invLastGroups[idx];
+  if(cat === undefined) return;
+  invCollapsed[cat] = !invCollapsed[cat];
+  renderCounters();
+}
+
+function refreshCatOptions() {
+  const dl = document.getElementById('cnt-cat-options');
+  if(!dl) return;
+  const cats = {};
+  countersCache.forEach(function(c){ const v = (c.category || '').trim(); if(v) cats[v] = true; });
+  dl.innerHTML = Object.keys(cats).sort().map(function(c){ return '<option value="' + escHtml(c) + '"></option>'; }).join('');
 }
 
 function fmtMoney(n) {
@@ -5240,8 +5296,9 @@ function updateCounterCardValue(id) {
   if(!c) return;
   const cost = parseFloat(c.cost) || 0;
   const qty = parseInt(c.count) || 0;
+  const unit = (c.unit || '').trim();
   const line = document.getElementById('cnt-line-' + id);
-  if(line) line.innerHTML = cost > 0 ? ('RM ' + fmtMoney(cost) + ' &times; ' + qty + ' = RM ' + fmtMoney(cost * qty)) : '';
+  if(line) line.innerHTML = cost > 0 ? ('RM ' + fmtMoney(cost) + (unit ? ' / ' + escHtml(unit) : '') + ' &times; ' + qty + ' = RM ' + fmtMoney(cost * qty)) : '';
   recomputeInventoryTotal();
 }
 
@@ -5293,6 +5350,8 @@ function editCounter(id) {
   document.getElementById('cnt-start').value = (parseInt(c.count) || 0);
   document.getElementById('cnt-step').value = (parseInt(c.step) || 1);
   document.getElementById('cnt-cost').value = (parseFloat(c.cost) > 0 ? c.cost : '');
+  document.getElementById('cnt-unit').value = c.unit || '';
+  document.getElementById('cnt-category').value = c.category || '';
   document.getElementById('cnt-edit-id').value = id;
   document.getElementById('cnt-form-title').textContent = 'Edit item';
   document.getElementById('cnt-save-btn').textContent = 'Update';
@@ -5303,7 +5362,7 @@ function editCounter(id) {
 }
 
 function cancelCounterForm() {
-  ['cnt-name','cnt-start','cnt-step','cnt-cost','cnt-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  ['cnt-name','cnt-start','cnt-step','cnt-cost','cnt-unit','cnt-category','cnt-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
   const t = document.getElementById('cnt-form-title'); if(t) t.textContent = 'New item';
   const b = document.getElementById('cnt-save-btn'); if(b) b.textContent = 'Add item';
   const c = document.getElementById('cnt-cancel-btn'); if(c) c.style.display = 'none';
@@ -5315,17 +5374,19 @@ async function saveCounter() {
   const start = parseInt(document.getElementById('cnt-start').value);
   const step = parseInt(document.getElementById('cnt-step').value);
   const cost = parseFloat(document.getElementById('cnt-cost').value);
+  const unit = (document.getElementById('cnt-unit').value || '').trim();
+  const category = (document.getElementById('cnt-category').value || '').trim();
   const editId = document.getElementById('cnt-edit-id').value;
   if(!name) { showToast('Enter an item name!'); return; }
   const stepVal = (!isNaN(step) && step > 0) ? step : 1;
   const costVal = (!isNaN(cost) && cost >= 0) ? cost : 0;
   let res;
   if(editId) {
-    const upd = { name: name, step: stepVal, cost: costVal };
+    const upd = { name: name, step: stepVal, cost: costVal, unit: unit, category: category };
     if(!isNaN(start)) upd.count = start;
     res = await sb.from('counters').update(upd).eq('id', editId);
   } else {
-    const row = { name: name, count: (!isNaN(start) ? start : 0), step: stepVal, cost: costVal };
+    const row = { name: name, count: (!isNaN(start) ? start : 0), step: stepVal, cost: costVal, unit: unit, category: category };
     if(currentTenantId) row.tenant_id = currentTenantId;
     res = await sb.from('counters').insert(row);
   }
