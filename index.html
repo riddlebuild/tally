@@ -1872,10 +1872,10 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="form-row"><label class="form-lbl">Item name</label><input class="inp" id="cnt-name" type="text" placeholder="e.g. Flour"/></div>
         <div style="display:flex;gap:8px;">
           <div class="form-row" style="flex:1;"><label class="form-lbl">Quantity <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="cnt-start" type="number" inputmode="numeric" placeholder="0"/></div>
-          <div class="form-row" style="flex:1;"><label class="form-lbl">Unit <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="cnt-unit" type="text" list="cnt-unit-options" placeholder="kg, L, pcs"/></div>
+          <div class="form-row" style="flex:1;"><label class="form-lbl">Unit <span style="color:var(--ink-soft);font-weight:400;">(opt label)</span></label><input class="inp" id="cnt-unit" type="text" list="cnt-unit-options" placeholder="e.g. 20L, bottle"/></div>
         </div>
         <div style="display:flex;gap:8px;">
-          <div class="form-row" style="flex:1;"><label class="form-lbl">Cost/unit RM <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="cnt-cost" type="number" inputmode="decimal" placeholder="0.00"/></div>
+          <div class="form-row" style="flex:1;"><label class="form-lbl">Cost each RM <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="cnt-cost" type="number" inputmode="decimal" placeholder="0.00"/></div>
           <div class="form-row" style="flex:1;"><label class="form-lbl">Step <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="cnt-step" type="number" inputmode="numeric" placeholder="1"/></div>
         </div>
         <div class="form-row"><label class="form-lbl">Category <span style="color:var(--ink-soft);font-weight:400;">(opt — groups items)</span></label><input class="inp" id="cnt-category" type="text" list="cnt-cat-options" placeholder="e.g. Dry goods, Packaging"/></div>
@@ -5197,23 +5197,23 @@ function renderCounterCard(c) {
   const val = parseInt(c.count) || 0;
   const cost = parseFloat(c.cost) || 0;
   const unit = (c.unit || '').trim();
-  const lineTxt = cost > 0 ? ('RM ' + fmtMoney(cost) + (unit ? ' / ' + escHtml(unit) : '') + ' &times; ' + val + ' = RM ' + fmtMoney(cost * val)) : '';
+  const lineTxt = cost > 0 ? ('RM ' + fmtMoney(cost) + ' &times; ' + val + ' = RM ' + fmtMoney(cost * val)) : '';
   return '<div style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:1rem;margin-bottom:0.6rem;">' +
     '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
-      '<strong style="font-size:14px;color:var(--ink);min-width:0;">' + escHtml(c.name || '(untitled)') + '</strong>' +
-      '<i class="ti ti-pencil" onclick="editCounter(\'' + c.id + '\')" style="color:var(--ink-soft);cursor:pointer;padding:2px;flex-shrink:0;"></i>' +
+      '<strong style="font-size:15px;color:var(--ink);min-width:0;">' + escHtml(c.name || '(untitled)') + '</strong>' +
+      '<i class="ti ti-pencil" onclick="editCounter(\'' + c.id + '\')" style="font-size:17px;color:var(--ink-soft);cursor:pointer;padding:2px;flex-shrink:0;"></i>' +
     '</div>' +
-    '<input type="number" inputmode="numeric" id="cnt-val-' + c.id + '" value="' + val + '" onchange="setCounter(\'' + c.id + '\', this.value)" style="width:100%;text-align:center;font-size:42px;font-weight:700;color:var(--ink);border:none;background:transparent;outline:none;font-family:\'DM Sans\',sans-serif;margin:0.3rem 0 0;padding:0;" />' +
-    (unit ? '<div style="text-align:center;font-size:11px;color:var(--ink-soft);margin-bottom:0.4rem;">' + escHtml(unit) + '</div>' : '<div style="height:0.4rem;"></div>') +
+    '<input type="number" inputmode="numeric" id="cnt-val-' + c.id + '" value="' + val + '" onchange="setCounter(\'' + c.id + '\', this.value)" style="width:100%;text-align:center;font-size:34px;font-weight:700;color:var(--ink);border:none;background:transparent;outline:none;font-family:\'DM Sans\',sans-serif;margin:0.4rem 0 0;padding:0;" />' +
+    (unit ? '<div style="text-align:center;font-size:14px;color:var(--ink-mid);margin-bottom:0.5rem;">' + escHtml(unit) + '</div>' : '<div style="height:0.5rem;"></div>') +
     '<div style="display:flex;gap:10px;">' +
-      '<button onclick="adjustCounter(\'' + c.id + '\',-' + step + ')" style="flex:1;padding:14px;font-size:24px;font-weight:600;background:var(--cream-dark);border:none;border-radius:12px;color:var(--ink);cursor:pointer;">&minus;</button>' +
-      '<button onclick="adjustCounter(\'' + c.id + '\',' + step + ')" style="flex:1;padding:14px;font-size:24px;font-weight:600;background:#2f8f83;border:none;border-radius:12px;color:#fff;cursor:pointer;">+</button>' +
+      '<button onclick="adjustCounter(\'' + c.id + '\',-' + step + ')" style="flex:1;padding:13px;font-size:22px;font-weight:600;background:var(--cream-dark);border:none;border-radius:12px;color:var(--ink);cursor:pointer;">&minus;</button>' +
+      '<button onclick="adjustCounter(\'' + c.id + '\',' + step + ')" style="flex:1;padding:13px;font-size:22px;font-weight:600;background:#2f8f83;border:none;border-radius:12px;color:#fff;cursor:pointer;">+</button>' +
     '</div>' +
     '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:0.6rem;">' +
-      '<span id="cnt-line-' + c.id + '" style="font-size:12px;color:#2f8f83;font-weight:600;">' + lineTxt + '</span>' +
-      '<span onclick="resetCounter(\'' + c.id + '\')" style="font-size:11px;color:var(--ink-soft);cursor:pointer;text-decoration:underline;flex-shrink:0;">Reset to 0</span>' +
+      '<span id="cnt-line-' + c.id + '" style="font-size:13px;color:#2f8f83;font-weight:600;">' + lineTxt + '</span>' +
+      '<span onclick="resetCounter(\'' + c.id + '\')" style="font-size:12px;color:var(--ink-soft);cursor:pointer;text-decoration:underline;flex-shrink:0;">Reset to 0</span>' +
     '</div>' +
-    (step !== 1 ? '<div style="text-align:center;font-size:10px;color:var(--ink-soft);margin-top:3px;">steps of ' + step + '</div>' : '') +
+    (step !== 1 ? '<div style="text-align:center;font-size:11px;color:var(--ink-soft);margin-top:3px;">steps of ' + step + '</div>' : '') +
   '</div>';
 }
 
@@ -5250,8 +5250,8 @@ function renderCounters() {
     items.forEach(function(c){ const co = parseFloat(c.cost) || 0; if(co > 0){ hasCost = true; subtotal += co * (parseInt(c.count) || 0); } });
     const collapsed = !!invCollapsed[cat];
     const header = '<div onclick="toggleInvCategory(' + idx + ')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--cream-dark);border-radius:10px;padding:0.6rem 0.85rem;margin-bottom:0.5rem;cursor:pointer;">' +
-      '<span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink);min-width:0;"><i class="ti ti-chevron-' + (collapsed ? 'right' : 'down') + '" style="font-size:15px;color:var(--ink-soft);flex-shrink:0;"></i><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(cat) + '</span><span style="font-weight:400;color:var(--ink-soft);font-size:11px;flex-shrink:0;">(' + items.length + ')</span></span>' +
-      (hasCost ? '<span style="font-size:12px;color:#2f8f83;font-weight:600;flex-shrink:0;">RM ' + fmtMoney(subtotal) + '</span>' : '') +
+      '<span style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--ink);min-width:0;"><i class="ti ti-chevron-' + (collapsed ? 'right' : 'down') + '" style="font-size:16px;color:var(--ink-soft);flex-shrink:0;"></i><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(cat) + '</span><span style="font-weight:400;color:var(--ink-soft);font-size:12px;flex-shrink:0;">(' + items.length + ')</span></span>' +
+      (hasCost ? '<span style="font-size:13px;color:#2f8f83;font-weight:600;flex-shrink:0;">RM ' + fmtMoney(subtotal) + '</span>' : '') +
       '</div>';
     const body = collapsed ? '' : items.map(renderCounterCard).join('');
     return '<div style="margin-bottom:0.7rem;">' + header + body + '</div>';
@@ -5296,9 +5296,8 @@ function updateCounterCardValue(id) {
   if(!c) return;
   const cost = parseFloat(c.cost) || 0;
   const qty = parseInt(c.count) || 0;
-  const unit = (c.unit || '').trim();
   const line = document.getElementById('cnt-line-' + id);
-  if(line) line.innerHTML = cost > 0 ? ('RM ' + fmtMoney(cost) + (unit ? ' / ' + escHtml(unit) : '') + ' &times; ' + qty + ' = RM ' + fmtMoney(cost * qty)) : '';
+  if(line) line.innerHTML = cost > 0 ? ('RM ' + fmtMoney(cost) + ' &times; ' + qty + ' = RM ' + fmtMoney(cost * qty)) : '';
   recomputeInventoryTotal();
 }
 
