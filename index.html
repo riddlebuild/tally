@@ -5197,23 +5197,26 @@ function renderCounterCard(c) {
   const val = parseInt(c.count) || 0;
   const cost = parseFloat(c.cost) || 0;
   const unit = (c.unit || '').trim();
-  const lineTxt = cost > 0 ? ('RM ' + fmtMoney(cost) + ' &times; ' + val + ' = RM ' + fmtMoney(cost * val)) : '';
-  return '<div style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:1rem;margin-bottom:0.6rem;">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
-      '<strong style="font-size:15px;color:var(--ink);min-width:0;">' + escHtml(c.name || '(untitled)') + '</strong>' +
-      '<i class="ti ti-pencil" onclick="editCounter(\'' + c.id + '\')" style="font-size:17px;color:var(--ink-soft);cursor:pointer;padding:2px;flex-shrink:0;"></i>' +
+  const info = [];
+  if(unit) info.push(escHtml(unit));
+  if(cost > 0) info.push('RM ' + fmtMoney(cost) + ' &times; ' + val + ' = RM ' + fmtMoney(cost * val));
+  if(step !== 1) info.push('&plusmn;' + step);
+  return '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.6rem 0.75rem;margin-bottom:0.45rem;">' +
+    '<div style="display:flex;align-items:center;gap:10px;">' +
+      '<div style="flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(c.name || '(untitled)') + '</div>' +
+      '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">' +
+        '<button onclick="adjustCounter(\'' + c.id + '\',-' + step + ')" style="width:30px;height:30px;border-radius:8px;background:var(--cream-dark);border:none;font-size:18px;line-height:1;color:var(--ink);cursor:pointer;">&minus;</button>' +
+        '<input type="number" inputmode="numeric" id="cnt-val-' + c.id + '" value="' + val + '" onchange="setCounter(\'' + c.id + '\', this.value)" style="width:44px;text-align:center;font-size:19px;font-weight:700;color:var(--ink);border:none;background:transparent;outline:none;font-family:\'DM Sans\',sans-serif;padding:0;" />' +
+        '<button onclick="adjustCounter(\'' + c.id + '\',' + step + ')" style="width:30px;height:30px;border-radius:8px;background:#2f8f83;border:none;font-size:18px;line-height:1;color:#fff;cursor:pointer;">+</button>' +
+      '</div>' +
     '</div>' +
-    '<input type="number" inputmode="numeric" id="cnt-val-' + c.id + '" value="' + val + '" onchange="setCounter(\'' + c.id + '\', this.value)" style="width:100%;text-align:center;font-size:34px;font-weight:700;color:var(--ink);border:none;background:transparent;outline:none;font-family:\'DM Sans\',sans-serif;margin:0.4rem 0 0;padding:0;" />' +
-    (unit ? '<div style="text-align:center;font-size:14px;color:var(--ink-mid);margin-bottom:0.5rem;">' + escHtml(unit) + '</div>' : '<div style="height:0.5rem;"></div>') +
-    '<div style="display:flex;gap:10px;">' +
-      '<button onclick="adjustCounter(\'' + c.id + '\',-' + step + ')" style="flex:1;padding:13px;font-size:22px;font-weight:600;background:var(--cream-dark);border:none;border-radius:12px;color:var(--ink);cursor:pointer;">&minus;</button>' +
-      '<button onclick="adjustCounter(\'' + c.id + '\',' + step + ')" style="flex:1;padding:13px;font-size:22px;font-weight:600;background:#2f8f83;border:none;border-radius:12px;color:#fff;cursor:pointer;">+</button>' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:5px;">' +
+      '<span id="cnt-line-' + c.id + '" style="font-size:11.5px;color:var(--ink-soft);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + info.join(' &middot; ') + '</span>' +
+      '<span style="display:flex;align-items:center;gap:12px;flex-shrink:0;">' +
+        '<i class="ti ti-pencil" onclick="editCounter(\'' + c.id + '\')" style="font-size:15px;color:var(--ink-soft);cursor:pointer;"></i>' +
+        '<span onclick="resetCounter(\'' + c.id + '\')" style="font-size:11px;color:var(--ink-soft);text-decoration:underline;cursor:pointer;">Reset</span>' +
+      '</span>' +
     '</div>' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:0.6rem;">' +
-      '<span id="cnt-line-' + c.id + '" style="font-size:13px;color:#2f8f83;font-weight:600;">' + lineTxt + '</span>' +
-      '<span onclick="resetCounter(\'' + c.id + '\')" style="font-size:12px;color:var(--ink-soft);cursor:pointer;text-decoration:underline;flex-shrink:0;">Reset to 0</span>' +
-    '</div>' +
-    (step !== 1 ? '<div style="text-align:center;font-size:11px;color:var(--ink-soft);margin-top:3px;">steps of ' + step + '</div>' : '') +
   '</div>';
 }
 
@@ -5287,7 +5290,7 @@ function recomputeInventoryTotal() {
     if(cost > 0) { hasCost = true; total += cost * qty; }
   });
   el.innerHTML = hasCost
-    ? '<div style="background:#2f8f83;border-radius:14px;padding:0.9rem 1rem;margin-bottom:0.9rem;color:#fff;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;opacity:0.9;">Total stock value</span><strong style="font-size:20px;">RM ' + fmtMoney(total) + '</strong></div>'
+    ? '<div style="background:#e3f1ef;border:1px solid #cfe6e2;border-radius:12px;padding:0.7rem 0.9rem;margin-bottom:0.8rem;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:12px;color:#2f8f83;font-weight:500;">Total stock value</span><strong style="font-size:18px;color:#2f8f83;">RM ' + fmtMoney(total) + '</strong></div>'
     : '';
 }
 
@@ -5296,8 +5299,14 @@ function updateCounterCardValue(id) {
   if(!c) return;
   const cost = parseFloat(c.cost) || 0;
   const qty = parseInt(c.count) || 0;
+  const unit = (c.unit || '').trim();
+  const step = parseInt(c.step) || 1;
+  const info = [];
+  if(unit) info.push(escHtml(unit));
+  if(cost > 0) info.push('RM ' + fmtMoney(cost) + ' &times; ' + qty + ' = RM ' + fmtMoney(cost * qty));
+  if(step !== 1) info.push('&plusmn;' + step);
   const line = document.getElementById('cnt-line-' + id);
-  if(line) line.innerHTML = cost > 0 ? ('RM ' + fmtMoney(cost) + ' &times; ' + qty + ' = RM ' + fmtMoney(cost * qty)) : '';
+  if(line) line.innerHTML = info.join(' &middot; ');
   recomputeInventoryTotal();
 }
 
