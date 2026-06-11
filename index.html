@@ -6470,7 +6470,7 @@ async function changeMyPin() {
   if(up.error) { show('Error: ' + up.error.message); return; }
   ['cp-current','cp-new','cp-confirm'].forEach(function(id){ document.getElementById(id).value=''; });
   showToast(cpMode === 'setup' ? 'PIN set! Sign in with your name + PIN next time.' : 'PIN updated!');
-  go('s-home');
+  setTimeout(function(){ go('s-home'); }, 800);
 }
 
 function escHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
