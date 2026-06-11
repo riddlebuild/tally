@@ -6425,6 +6425,17 @@ async function prepChangePin() {
   }
 }
 
+// --- Client-side PIN hashing (MUST match staff-login edge fn: PBKDF2-SHA256, 100k iters, 16-byte hex salt, 32-byte hex out) ---
+function _pinHexToBytes(h){ const a = new Uint8Array(h.length/2); for(let i=0;i<a.length;i++) a[i] = parseInt(h.substr(i*2,2),16); return a; }
+function _pinBytesToHex(b){ return Array.from(b).map(function(x){ return x.toString(16).padStart(2,'0'); }).join(''); }
+function pinRandomSaltHex(){ return _pinBytesToHex(crypto.getRandomValues(new Uint8Array(16))); }
+async function hashPinClient(pin, saltHex){
+  const enc = new TextEncoder();
+  const km = await crypto.subtle.importKey('raw', enc.encode(pin), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name:'PBKDF2', salt:_pinHexToBytes(saltHex), iterations:100000, hash:'SHA-256' }, km, 256);
+  return _pinBytesToHex(new Uint8Array(bits));
+}
+
 async function changeMyPin() {
   const cur = (document.getElementById('cp-current').value || '').trim();
   const nw = (document.getElementById('cp-new').value || '').trim();
@@ -6439,11 +6450,22 @@ async function changeMyPin() {
   const label = btn.textContent;
   btn.disabled = true; btn.textContent = 'Saving...';
   if(cpMode === 'change') {
-    const r = await sb.from('staff').select('pin').eq('id', cpStaffId);
+    const r = await sb.from('staff').select('pin,pin_hash,pin_salt').eq('id', cpStaffId);
     if(r.error || !r.data || r.data.length === 0) { btn.disabled=false; btn.textContent=label; show('Could not verify your account.'); return; }
-    if(String(r.data[0].pin) !== String(cur)) { btn.disabled=false; btn.textContent=label; show('Current PIN is incorrect.'); return; }
+    const me = r.data[0];
+    let curOk = false;
+    if(me.pin_hash && me.pin_salt) {
+      try { curOk = (await hashPinClient(String(cur), me.pin_salt)) === me.pin_hash; } catch(e) { curOk = false; }
+    } else if(me.pin !== null && me.pin !== undefined) {
+      curOk = String(me.pin) === String(cur);
+    }
+    if(!curOk) { btn.disabled=false; btn.textContent=label; show('Current PIN is incorrect.'); return; }
   }
-  const up = await sb.from('staff').update({ pin: nw }).eq('id', cpStaffId);
+  const newSalt = pinRandomSaltHex();
+  let newHash;
+  try { newHash = await hashPinClient(String(nw), newSalt); }
+  catch(e) { btn.disabled=false; btn.textContent=label; show('Could not secure your PIN. Please try again.'); return; }
+  const up = await sb.from('staff').update({ pin: null, pin_hash: newHash, pin_salt: newSalt }).eq('id', cpStaffId);
   btn.disabled=false; btn.textContent=label;
   if(up.error) { show('Error: ' + up.error.message); return; }
   ['cp-current','cp-new','cp-confirm'].forEach(function(id){ document.getElementById(id).value=''; });
@@ -6971,7 +6993,11 @@ async function addStaff() {
   if(pin.length !== 6 || isNaN(pin)) { showToast('PIN must be exactly 6 digits!'); return; }
   const btn = document.getElementById('add-staff-btn');
   btn.disabled = true; btn.textContent = 'Adding...';
-  const result = await sb.from('staff').insert({name:name,pin:pin,role:role,outlet_id:outletId}).select();
+  const _salt = pinRandomSaltHex();
+  let _hash;
+  try { _hash = await hashPinClient(String(pin), _salt); }
+  catch(e) { btn.disabled = false; btn.textContent = 'Add staff member'; showToast('Could not secure the PIN. Try again.'); return; }
+  const result = await sb.from('staff').insert({name:name,pin:null,pin_hash:_hash,pin_salt:_salt,role:role,outlet_id:outletId}).select();
   btn.disabled = false; btn.textContent = 'Add staff member';
   if(result.error) { showToast('Error: ' + result.error.message); return; }
   ['new-staff-name','new-staff-pin'].forEach(function(id){ document.getElementById(id).value=''; });
@@ -7006,7 +7032,11 @@ async function saveStaff() {
   const btn = document.getElementById('edit-staff-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
   const updateData = {name:name, role:role, outlet_id:outletId};
-  if(pin) updateData.pin = pin;
+  if(pin) {
+    const _salt = pinRandomSaltHex();
+    try { updateData.pin_hash = await hashPinClient(String(pin), _salt); updateData.pin_salt = _salt; updateData.pin = null; }
+    catch(e) { btn.disabled = false; btn.textContent = 'Save changes'; showToast('Could not secure the PIN. Try again.'); return; }
+  }
   const result = await sb.from('staff').update(updateData).eq('id', id);
   btn.disabled = false; btn.textContent = 'Save changes';
   if(result.error) { showToast('Error: ' + result.error.message); return; }
