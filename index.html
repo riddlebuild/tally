@@ -4397,6 +4397,7 @@ function editInvoice(id) {
   if(!inv) return;
   invoiceTab = inv.direction || 'payable';
   applyInvoiceTabUI();
+  const _t = document.getElementById('inv-screen-title'); if(_t) _t.textContent = (invoiceTab === 'payable') ? 'We owe' : 'Tally Invoices';
   renderInvoices();
   document.getElementById('inv-no').value = inv.invoice_no || '';
   document.getElementById('inv-party').value = inv.party || '';
@@ -4542,7 +4543,7 @@ async function loadInvoiceSales() {
     const day = i.paid_date || i.invoice_date || (i.created_at ? i.created_at.split('T')[0] : '');
     if(!byDay[day]) byDay[day] = { total:0, items:[] };
     byDay[day].total += rec;
-    byDay[day].items.push({ party:i.party, rec:rec, method:m, notes:i.notes });
+    byDay[day].items.push({ id:i.id, party:i.party, rec:rec, method:m, notes:i.notes });
   });
   const setV = function(id, t){ const e = document.getElementById(id); if(e) e.textContent = t; };
   setV('invsale-received', 'RM ' + received.toFixed(2));
@@ -4569,9 +4570,9 @@ async function loadInvoiceSales() {
         const dateLabel = day ? formatDate(new Date(day + 'T00:00:00')) : 'No date';
         const items = d.items.map(function(it){
           const methodTxt = it.method === 'bank' ? 'Bank' : (it.method === 'other' ? 'Other' : 'Cash');
-          return '<div style="display:flex;justify-content:space-between;gap:8px;padding:0.45rem 0;border-top:1px solid var(--cream-dark);">' +
+          return '<div onclick="openInvoiceForEdit(\'' + it.id + '\')" style="display:flex;justify-content:space-between;gap:8px;padding:0.45rem 0;border-top:1px solid var(--cream-dark);cursor:pointer;">' +
             '<div style="min-width:0;"><div style="font-size:13px;color:var(--ink);">' + escHtml(it.party || '(no name)') + '</div>' + (it.notes ? '<div style="font-size:11px;color:var(--ink-soft);font-style:italic;">' + escHtml(it.notes) + '</div>' : '') + '</div>' +
-            '<div style="text-align:right;flex-shrink:0;"><div style="font-size:13px;font-weight:600;color:var(--ink);">RM ' + it.rec.toFixed(2) + '</div><div style="font-size:10px;color:var(--ink-soft);">' + methodTxt + '</div></div>' +
+            '<div style="text-align:right;flex-shrink:0;display:flex;align-items:center;gap:6px;"><div><div style="font-size:13px;font-weight:600;color:var(--ink);">RM ' + it.rec.toFixed(2) + '</div><div style="font-size:10px;color:var(--ink-soft);">' + methodTxt + '</div></div><i class="ti ti-chevron-right" style="font-size:14px;color:var(--ink-soft);"></i></div>' +
             '</div>';
         }).join('');
         return '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.7rem 0.9rem;margin-bottom:0.6rem;">' +
