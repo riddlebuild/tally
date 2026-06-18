@@ -3708,16 +3708,15 @@ async function loadCashCountHistory() {
     const varColor = tally ? 'var(--matcha)' : 'var(--vermillion)';
     const varText = tally ? 'Balanced' : variance < 0 ? '−RM '+Math.abs(variance).toFixed(2) : '+RM '+variance.toFixed(2);
     return '<div style="display:flex;align-items:center;gap:8px;padding:0.65rem 0;border-bottom:1px solid var(--border);">' +
-      '<div style="flex:1;">' +
+      '<div style="flex:1;min-width:0;">' +
       '<div style="font-size:12px;font-weight:500;color:' + (isToday ? '#2d6bc4' : 'var(--ink-mid)') + ';">' + dateLabel + ' · ' + timeLabel + (c.counted_by ? ' · <span style="font-weight:400;color:var(--ink-soft);">' + c.counted_by + '</span>' : '') + '</div>' +
       (c.notes ? '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">' + c.notes + '</div>' : '') +
       '</div>' +
-      '<div style="display:flex;align-items:center;gap:10px;">' +
-      tallyStamp(tally, true) +
-      '<div style="text-align:right;">' +
+      '<div style="width:88px;display:flex;justify-content:center;flex-shrink:0;">' + tallyStamp(tally, true) + '</div>' +
+      '<div style="width:92px;text-align:right;flex-shrink:0;">' +
       '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + parseFloat(c.cash_actual).toFixed(2) + '</div>' +
       '<div style="font-size:10px;color:' + varColor + ';">' + varText + '</div>' +
-      '</div></div></div>';
+      '</div></div>';
   }).join('');
   countEl.textContent = data.length + ' count' + (data.length !== 1 ? 's' : '');
 }
