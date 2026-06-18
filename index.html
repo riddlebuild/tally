@@ -1052,6 +1052,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
         <div class="var-box" id="cc-var-box"><span id="cc-var-txt"></span></div>
         <div id="cc-float-note" style="display:none;font-size:12px;color:#2d6bc4;margin-top:0.6rem;"><i class="ti ti-wallet" style="font-size:12px"></i> <span id="cc-float-txt"></span></div>
+        <div id="cc-exp-note" style="display:none;font-size:12px;color:var(--amber);margin-top:0.4rem;"><i class="ti ti-receipt" style="font-size:12px"></i> <span id="cc-exp-txt"></span></div>
         <div class="form-row" style="margin-top:0.9rem;">
           <label class="form-lbl">Counted by</label>
           <input class="inp" id="cc-by" type="text" placeholder="Staff name"/>
@@ -2315,7 +2316,7 @@ function go(id) {
   }
   if(id === 's-add-staff') populateOutletSelects();
   if(id === 's-cashcount') {
-    loadCashCountHistory(); showCashCountFloat();
+    loadCashCountHistory(); showCashCountFloat(); loadCashCountExpenses();
     if(currentUser) { const el = document.getElementById('cc-by'); if(el && !el.value) el.value = currentUser.name; }
   }
   if(id === 's-ingredients') loadIngredients();
@@ -3355,8 +3356,10 @@ async function loadExpenses() {
     const canEdit = canEditEntries();
     const editBtn = function(id){ return canEdit ? '<i class="ti ti-pencil" onclick="openEditExpense(\'' + id + '\')" style="font-size:14px;color:var(--ink-soft);margin-left:8px;cursor:pointer;flex-shrink:0;"></i>' : ''; };
     list.innerHTML = data.map(function(e){
+      const t = e.created_at ? new Date(e.created_at).toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true}) : '';
+      const timeBit = t ? ' · <i class="ti ti-clock" style="font-size:10px"></i> ' + t : '';
       return '<div class="exp-row"><span class="exp-cat ' + (catClass[e.category]||'cat-other') + '">' + e.category + '</span>' +
-        '<span class="exp-name">' + e.item_name + '<br/>' + (e.bought_by ? '<span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> ' + e.bought_by + '</span>' : '<span style="color:var(--border);font-size:11px;">No name logged</span>') + '</span>' +
+        '<span class="exp-name">' + e.item_name + '<br/><span style="color:var(--ink-soft);font-size:11px;">' + (e.bought_by ? '<i class="ti ti-user" style="font-size:10px"></i> ' + e.bought_by : '<span style="color:var(--border);">No name</span>') + timeBit + '</span></span>' +
         '<span class="exp-amt">RM ' + parseFloat(e.amount).toFixed(2) + '</span>' + editBtn(e.id) + '</div>';
     }).join('');
     const total = data.reduce(function(a,b){ return a + parseFloat(b.amount); }, 0);
@@ -3384,8 +3387,10 @@ async function loadExpenses() {
         '<span style="font-size:11px;font-weight:500;color:' + (isToday ? 'var(--matcha)' : 'var(--ink-mid)') + ';">' + label + '</span>' +
         '<span style="font-size:11px;color:var(--ink-soft);">RM ' + dayTotal.toFixed(2) + '</span></div>' +
         items.map(function(e){
+          const t = e.created_at ? new Date(e.created_at).toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true}) : '';
+          const metaBits = (e.bought_by ? '<i class="ti ti-user" style="font-size:10px"></i> '+e.bought_by : '') + (e.bought_by && t ? ' · ' : '') + (t ? '<i class="ti ti-clock" style="font-size:10px"></i> '+t : '');
           return '<div class="exp-row" style="padding:4px 0;"><span class="exp-cat ' + (catClass[e.category]||'cat-other') + '">' + e.category + '</span>' +
-            '<span class="exp-name">' + e.item_name + (e.bought_by ? '<br/><span style="color:var(--ink-soft);font-size:11px;"><i class="ti ti-user" style="font-size:10px"></i> '+e.bought_by+'</span>' : '') + '</span>' +
+            '<span class="exp-name">' + e.item_name + (metaBits ? '<br/><span style="color:var(--ink-soft);font-size:11px;">'+metaBits+'</span>' : '') + '</span>' +
             '<span class="exp-amt">RM ' + parseFloat(e.amount).toFixed(2) + '</span>' + editBtnH(e.id) + '</div>';
         }).join('') + '</div>';
     }).join('');
@@ -3584,6 +3589,30 @@ function cancelWastageEdit() {
 }
 
 // CASH COUNT
+function tallyStamp(isTally, small){
+  const bd = isTally ? '#1a7a4a' : '#c0392b';
+  const bg = isTally ? '#e8f0e9' : '#fcecea';
+  const label = isTally ? 'TALLY' : 'NOT TALLY';
+  const sz = small ? 'font-size:9px;padding:1px 5px;letter-spacing:0.5px;border-width:1.5px;' : 'font-size:13px;padding:3px 10px;letter-spacing:2px;border-width:2px;';
+  return '<span style="display:inline-block;border-style:solid;border-color:' + bd + ';color:' + bd + ';background:' + bg + ';font-weight:800;border-radius:6px;transform:rotate(-3deg);' + sz + '">' + label + '</span>';
+}
+
+let ccExpensesToday = 0;
+async function loadCashCountExpenses() {
+  ccExpensesToday = 0;
+  const note = document.getElementById('cc-exp-note');
+  const txt = document.getElementById('cc-exp-txt');
+  if(currentOutlet && currentOutlet.id !== 'all') {
+    const r = await sb.from('expenses').select('amount').eq('outlet_id', currentOutlet.id).eq('date', getToday());
+    if(r.data) ccExpensesToday = r.data.reduce(function(a,e){ return a + (parseFloat(e.amount)||0); }, 0);
+  }
+  if(note && txt) {
+    if(ccExpensesToday > 0) { txt.textContent = "Today's expenses RM " + ccExpensesToday.toFixed(2) + ' (paid from the till) are already accounted for.'; note.style.display = 'block'; }
+    else { note.style.display = 'none'; }
+  }
+  calcCashVariance();
+}
+
 function calcCashVariance() {
   const actual = parseFloat(document.getElementById('cc-actual').value) || 0;
   const system = parseFloat(document.getElementById('cc-system').value) || 0;
@@ -3592,17 +3621,18 @@ function calcCashVariance() {
   const txt = document.getElementById('cc-var-txt');
   if(actual === 0 && system === 0) { box.style.display='none'; return; }
   box.style.display = 'block';
-  const diff = (actual - float) - system;
+  const diff = (actual - float + ccExpensesToday) - system;
   const floatNote = float > 0 ? ' (after RM ' + float.toFixed(2) + ' float)' : '';
+  const expNote = ccExpensesToday > 0 ? ' (incl. RM ' + ccExpensesToday.toFixed(2) + ' expenses)' : '';
   if(Math.abs(diff) < 0.01) {
     box.className = 'var-box var-ok';
-    txt.textContent = 'All good — cash matches system exactly' + floatNote + '.';
+    txt.innerHTML = tallyStamp(true) + ' &nbsp;Cash matches system exactly' + floatNote + expNote + '.';
   } else if(diff < 0) {
     box.className = 'var-box var-short';
-    txt.textContent = 'Short by RM ' + Math.abs(diff).toFixed(2) + ' vs system' + floatNote + '.';
+    txt.innerHTML = tallyStamp(false) + ' &nbsp;Short by RM ' + Math.abs(diff).toFixed(2) + ' vs system' + floatNote + expNote + '.';
   } else {
-    box.className = 'var-box var-ok';
-    txt.textContent = 'Over by RM ' + diff.toFixed(2) + ' vs system' + floatNote + '.';
+    box.className = 'var-box var-short';
+    txt.innerHTML = tallyStamp(false) + ' &nbsp;Over by RM ' + diff.toFixed(2) + ' vs system' + floatNote + expNote + '.';
   }
 }
 
@@ -3623,7 +3653,10 @@ async function saveCashCount() {
   const notes = document.getElementById('cc-notes').value.trim();
   if(!by) { showToast('Please enter who counted!'); return; }
   const float = (currentOutlet && currentOutlet.cash_float) ? parseFloat(currentOutlet.cash_float) : 0;
-  const variance = (actual - float) - system;
+  let expToday = 0;
+  const er = await sb.from('expenses').select('amount').eq('outlet_id', currentOutlet.id).eq('date', getToday());
+  if(er.data) expToday = er.data.reduce(function(a,e){ return a + (parseFloat(e.amount)||0); }, 0);
+  const variance = (actual - float + expToday) - system;
   const now = new Date();
   const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':00';
   const btn = document.getElementById('cc-btn');
@@ -3671,14 +3704,16 @@ async function loadCashCountHistory() {
     const dateLabel = isToday ? 'Today' : new Date(c.date+'T00:00:00').toLocaleDateString('en-MY',{weekday:'short',day:'numeric',month:'short'});
     const timeLabel = c.time_of_count ? c.time_of_count.substring(0,5) : '';
     const variance = parseFloat(c.variance);
-    const varColor = Math.abs(variance) < 0.01 ? 'var(--matcha)' : variance < 0 ? 'var(--vermillion)' : 'var(--matcha)';
-    const varText = Math.abs(variance) < 0.01 ? 'Balanced' : variance < 0 ? '−RM '+Math.abs(variance).toFixed(2) : '+RM '+variance.toFixed(2);
+    const tally = Math.abs(variance) < 0.01;
+    const varColor = tally ? 'var(--matcha)' : 'var(--vermillion)';
+    const varText = tally ? 'Balanced' : variance < 0 ? '−RM '+Math.abs(variance).toFixed(2) : '+RM '+variance.toFixed(2);
     return '<div style="display:flex;align-items:center;gap:8px;padding:0.65rem 0;border-bottom:1px solid var(--border);">' +
       '<div style="flex:1;">' +
       '<div style="font-size:12px;font-weight:500;color:' + (isToday ? '#2d6bc4' : 'var(--ink-mid)') + ';">' + dateLabel + ' · ' + timeLabel + (c.counted_by ? ' · <span style="font-weight:400;color:var(--ink-soft);">' + c.counted_by + '</span>' : '') + '</div>' +
       (c.notes ? '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">' + c.notes + '</div>' : '') +
       '</div>' +
-      '<div style="text-align:right;">' +
+      '<div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px;">' +
+      tallyStamp(tally, true) +
       '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + parseFloat(c.cash_actual).toFixed(2) + '</div>' +
       '<div style="font-size:10px;color:' + varColor + ';">' + varText + '</div>' +
       '</div></div>';
