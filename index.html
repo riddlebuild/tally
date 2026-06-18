@@ -3356,7 +3356,7 @@ async function loadExpenses() {
     const canEdit = canEditEntries();
     const editBtn = function(id){ return canEdit ? '<i class="ti ti-pencil" onclick="openEditExpense(\'' + id + '\')" style="font-size:14px;color:var(--ink-soft);margin-left:8px;cursor:pointer;flex-shrink:0;"></i>' : ''; };
     list.innerHTML = data.map(function(e){
-      const t = e.created_at ? new Date(e.created_at).toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true}) : '';
+      const t = e.created_at ? new Date(e.created_at).toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'Asia/Kuching'}) : '';
       const timeBit = t ? ' · <i class="ti ti-clock" style="font-size:10px"></i> ' + t : '';
       return '<div class="exp-row"><span class="exp-cat ' + (catClass[e.category]||'cat-other') + '">' + e.category + '</span>' +
         '<span class="exp-name">' + e.item_name + '<br/><span style="color:var(--ink-soft);font-size:11px;">' + (e.bought_by ? '<i class="ti ti-user" style="font-size:10px"></i> ' + e.bought_by : '<span style="color:var(--border);">No name</span>') + timeBit + '</span></span>' +
@@ -3387,7 +3387,7 @@ async function loadExpenses() {
         '<span style="font-size:11px;font-weight:500;color:' + (isToday ? 'var(--matcha)' : 'var(--ink-mid)') + ';">' + label + '</span>' +
         '<span style="font-size:11px;color:var(--ink-soft);">RM ' + dayTotal.toFixed(2) + '</span></div>' +
         items.map(function(e){
-          const t = e.created_at ? new Date(e.created_at).toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true}) : '';
+          const t = e.created_at ? new Date(e.created_at).toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'Asia/Kuching'}) : '';
           const metaBits = (e.bought_by ? '<i class="ti ti-user" style="font-size:10px"></i> '+e.bought_by : '') + (e.bought_by && t ? ' · ' : '') + (t ? '<i class="ti ti-clock" style="font-size:10px"></i> '+t : '');
           return '<div class="exp-row" style="padding:4px 0;"><span class="exp-cat ' + (catClass[e.category]||'cat-other') + '">' + e.category + '</span>' +
             '<span class="exp-name">' + e.item_name + (metaBits ? '<br/><span style="color:var(--ink-soft);font-size:11px;">'+metaBits+'</span>' : '') + '</span>' +
@@ -3712,11 +3712,12 @@ async function loadCashCountHistory() {
       '<div style="font-size:12px;font-weight:500;color:' + (isToday ? '#2d6bc4' : 'var(--ink-mid)') + ';">' + dateLabel + ' · ' + timeLabel + (c.counted_by ? ' · <span style="font-weight:400;color:var(--ink-soft);">' + c.counted_by + '</span>' : '') + '</div>' +
       (c.notes ? '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">' + c.notes + '</div>' : '') +
       '</div>' +
-      '<div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px;">' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
       tallyStamp(tally, true) +
+      '<div style="text-align:right;">' +
       '<div style="font-size:13px;font-weight:500;color:var(--ink);">RM ' + parseFloat(c.cash_actual).toFixed(2) + '</div>' +
       '<div style="font-size:10px;color:' + varColor + ';">' + varText + '</div>' +
-      '</div></div>';
+      '</div></div></div>';
   }).join('');
   countEl.textContent = data.length + ' count' + (data.length !== 1 ? 's' : '');
 }
