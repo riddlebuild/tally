@@ -1779,13 +1779,30 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         </div>
         <div id="issue-items"></div>
         <button onclick="addIssueRow()" style="width:100%;padding:8px;background:#eef3ec;border:1px dashed var(--matcha-mid);border-radius:8px;color:#4a7c59;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:4px;"><i class="ti ti-plus" style="font-size:12px;"></i> Add item</button>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.9rem;padding-top:0.7rem;border-top:1px solid var(--border);">
-          <span style="font-size:14px;font-weight:600;color:var(--ink);">Grand total</span>
-          <span id="issue-grand" style="font-size:18px;font-weight:700;color:var(--matcha);">RM 0.00</span>
+        <div style="margin-top:0.9rem;padding-top:0.7rem;border-top:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+            <span style="font-size:13px;color:var(--ink-mid);">Subtotal</span>
+            <span id="issue-subtotal" style="font-size:14px;font-weight:600;color:var(--ink-mid);">RM 0.00</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:0.5rem;">
+            <span style="font-size:13px;color:var(--ink-mid);">Discount <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></span>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input class="inp" id="issue-disc" type="number" inputmode="decimal" placeholder="0" oninput="recalcIssue()" style="width:84px;text-align:right;padding:7px 8px;margin:0;"/>
+              <select class="inp" id="issue-disc-type" onchange="recalcIssue()" style="width:62px;padding:7px 4px;margin:0;"><option value="rm">RM</option><option value="pct">%</option></select>
+            </div>
+          </div>
+          <div id="issue-disc-line" style="display:none;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+            <span style="font-size:12px;color:var(--ink-soft);">Discount applied</span>
+            <span id="issue-disc-amt" style="font-size:13px;font-weight:600;color:var(--vermillion);">− RM 0.00</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:14px;font-weight:600;color:var(--ink);">Grand total</span>
+            <span id="issue-grand" style="font-size:18px;font-weight:700;color:var(--matcha);">RM 0.00</span>
+          </div>
         </div>
       </div>
       <div class="card">
-        <div class="form-row" style="margin-bottom:0;"><label class="form-lbl">Notes <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><input class="inp" id="issue-notes" type="text" placeholder="e.g. Payment within 7 days, bank details..."/></div>
+        <div class="form-row" style="margin-bottom:0;"><label class="form-lbl">Notes <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><textarea class="inp" id="issue-notes" rows="3" placeholder="e.g. Payment within 7 days, bank details..."></textarea></div>
       </div>
       <button onclick="generateInvoicePDF()" style="width:100%;padding:13px;background:#4a7c59;border:none;border-radius:12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;margin-bottom:1.5rem;"><i class="ti ti-file-type-pdf" style="font-size:16px;"></i> Generate &amp; share PDF</button>
     </div>
@@ -3631,7 +3648,7 @@ function calcCashVariance() {
     box.className = 'var-box var-short';
     txt.innerHTML = tallyStamp(false) + ' &nbsp;Short by RM ' + Math.abs(diff).toFixed(2) + ' vs system' + floatNote + expNote + '.';
   } else {
-    box.className = 'var-box var-short';
+    box.className = 'var-box var-ok';
     txt.innerHTML = tallyStamp(false) + ' &nbsp;Over by RM ' + diff.toFixed(2) + ' vs system' + floatNote + expNote + '.';
   }
 }
@@ -3705,7 +3722,7 @@ async function loadCashCountHistory() {
     const timeLabel = c.time_of_count ? c.time_of_count.substring(0,5) : '';
     const variance = parseFloat(c.variance);
     const tally = Math.abs(variance) < 0.01;
-    const varColor = tally ? 'var(--matcha)' : 'var(--vermillion)';
+    const varColor = variance < -0.01 ? 'var(--vermillion)' : 'var(--matcha)';
     const varText = tally ? 'Balanced' : variance < 0 ? '−RM '+Math.abs(variance).toFixed(2) : '+RM '+variance.toFixed(2);
     return '<div style="display:flex;align-items:center;gap:8px;padding:0.65rem 0;border-bottom:1px solid var(--border);">' +
       '<div style="flex:1;min-width:0;">' +
@@ -4883,7 +4900,8 @@ async function loadIssueScreen() {
   refreshIssueProductOptions();
   const dt = document.getElementById('issue-date'); if(dt) dt.value = getToday();
   const ty = document.getElementById('issue-type'); if(ty) ty.value = 'invoice';
-  ['issue-client','issue-client-addr','issue-notes'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  ['issue-client','issue-client-addr','issue-notes','issue-disc'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  const dtype = document.getElementById('issue-disc-type'); if(dtype) dtype.value = 'rm';
   const items = document.getElementById('issue-items'); if(items) items.innerHTML = '';
   addIssueRow();
   suggestDocNo();
@@ -4947,13 +4965,29 @@ function renumberIssue() {
 }
 
 function recalcIssue() {
-  let grand = 0;
+  let subtotal = 0;
   document.querySelectorAll('#issue-items .issue-row').forEach(function(row){
     const qty = parseFloat(row.querySelector('.issue-qty').value) || 0;
     const price = parseFloat(row.querySelector('.issue-price').value) || 0;
-    const lt = qty * price; grand += lt;
+    const lt = qty * price; subtotal += lt;
     row.querySelector('.issue-linetotal').textContent = lt.toFixed(2);
   });
+  const discEl = document.getElementById('issue-disc');
+  const discTypeEl = document.getElementById('issue-disc-type');
+  const discInput = discEl ? (parseFloat(discEl.value) || 0) : 0;
+  const discType = discTypeEl ? discTypeEl.value : 'rm';
+  let discount = 0;
+  if(discInput > 0) discount = discType === 'pct' ? subtotal * (discInput / 100) : discInput;
+  if(discount > subtotal) discount = subtotal;
+  if(discount < 0) discount = 0;
+  const grand = subtotal - discount;
+  const sEl = document.getElementById('issue-subtotal'); if(sEl) sEl.textContent = 'RM ' + subtotal.toFixed(2);
+  const dLine = document.getElementById('issue-disc-line');
+  const dAmt = document.getElementById('issue-disc-amt');
+  if(dLine && dAmt) {
+    if(discount > 0) { dAmt.textContent = '− RM ' + discount.toFixed(2) + (discType === 'pct' ? ' (' + discInput + '%)' : ''); dLine.style.display = 'flex'; }
+    else { dLine.style.display = 'none'; }
+  }
   const g = document.getElementById('issue-grand'); if(g) g.textContent = 'RM ' + grand.toFixed(2);
   return grand;
 }
@@ -5067,15 +5101,24 @@ async function generateInvoicePDF() {
   const client = (document.getElementById('issue-client').value || '').trim();
   const clientAddr = (document.getElementById('issue-client-addr').value || '').trim();
   const notes = (document.getElementById('issue-notes').value || '').trim();
-  const items = []; let grand = 0;
+  const items = []; let subtotal = 0;
   document.querySelectorAll('#issue-items .issue-row').forEach(function(row){
     const desc = (row.querySelector('.issue-desc').value || '').trim();
     const qty = parseFloat(row.querySelector('.issue-qty').value) || 0;
     const price = parseFloat(row.querySelector('.issue-price').value) || 0;
     if(!desc && !qty && !price) return;
-    const lt = qty * price; grand += lt;
+    const lt = qty * price; subtotal += lt;
     items.push({ description:desc, qty:qty, price:price, total:lt });
   });
+  const discEl = document.getElementById('issue-disc');
+  const discTypeEl = document.getElementById('issue-disc-type');
+  const discInput = discEl ? (parseFloat(discEl.value) || 0) : 0;
+  const discType = discTypeEl ? discTypeEl.value : 'rm';
+  let discount = 0;
+  if(discInput > 0) discount = discType === 'pct' ? subtotal * (discInput / 100) : discInput;
+  if(discount > subtotal) discount = subtotal;
+  if(discount < 0) discount = 0;
+  const grand = subtotal - discount;
   if(!profile) { showToast('Choose your company profile first!'); return; }
   if(items.length === 0) { showToast('Add at least one item!'); return; }
   if(!docNo) { showToast('Enter a document number!'); return; }
@@ -5086,7 +5129,7 @@ async function generateInvoicePDF() {
   issuedDocsCache.push(rec);
   showToast('Building PDF…');
   try { await loadJsPDF(); } catch(e) { showToast('Could not load PDF tool — check connection.'); return; }
-  await outputInvoicePDF({ type:type, profile:profile, docNo:docNo, issueDate:issueDate, client:client, clientAddr:clientAddr, notes:notes, items:items, grand:grand });
+  await outputInvoicePDF({ type:type, profile:profile, docNo:docNo, issueDate:issueDate, client:client, clientAddr:clientAddr, notes:notes, items:items, subtotal:subtotal, discount:discount, discType:discType, discInput:discInput, grand:grand });
   suggestDocNo();
 }
 
@@ -5163,6 +5206,14 @@ async function outputInvoicePDF(d) {
     y += rowH;
   });
   y += 2;
+  if(d.discount > 0) {
+    if(y + 12 > pageH - 45) { doc.addPage(); y = 20; }
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(90,90,90);
+    doc.text('Subtotal', cPrice, y, {align:'right'}); doc.text('RM ' + d.subtotal.toFixed(2), cAmt, y, {align:'right'}); y += 5.5;
+    const dLabel = 'Discount' + (d.discType === 'pct' ? ' (' + d.discInput + '%)' : '');
+    doc.setTextColor(150,60,60);
+    doc.text(dLabel, cPrice, y, {align:'right'}); doc.text('- RM ' + d.discount.toFixed(2), cAmt, y, {align:'right'}); y += 6;
+  }
   if(fancy) {
     const bx = 120, bw = mR - bx, bh = 9;
     if(y + bh > pageH - 45) { doc.addPage(); y = 20; }
