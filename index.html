@@ -1804,7 +1804,15 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="card">
         <div class="form-row" style="margin-bottom:0;"><label class="form-lbl">Notes <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><textarea class="inp" id="issue-notes" rows="3" placeholder="e.g. Payment within 7 days, bank details..."></textarea></div>
       </div>
-      <button onclick="generateInvoicePDF()" style="width:100%;padding:13px;background:#4a7c59;border:none;border-radius:12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;margin-bottom:1.5rem;"><i class="ti ti-file-type-pdf" style="font-size:16px;"></i> Generate &amp; share PDF</button>
+      <div id="issue-edit-indicator" style="display:none;margin-bottom:0.7rem;padding:0.6rem 0.8rem;border-radius:8px;font-size:12px;background:var(--amber-light);color:var(--amber);"><span id="issue-edit-text"></span> · <span onclick="cancelIssueEdit()" style="text-decoration:underline;cursor:pointer;">Cancel / new</span></div>
+      <button id="issue-gen-btn" onclick="generateInvoicePDF()" style="width:100%;padding:13px;background:#4a7c59;border:none;border-radius:12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;margin-bottom:1rem;"><i class="ti ti-file-type-pdf" style="font-size:16px;"></i> Generate &amp; share PDF</button>
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-head" style="color:#4a7c59;display:flex;align-items:center;justify-content:space-between;">
+          <span><i class="ti ti-history" style="font-size:14px"></i> Recent</span>
+          <span style="font-size:10px;color:var(--ink-soft);font-weight:400;">Kept 6 days, then auto-removed</span>
+        </div>
+        <div id="issue-history"><div class="empty-state" style="font-size:12px;">No invoices issued in the last 6 days.</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -4816,6 +4824,120 @@ async function exportInvoiceReportPDF() {
 // ===== ISSUE INVOICE / QUOTATION (generator) =====
 let issuerProfilesCache = [];
 let issuedDocsCache = [];
+let issueEditId = null;
+const ISSUE_RETAIN_DAYS = 6;
+
+function issuedExpiry(d) {
+  const base = d.created_at || ((d.issue_date || getToday()) + 'T00:00:00');
+  const created = new Date(base);
+  const expires = new Date(created.getTime() + ISSUE_RETAIN_DAYS * 86400000);
+  const msLeft = expires.getTime() - Date.now();
+  return { daysLeft: Math.ceil(msLeft / 86400000), expired: msLeft <= 0 };
+}
+
+function renderIssuedHistory() {
+  const el = document.getElementById('issue-history');
+  if(!el) return;
+  const live = (issuedDocsCache || []).filter(function(d){ return d.id && !issuedExpiry(d).expired; });
+  live.sort(function(a, b){ return String(b.created_at || b.issue_date || '').localeCompare(String(a.created_at || a.issue_date || '')); });
+  if(live.length === 0) { el.innerHTML = '<div class="empty-state" style="font-size:12px;">No invoices issued in the last 6 days.</div>'; return; }
+  el.innerHTML = live.map(function(d){
+    const info = issuedExpiry(d);
+    const dleft = info.daysLeft;
+    const badge = dleft <= 1
+      ? '<span style="color:var(--vermillion);font-weight:600;">Expires today</span>'
+      : '<span style="color:var(--ink-soft);">Expires in ' + dleft + ' days</span>';
+    const typeLbl = (d.doc_type === 'quotation') ? 'Quotation' : 'Invoice';
+    const isEditing = issueEditId && d.id === issueEditId;
+    return '<div style="display:flex;align-items:center;gap:8px;padding:0.55rem 0;border-bottom:1px solid var(--border);' + (isEditing ? 'background:#f3f8f4;' : '') + '">' +
+      '<div style="flex:1;min-width:0;">' +
+      '<div style="font-size:12px;font-weight:600;color:var(--ink);">' + escHtml(d.doc_no || '—') + ' <span style="font-weight:400;color:var(--ink-soft);">· ' + typeLbl + '</span></div>' +
+      '<div style="font-size:11px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(d.client_name || '(no customer)') + '</div>' +
+      '<div style="font-size:10px;margin-top:1px;">' + badge + '</div>' +
+      '</div>' +
+      '<div style="font-size:13px;font-weight:600;color:var(--matcha);flex-shrink:0;">RM ' + (parseFloat(d.grand_total) || 0).toFixed(2) + '</div>' +
+      '<i class="ti ti-pencil" onclick="editIssuedDoc(\'' + d.id + '\')" style="font-size:15px;color:var(--ink-soft);cursor:pointer;flex-shrink:0;"></i>' +
+      '<i class="ti ti-trash" onclick="deleteIssuedDoc(\'' + d.id + '\')" style="font-size:15px;color:var(--vermillion);cursor:pointer;flex-shrink:0;"></i>' +
+      '</div>';
+  }).join('');
+}
+
+function editIssuedDoc(id) {
+  const d = issuedDocsCache.find(function(x){ return x.id === id; });
+  if(!d) { showToast('Could not find that invoice.'); return; }
+  issueEditId = id;
+  const setv = function(eid, v){ const e = document.getElementById(eid); if(e) e.value = (v == null ? '' : v); };
+  setv('issue-type', d.doc_type || 'invoice');
+  setv('issue-no', d.doc_no);
+  setv('issue-date', d.issue_date || getToday());
+  setv('issue-client', d.client_name);
+  setv('issue-client-addr', d.client_address);
+  setv('issue-notes', d.notes);
+  const prof = document.getElementById('issue-profile'); if(prof) prof.value = d.profile_id || '';
+  const items = document.getElementById('issue-items'); if(items) items.innerHTML = '';
+  const list = Array.isArray(d.items) ? d.items : [];
+  if(list.length === 0) addIssueRow();
+  else list.forEach(function(it){ addIssueRow({ description: it.description, qty: it.qty, price: it.price }); });
+  const disc = document.getElementById('issue-disc'); if(disc) disc.value = '';
+  const dtype = document.getElementById('issue-disc-type'); if(dtype) dtype.value = 'rm';
+  recalcIssue();
+  const gb = document.getElementById('issue-gen-btn'); if(gb) gb.innerHTML = '<i class="ti ti-refresh" style="font-size:16px;"></i> Update &amp; share PDF';
+  const ind = document.getElementById('issue-edit-indicator'); if(ind) { ind.style.display = 'block'; const t = document.getElementById('issue-edit-text'); if(t) t.textContent = 'Editing ' + (d.doc_no || 'invoice'); }
+  renderIssuedHistory();
+  const top = document.getElementById('s-issue'); if(top) { const sc = top.querySelector('[style*="overflow-y"]'); if(sc) sc.scrollTop = 0; }
+}
+
+function cancelIssueEdit() {
+  issueEditId = null;
+  const gb = document.getElementById('issue-gen-btn'); if(gb) gb.innerHTML = '<i class="ti ti-file-type-pdf" style="font-size:16px;"></i> Generate &amp; share PDF';
+  const ind = document.getElementById('issue-edit-indicator'); if(ind) ind.style.display = 'none';
+  const items = document.getElementById('issue-items'); if(items) items.innerHTML = '';
+  ['issue-client','issue-client-addr','issue-notes','issue-disc'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  const dtype = document.getElementById('issue-disc-type'); if(dtype) dtype.value = 'rm';
+  addIssueRow();
+  suggestDocNo();
+  recalcIssue();
+  renderIssuedHistory();
+}
+
+async function deleteIssuedDoc(id) {
+  if(!confirm('Delete this invoice from history? This cannot be undone.')) return;
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/issued_documents?id=eq.' + id, {
+      method: 'DELETE',
+      headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY), 'Prefer': 'return=representation'}
+    });
+    if(!res.ok) {
+      let msg = 'status ' + res.status;
+      try { const j = await res.json(); if(j && (j.message || j.hint)) msg = j.message || j.hint; } catch(e) {}
+      showToast('Delete failed: ' + msg);
+      return;
+    }
+    let deleted = [];
+    try { deleted = await res.json(); } catch(e) {}
+    if(Array.isArray(deleted) && deleted.length === 0) { showToast('Nothing deleted (permission or row not found).'); return; }
+    issuedDocsCache = issuedDocsCache.filter(function(d){ return d.id !== id; });
+    if(issueEditId === id) cancelIssueEdit();
+    showToast('Invoice deleted');
+    renderIssuedHistory();
+  } catch(e) {
+    showToast('Delete error: ' + (e && e.message ? e.message : 'network'));
+  }
+}
+
+async function cleanupOldIssuedDocs() {
+  const old = (issuedDocsCache || []).filter(function(d){ return d.id && issuedExpiry(d).expired; });
+  if(old.length === 0) return;
+  for(const d of old) {
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/issued_documents?id=eq.' + d.id, {
+        method: 'DELETE',
+        headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY), 'Prefer': 'return=minimal'}
+      });
+    } catch(e) { /* best-effort; ignore */ }
+  }
+  issuedDocsCache = issuedDocsCache.filter(function(d){ return !issuedExpiry(d).expired; });
+}
 let savedProductsCache = [];
 
 function refreshIssueProductOptions() {
@@ -4938,6 +5060,11 @@ async function loadIssueScreen() {
   addIssueRow();
   suggestDocNo();
   recalcIssue();
+  issueEditId = null;
+  const gb = document.getElementById('issue-gen-btn'); if(gb) gb.innerHTML = '<i class="ti ti-file-type-pdf" style="font-size:16px;"></i> Generate &amp; share PDF';
+  const ind = document.getElementById('issue-edit-indicator'); if(ind) ind.style.display = 'none';
+  await cleanupOldIssuedDocs();
+  renderIssuedHistory();
 }
 
 function renderIssuerProfileSelect() {
@@ -4967,7 +5094,7 @@ function suggestDocNo() {
   const noEl = document.getElementById('issue-no'); if(noEl) noEl.value = prefix + '-' + mm + nn;
 }
 
-function addIssueRow() {
+function addIssueRow(vals) {
   const wrap = document.getElementById('issue-items');
   if(!wrap) return;
   const row = document.createElement('div');
@@ -4981,6 +5108,11 @@ function addIssueRow() {
     '<span class="issue-linetotal" style="flex:1.2;font-size:12px;text-align:right;color:var(--ink);">0.00</span>' +
     '<button onclick="removeIssueRow(this)" style="width:20px;background:none;border:none;color:var(--vermillion);font-size:16px;cursor:pointer;padding:0;">&times;</button>';
   wrap.appendChild(row);
+  if(vals) {
+    if(vals.description != null) row.querySelector('.issue-desc').value = vals.description;
+    if(vals.qty != null) row.querySelector('.issue-qty').value = vals.qty;
+    if(vals.price != null) row.querySelector('.issue-price').value = vals.price;
+  }
   renumberIssue();
   recalcIssue();
 }
@@ -5156,9 +5288,23 @@ async function generateInvoicePDF() {
   if(!docNo) { showToast('Enter a document number!'); return; }
   const rec = { doc_type:type, doc_no:docNo, profile_id:profileId || null, client_name:client, client_address:clientAddr, issue_date:issueDate, items:items, grand_total:grand, notes:notes };
   if(currentTenantId) rec.tenant_id = currentTenantId;
-  const saveRes = await sb.from('issued_documents').insert(rec);
-  if(saveRes.error) { showToast('Save error: ' + saveRes.error.message); return; }
-  issuedDocsCache.push(rec);
+  let savedRow;
+  if(issueEditId) {
+    const upd = await sb.from('issued_documents').update(rec).eq('id', issueEditId).select();
+    if(upd.error) { showToast('Save error: ' + upd.error.message); return; }
+    savedRow = (upd.data && upd.data[0]) ? upd.data[0] : null;
+    const idx = issuedDocsCache.findIndex(function(d){ return d.id === issueEditId; });
+    if(savedRow) { if(idx >= 0) issuedDocsCache[idx] = savedRow; else issuedDocsCache.push(savedRow); }
+    issueEditId = null;
+    const gb = document.getElementById('issue-gen-btn'); if(gb) gb.innerHTML = '<i class="ti ti-file-type-pdf" style="font-size:16px;"></i> Generate &amp; share PDF';
+    const ind = document.getElementById('issue-edit-indicator'); if(ind) ind.style.display = 'none';
+  } else {
+    const ins = await sb.from('issued_documents').insert(rec).select();
+    if(ins.error) { showToast('Save error: ' + ins.error.message); return; }
+    savedRow = (ins.data && ins.data[0]) ? ins.data[0] : rec;
+    issuedDocsCache.push(savedRow);
+  }
+  renderIssuedHistory();
   showToast('Building PDF…');
   try { await loadJsPDF(); } catch(e) { showToast('Could not load PDF tool — check connection.'); return; }
   await outputInvoicePDF({ type:type, profile:profile, docNo:docNo, issueDate:issueDate, client:client, clientAddr:clientAddr, notes:notes, items:items, subtotal:subtotal, discount:discount, discType:discType, discInput:discInput, grand:grand });
