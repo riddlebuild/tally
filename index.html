@@ -2810,7 +2810,12 @@ function showToast(msg, duration) {
 }
 
 function getToday() {
-  return new Date().toISOString().split('T')[0];
+  // Malaysia date (UTC+8), independent of the device/runtime timezone
+  return new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Kuching', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
+}
+function mytClock(date) {
+  // Current/given time in Malaysia as "HH:MM" (24h), regardless of device timezone
+  return new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Kuching', hour:'2-digit', minute:'2-digit', hour12:false}).format(date || new Date());
 }
 
 function formatDate(d) {
@@ -2818,7 +2823,7 @@ function formatDate(d) {
 }
 
 function greeting() {
-  const h = new Date().getHours();
+  const h = parseInt(mytClock().split(':')[0], 10);
   if(h < 12) return 'Good morning';
   if(h < 17) return 'Good afternoon';
   return 'Good evening';
@@ -3371,7 +3376,7 @@ async function loadExpenses() {
     countEl.textContent = '0 items'; totalRow.style.display = 'none';
   } else {
     const canEdit = canEditEntries();
-    const editBtn = function(id){ return canEdit ? '<i class="ti ti-pencil" onclick="openEditExpense(\'' + id + '\')" style="font-size:14px;color:var(--ink-soft);margin-left:8px;cursor:pointer;flex-shrink:0;"></i>' : ''; };
+    const editBtn = function(id){ return canEdit ? '<i class="ti ti-pencil" onclick="openEditExpense(\'' + id + '\')" style="font-size:14px;color:var(--ink-soft);margin-left:8px;cursor:pointer;flex-shrink:0;"></i><i class="ti ti-trash" onclick="deleteExpense(\'' + id + '\')" style="font-size:14px;color:var(--vermillion);margin-left:8px;cursor:pointer;flex-shrink:0;"></i>' : ''; };
     list.innerHTML = data.map(function(e){
       const t = e.created_at ? new Date(e.created_at).toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'Asia/Kuching'}) : '';
       const timeBit = t ? ' · <i class="ti ti-clock" style="font-size:10px"></i> ' + t : '';
@@ -3392,7 +3397,7 @@ async function loadExpenses() {
   } else {
     const grouped = {};
     const canEditH = canEditEntries();
-    const editBtnH = function(id){ return canEditH ? '<i class="ti ti-pencil" onclick="openEditExpense(\'' + id + '\')" style="font-size:14px;color:var(--ink-soft);margin-left:8px;cursor:pointer;flex-shrink:0;"></i>' : ''; };
+    const editBtnH = function(id){ return canEditH ? '<i class="ti ti-pencil" onclick="openEditExpense(\'' + id + '\')" style="font-size:14px;color:var(--ink-soft);margin-left:8px;cursor:pointer;flex-shrink:0;"></i><i class="ti ti-trash" onclick="deleteExpense(\'' + id + '\')" style="font-size:14px;color:var(--vermillion);margin-left:8px;cursor:pointer;flex-shrink:0;"></i>' : ''; };
     hist.forEach(function(e){ if(!grouped[e.date]) grouped[e.date]=[]; grouped[e.date].push(e); });
     histEl.innerHTML = Object.keys(grouped).map(function(date){
       const items = grouped[date];
@@ -3445,6 +3450,33 @@ async function saveExpense() {
     btn.textContent = 'Add expense';
   }
   loadExpenses();
+}
+
+async function deleteExpense(id) {
+  if(!canEditEntries()) { showToast('Only owner or admin can delete expenses.'); return; }
+  if(!confirm('Delete this expense? This cannot be undone.')) return;
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/expenses?id=eq.' + id, {
+      method: 'DELETE',
+      headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY), 'Prefer': 'return=representation'}
+    });
+    if(!res.ok) {
+      let msg = 'status ' + res.status;
+      try { const j = await res.json(); if(j && (j.message || j.hint)) msg = j.message || j.hint; } catch(e) {}
+      showToast('Delete failed: ' + msg);
+      return;
+    }
+    let deleted = [];
+    try { deleted = await res.json(); } catch(e) {}
+    if(Array.isArray(deleted) && deleted.length === 0) {
+      showToast('Nothing deleted (permission or row not found).');
+      return;
+    }
+    showToast('Expense deleted');
+    loadExpenses();
+  } catch(e) {
+    showToast('Delete error: ' + (e && e.message ? e.message : 'network'));
+  }
 }
 
 async function openEditExpense(id) {
@@ -3675,7 +3707,7 @@ async function saveCashCount() {
   if(er.data) expToday = er.data.reduce(function(a,e){ return a + (parseFloat(e.amount)||0); }, 0);
   const variance = (actual - float + expToday) - system;
   const now = new Date();
-  const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':00';
+  const timeStr = mytClock(now) + ':00';
   const btn = document.getElementById('cc-btn');
   btn.disabled = true; btn.textContent = 'Saving...';
   const result = await sb.from('cash_counts').insert({
@@ -4741,7 +4773,7 @@ async function exportInvoiceReportPDF() {
   const methodTxt = ms === 'all' ? 'All methods' : (ms === 'unpaid' ? 'Unpaid only' : (ms === 'bank' ? 'Bank transfer' : (ms === 'other' ? 'Other' : 'Cash')));
   doc.text((bizCode ? bizCode + '  ·  ' : '') + rangeTxt + '  ·  ' + methodTxt, mL, y); y += 5;
   const now = new Date();
-  doc.text('Generated ' + formatDate(now) + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0'), mL, y); y += 6;
+  doc.text('Generated ' + formatDate(now) + ' ' + mytClock(now), mL, y); y += 6;
   doc.setDrawColor(210,205,195); doc.line(mL,y,mR,y); y += 7;
   const drawSection = function(title, arr, rgb){
     if(arr.length === 0) return;
@@ -5927,8 +5959,7 @@ function drawDailySummary(d) {
   stat('Wastage', 'RM ' + d.totalWast.toFixed(2), '#1c1a16');
   y += 20;
   ctx.fillStyle = '#9a938a'; ctx.font = F('400',13); ctx.textAlign = 'left';
-  const t = new Date(); const hh = String(t.getHours()).padStart(2,'0'), mm = String(t.getMinutes()).padStart(2,'0');
-  ctx.fillText('Generated by Tally · ' + hh + ':' + mm, P, y + 6);
+  ctx.fillText('Generated by Tally · ' + mytClock(), P, y + 6);
   return canvas;
 }
 
