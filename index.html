@@ -2825,6 +2825,14 @@ function mytClock(date) {
   // Current/given time in Malaysia as "HH:MM" (24h), regardless of device timezone
   return new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Kuching', hour:'2-digit', minute:'2-digit', hour12:false}).format(date || new Date());
 }
+function parseUTC(ts) {
+  // DB stores `timestamp without time zone` (no offset) but the value is UTC.
+  // Force UTC interpretation so it isn't misread as local/Malaysia time.
+  if(!ts) return new Date(NaN);
+  let s = String(ts).trim().replace(' ', 'T');
+  if(!/[zZ]$|[+\-]\d\d:?\d\d$/.test(s)) s += 'Z';
+  return new Date(s);
+}
 
 function formatDate(d) {
   return new Date(d).toLocaleDateString('en-MY', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
@@ -3386,7 +3394,7 @@ async function loadExpenses() {
     const canEdit = canEditEntries();
     const editBtn = function(id){ return canEdit ? '<i class="ti ti-pencil" onclick="openEditExpense(\'' + id + '\')" style="font-size:14px;color:var(--ink-soft);margin-left:8px;cursor:pointer;flex-shrink:0;"></i><i class="ti ti-trash" onclick="deleteExpense(\'' + id + '\')" style="font-size:14px;color:var(--vermillion);margin-left:8px;cursor:pointer;flex-shrink:0;"></i>' : ''; };
     list.innerHTML = data.map(function(e){
-      const t = e.created_at ? new Date(e.created_at).toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'Asia/Kuching'}) : '';
+      const t = e.created_at ? parseUTC(e.created_at).toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'Asia/Kuching'}) : '';
       const timeBit = t ? ' · <i class="ti ti-clock" style="font-size:10px"></i> ' + t : '';
       return '<div class="exp-row"><span class="exp-cat ' + (catClass[e.category]||'cat-other') + '">' + e.category + '</span>' +
         '<span class="exp-name">' + e.item_name + '<br/><span style="color:var(--ink-soft);font-size:11px;">' + (e.bought_by ? '<i class="ti ti-user" style="font-size:10px"></i> ' + e.bought_by : '<span style="color:var(--border);">No name</span>') + timeBit + '</span></span>' +
@@ -3417,7 +3425,7 @@ async function loadExpenses() {
         '<span style="font-size:11px;font-weight:500;color:' + (isToday ? 'var(--matcha)' : 'var(--ink-mid)') + ';">' + label + '</span>' +
         '<span style="font-size:11px;color:var(--ink-soft);">RM ' + dayTotal.toFixed(2) + '</span></div>' +
         items.map(function(e){
-          const t = e.created_at ? new Date(e.created_at).toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'Asia/Kuching'}) : '';
+          const t = e.created_at ? parseUTC(e.created_at).toLocaleTimeString('en-MY',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'Asia/Kuching'}) : '';
           const metaBits = (e.bought_by ? '<i class="ti ti-user" style="font-size:10px"></i> '+e.bought_by : '') + (e.bought_by && t ? ' · ' : '') + (t ? '<i class="ti ti-clock" style="font-size:10px"></i> '+t : '');
           return '<div class="exp-row" style="padding:4px 0;"><span class="exp-cat ' + (catClass[e.category]||'cat-other') + '">' + e.category + '</span>' +
             '<span class="exp-name">' + e.item_name + (metaBits ? '<br/><span style="color:var(--ink-soft);font-size:11px;">'+metaBits+'</span>' : '') + '</span>' +
@@ -4829,7 +4837,7 @@ const ISSUE_RETAIN_DAYS = 6;
 
 function issuedExpiry(d) {
   const base = d.created_at || ((d.issue_date || getToday()) + 'T00:00:00');
-  const created = new Date(base);
+  const created = parseUTC(base);
   const expires = new Date(created.getTime() + ISSUE_RETAIN_DAYS * 86400000);
   const msLeft = expires.getTime() - Date.now();
   return { daysLeft: Math.ceil(msLeft / 86400000), expired: msLeft <= 0 };
@@ -7191,7 +7199,7 @@ async function loadReserveFloat() {
   if(histCount) histCount.textContent = data.length;
   histEl.innerHTML = data.map(function(r){
     const o = outlets.find(function(x){ return x.id === r.outlet_id; });
-    const dateLabel = new Date(r.created_at).toLocaleDateString('en-MY', {weekday:'short', day:'numeric', month:'short'});
+    const dateLabel = parseUTC(r.created_at).toLocaleDateString('en-MY', {weekday:'short', day:'numeric', month:'short', timeZone:'Asia/Kuching'});
     return '<div style="display:flex;align-items:center;gap:8px;padding:0.65rem 0;border-bottom:1px solid var(--border);">' +
       '<div style="flex:1;">' +
       '<div style="font-size:12px;font-weight:500;color:var(--ink-mid);">' + dateLabel + (isAll && o ? ' · ' + o.name : '') + (r.logged_by ? ' · <span style="font-weight:400;color:var(--ink-soft);">' + r.logged_by + '</span>' : '') + '</div>' +
