@@ -5522,24 +5522,28 @@ async function outputInvoicePDF(d) {
   if(d.profile.bank_details) String(d.profile.bank_details).split('\n').forEach(function(l){ if(l.trim()) payLines.push(l.trim()); });
 
   if(d.type === 'quotation') {
-    // Payment details (left) and acceptance/signature (right), side by side near the bottom
-    let blockY = Math.max(y + 6, pageH - 60);
-    if(blockY + 42 > pageH - 12) { doc.addPage(); y = 20; blockY = pageH - 60; }
     const rightX = 112;
+    const accLines = doc.splitTextToSize('I/We hereby accept this quotation and agree to proceed.', mR - rightX);
+    const payH = payLines.length ? (4.6 + payLines.length * 4.4) : 0;
+    const accH = 4.6 + accLines.length * 3.8 + 20 + 4 + 5;
+    const blockH = Math.max(payH, accH);
+    let blockTop = Math.max(y + 6, pageH - 16 - blockH);
+    if(blockTop + blockH > pageH - 14) { doc.addPage(); y = 20; blockTop = pageH - 16 - blockH; }
+    const centerY = blockTop + blockH / 2;
     if(payLines.length) {
-      let by = blockY;
+      let by = centerY - payH / 2;
       doc.setFont('helvetica','bold'); doc.setFontSize(8);
       if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(grey[0],grey[1],grey[2]);
       doc.text('PAYMENT DETAILS', mL, by); by += 4.6;
       doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(60,60,60);
       payLines.forEach(function(ln){ doc.text(ln, mL, by); by += 4.4; });
     }
-    let ay = blockY;
+    let ay = centerY - accH / 2;
     doc.setFont('helvetica','bold'); doc.setFontSize(8);
     if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(grey[0],grey[1],grey[2]);
     doc.text('ACCEPTANCE', rightX, ay); ay += 4.6;
     doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(90,90,90);
-    doc.splitTextToSize('I/We hereby accept this quotation and agree to proceed.', mR - rightX).forEach(function(ln){ doc.text(ln, rightX, ay); ay += 3.8; });
+    accLines.forEach(function(ln){ doc.text(ln, rightX, ay); ay += 3.8; });
     ay += 20;
     doc.setDrawColor(140,140,140);
     doc.line(rightX, ay, mR, ay); ay += 4;
