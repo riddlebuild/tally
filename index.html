@@ -1831,7 +1831,12 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="form-row"><label class="form-lbl">Company no. <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><input class="inp" id="profile-no" type="text" placeholder="e.g. 202401234567"/></div>
       <div class="form-row"><label class="form-lbl">Address</label><textarea class="inp" id="profile-addr" rows="2" placeholder="Business address"></textarea></div>
       <div class="form-row"><label class="form-lbl">Phone <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><input class="inp" id="profile-phone" type="text" placeholder="e.g. 012-3456789"/></div>
-      <div class="form-row"><label class="form-lbl">Bank / payment details <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><textarea class="inp" id="profile-bank" rows="3" placeholder="Bank: Maybank&#10;Acc: 1234567890&#10;Name: Koharu Taiyaki"></textarea></div>
+      <div style="display:flex;gap:8px;">
+        <div class="form-row" style="flex:1;"><label class="form-lbl">Bank name <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="profile-bank-name" type="text" placeholder="e.g. Maybank"/></div>
+        <div class="form-row" style="flex:1.2;"><label class="form-lbl">Bank account no. <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="profile-bank-acc" type="text" placeholder="e.g. 1234567890"/></div>
+      </div>
+      <div class="form-row"><label class="form-lbl">Other payment notes <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><textarea class="inp" id="profile-bank" rows="2" placeholder="e.g. DuitNow QR, payment terms"></textarea></div>
+      <div class="form-row"><label class="form-lbl">Terms &amp; conditions <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><textarea class="inp" id="profile-terms" rows="3" placeholder="e.g. Payment due within 14 days. Goods sold are not returnable."></textarea></div>
       <div class="form-row" style="margin-bottom:0.6rem;">
         <label class="form-lbl" style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="profile-fancy" checked style="width:auto;margin:0;"/> Fancy design (coloured)</label>
       </div>
@@ -5220,6 +5225,9 @@ function editProfile(id) {
   document.getElementById('profile-addr').value = p.address || '';
   document.getElementById('profile-phone').value = p.phone || '';
   document.getElementById('profile-bank').value = p.bank_details || '';
+  document.getElementById('profile-bank-name').value = p.bank_name || '';
+  document.getElementById('profile-bank-acc').value = p.bank_account || '';
+  document.getElementById('profile-terms').value = p.terms || '';
   document.getElementById('profile-fancy').checked = (p.fancy !== false);
   document.getElementById('profile-primary').value = p.primary_color || '#4a7c59';
   document.getElementById('profile-secondary').value = p.secondary_color || '#e8f0e9';
@@ -5230,7 +5238,7 @@ function editProfile(id) {
 }
 
 function cancelProfileForm() {
-  ['profile-name','profile-no','profile-addr','profile-phone','profile-bank','profile-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  ['profile-name','profile-no','profile-addr','profile-phone','profile-bank','profile-bank-name','profile-bank-acc','profile-terms','profile-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
   const fancy = document.getElementById('profile-fancy'); if(fancy) fancy.checked = true;
   const pc = document.getElementById('profile-primary'); if(pc) pc.value = '#4a7c59';
   const sc = document.getElementById('profile-secondary'); if(sc) sc.value = '#e8f0e9';
@@ -5245,6 +5253,9 @@ async function saveProfile() {
   const addr = (document.getElementById('profile-addr').value || '').trim();
   const phone = (document.getElementById('profile-phone').value || '').trim();
   const bank = (document.getElementById('profile-bank').value || '').trim();
+  const bankName = (document.getElementById('profile-bank-name').value || '').trim();
+  const bankAcc = (document.getElementById('profile-bank-acc').value || '').trim();
+  const terms = (document.getElementById('profile-terms').value || '').trim();
   const fancy = document.getElementById('profile-fancy').checked;
   const primary = document.getElementById('profile-primary').value || '#4a7c59';
   const secondary = document.getElementById('profile-secondary').value || '#e8f0e9';
@@ -5252,9 +5263,9 @@ async function saveProfile() {
   if(!name) { showToast('Enter a company name!'); return; }
   let res;
   if(editId) {
-    res = await sb.from('issuer_profiles').update({ name:name, company_no:no, address:addr, phone:phone, bank_details:bank, fancy:fancy, primary_color:primary, secondary_color:secondary }).eq('id', editId);
+    res = await sb.from('issuer_profiles').update({ name:name, company_no:no, address:addr, phone:phone, bank_details:bank, bank_name:bankName, bank_account:bankAcc, terms:terms, fancy:fancy, primary_color:primary, secondary_color:secondary }).eq('id', editId);
   } else {
-    const row = { name:name, company_no:no, address:addr, phone:phone, bank_details:bank, fancy:fancy, primary_color:primary, secondary_color:secondary };
+    const row = { name:name, company_no:no, address:addr, phone:phone, bank_details:bank, bank_name:bankName, bank_account:bankAcc, terms:terms, fancy:fancy, primary_color:primary, secondary_color:secondary };
     if(currentTenantId) row.tenant_id = currentTenantId;
     res = await sb.from('issuer_profiles').insert(row);
   }
@@ -5355,23 +5366,32 @@ async function outputInvoicePDF(d) {
     doc.setTextColor(255,255,255);
     doc.setFont('helvetica','bold'); doc.setFontSize(18);
     doc.text(d.profile.name || '', mL, 14);
-    doc.setFontSize(18);
+    if(d.profile.company_no) {
+      const _nw = doc.getTextWidth(d.profile.name || '');
+      doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      doc.text('(' + d.profile.company_no + ')', mL + _nw + 2, 14);
+    }
+    doc.setFont('helvetica','bold'); doc.setFontSize(18);
     doc.text(docTitle, mR, 14, {align:'right'});
     doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
     doc.text('No: ' + d.docNo, mR, 21, {align:'right'});
     doc.text('Date: ' + d.issueDate, mR, 26, {align:'right'});
     y = 38;
     doc.setTextColor(grey[0],grey[1],grey[2]); doc.setFontSize(9);
-    if(d.profile.company_no) { doc.text('Co. No: ' + d.profile.company_no, mL, y); y += 4.4; }
     if(d.profile.address) { doc.splitTextToSize(d.profile.address, 95).forEach(function(ln){ doc.text(ln, mL, y); y += 4.4; }); }
     if(d.profile.phone) { doc.text('Tel: ' + d.profile.phone, mL, y); y += 4.4; }
     y += 4;
   } else {
     let leftY = 20, rightY = 20;
     doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(ink[0],ink[1],ink[2]);
-    doc.text(d.profile.name || '', mL, leftY); leftY += 7;
+    doc.text(d.profile.name || '', mL, leftY);
+    if(d.profile.company_no) {
+      const _nw = doc.getTextWidth(d.profile.name || '');
+      doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(grey[0],grey[1],grey[2]);
+      doc.text('(' + d.profile.company_no + ')', mL + _nw + 2, leftY);
+    }
+    leftY += 7;
     doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(grey[0],grey[1],grey[2]);
-    if(d.profile.company_no) { doc.text('Co. No: ' + d.profile.company_no, mL, leftY); leftY += 4.5; }
     if(d.profile.address) { doc.splitTextToSize(d.profile.address, 95).forEach(function(ln){ doc.text(ln, mL, leftY); leftY += 4.5; }); }
     if(d.profile.phone) { doc.text('Tel: ' + d.profile.phone, mL, leftY); leftY += 4.5; }
     doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(primary[0],primary[1],primary[2]);
@@ -5450,7 +5470,22 @@ async function outputInvoicePDF(d) {
     y += 2;
   }
 
-  if(d.profile.bank_details) {
+  if(d.profile.terms) {
+    if(y > pageH - 55) { doc.addPage(); y = 20; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(grey[0],grey[1],grey[2]);
+    doc.text('TERMS & CONDITIONS', mL, y); y += 4.6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(90,90,90);
+    doc.splitTextToSize(d.profile.terms, mR - mL).forEach(function(ln){ if(y > pageH - 45) { doc.addPage(); y = 20; } doc.text(ln, mL, y); y += 4; });
+    y += 2;
+  }
+
+  const payLines = [];
+  if(d.profile.bank_name) payLines.push('Bank: ' + d.profile.bank_name);
+  if(d.profile.bank_account) payLines.push('Account No: ' + d.profile.bank_account);
+  if((d.profile.bank_name || d.profile.bank_account) && d.profile.name) payLines.push('Account Name: ' + d.profile.name);
+  if(d.profile.bank_details) String(d.profile.bank_details).split('\n').forEach(function(l){ if(l.trim()) payLines.push(l.trim()); });
+  if(payLines.length) {
     const bankAnchor = pageH - 42;
     let by = Math.max(y + 4, bankAnchor);
     if(by > pageH - 22) { doc.addPage(); y = 20; by = pageH - 42; }
@@ -5458,7 +5493,7 @@ async function outputInvoicePDF(d) {
     if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(grey[0],grey[1],grey[2]);
     doc.text('PAYMENT DETAILS', mL, by); by += 4.6;
     doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(60,60,60);
-    doc.splitTextToSize(d.profile.bank_details, 95).forEach(function(ln){ doc.text(ln, mL, by); by += 4.4; });
+    payLines.forEach(function(ln){ doc.text(ln, mL, by); by += 4.4; });
   }
 
   doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(150,150,150);
