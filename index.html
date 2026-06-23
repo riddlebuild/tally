@@ -5124,7 +5124,7 @@ function addIssueRow(vals) {
     '</div>' +
     '<div style="display:flex;gap:8px;align-items:center;padding-left:24px;">' +
       '<label style="font-size:11px;color:var(--ink-soft);display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;"><input type="checkbox" class="issue-sub-toggle" onchange="toggleIssueSub(this)" style="margin:0;"/> + sub-detail</label>' +
-      '<input class="inp issue-subdesc" type="text" placeholder="Sub-description (optional)" style="flex:1;min-width:0;display:none;font-size:12px;"/>' +
+      '<textarea class="inp issue-subdesc" rows="2" placeholder="Sub-description (optional) — press Enter for a new line" style="flex:1;min-width:0;display:none;font-size:12px;resize:vertical;"></textarea>' +
     '</div>';
   wrap.appendChild(row);
   if(vals) {
