@@ -1838,6 +1838,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="form-row" style="flex:1;"><label class="form-lbl">Bank name <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="profile-bank-name" type="text" placeholder="e.g. Maybank"/></div>
         <div class="form-row" style="flex:1.2;"><label class="form-lbl">Bank account no. <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="profile-bank-acc" type="text" placeholder="e.g. 1234567890"/></div>
       </div>
+      <div class="form-row"><label class="form-lbl">Bank account name <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="profile-bank-acc-name" type="text" placeholder="Name on the bank account"/></div>
       <div class="form-row"><label class="form-lbl">Other payment notes <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><textarea class="inp" id="profile-bank" rows="2" placeholder="e.g. DuitNow QR, payment terms"></textarea></div>
       <div class="form-row"><label class="form-lbl">Terms &amp; conditions <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><textarea class="inp" id="profile-terms" rows="3" placeholder="e.g. Payment due within 14 days. Goods sold are not returnable."></textarea></div>
       <div class="form-row" style="margin-bottom:0.6rem;">
@@ -5231,6 +5232,7 @@ function editProfile(id) {
   document.getElementById('profile-bank').value = p.bank_details || '';
   document.getElementById('profile-bank-name').value = p.bank_name || '';
   document.getElementById('profile-bank-acc').value = p.bank_account || '';
+  document.getElementById('profile-bank-acc-name').value = p.bank_acc_name || '';
   document.getElementById('profile-terms').value = p.terms || '';
   document.getElementById('profile-fancy').checked = (p.fancy !== false);
   document.getElementById('profile-primary').value = p.primary_color || '#4a7c59';
@@ -5242,7 +5244,7 @@ function editProfile(id) {
 }
 
 function cancelProfileForm() {
-  ['profile-name','profile-no','profile-addr','profile-phone','profile-website','profile-bank','profile-bank-name','profile-bank-acc','profile-terms','profile-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  ['profile-name','profile-no','profile-addr','profile-phone','profile-website','profile-bank','profile-bank-name','profile-bank-acc','profile-bank-acc-name','profile-terms','profile-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
   const fancy = document.getElementById('profile-fancy'); if(fancy) fancy.checked = true;
   const pc = document.getElementById('profile-primary'); if(pc) pc.value = '#4a7c59';
   const sc = document.getElementById('profile-secondary'); if(sc) sc.value = '#e8f0e9';
@@ -5260,27 +5262,35 @@ async function saveProfile() {
   const bank = (document.getElementById('profile-bank').value || '').trim();
   const bankName = (document.getElementById('profile-bank-name').value || '').trim();
   const bankAcc = (document.getElementById('profile-bank-acc').value || '').trim();
+  const bankAccName = (document.getElementById('profile-bank-acc-name').value || '').trim();
   const terms = (document.getElementById('profile-terms').value || '').trim();
   const fancy = document.getElementById('profile-fancy').checked;
   const primary = document.getElementById('profile-primary').value || '#4a7c59';
   const secondary = document.getElementById('profile-secondary').value || '#e8f0e9';
   const editId = document.getElementById('profile-edit-id').value;
   if(!name) { showToast('Enter a company name!'); return; }
-  let res;
-  if(editId) {
-    res = await sb.from('issuer_profiles').update({ name:name, company_no:no, address:addr, phone:phone, website:website, bank_details:bank, bank_name:bankName, bank_account:bankAcc, terms:terms, fancy:fancy, primary_color:primary, secondary_color:secondary }).eq('id', editId);
-  } else {
-    const row = { name:name, company_no:no, address:addr, phone:phone, website:website, bank_details:bank, bank_name:bankName, bank_account:bankAcc, terms:terms, fancy:fancy, primary_color:primary, secondary_color:secondary };
-    if(currentTenantId) row.tenant_id = currentTenantId;
-    res = await sb.from('issuer_profiles').insert(row);
+  const btn = document.getElementById('profile-save-btn');
+  const origTxt = btn ? btn.textContent : '';
+  if(btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.textContent = 'Saving…'; }
+  try {
+    let res;
+    if(editId) {
+      res = await sb.from('issuer_profiles').update({ name:name, company_no:no, address:addr, phone:phone, website:website, bank_details:bank, bank_name:bankName, bank_account:bankAcc, bank_acc_name:bankAccName, terms:terms, fancy:fancy, primary_color:primary, secondary_color:secondary }).eq('id', editId);
+    } else {
+      const row = { name:name, company_no:no, address:addr, phone:phone, website:website, bank_details:bank, bank_name:bankName, bank_account:bankAcc, bank_acc_name:bankAccName, terms:terms, fancy:fancy, primary_color:primary, secondary_color:secondary };
+      if(currentTenantId) row.tenant_id = currentTenantId;
+      res = await sb.from('issuer_profiles').insert(row);
+    }
+    if(res.error) { showToast('Error: ' + res.error.message); return; }
+    const pRes = await sb.from('issuer_profiles').select('*');
+    issuerProfilesCache = pRes.data || [];
+    renderIssuerProfileSelect();
+    renderProfileList();
+    cancelProfileForm();
+    showToast(editId ? 'Updated!' : 'Profile added!');
+  } finally {
+    if(btn) { btn.disabled = false; btn.style.opacity = ''; if(btn.textContent === 'Saving…') btn.textContent = origTxt; }
   }
-  if(res.error) { showToast('Error: ' + res.error.message); return; }
-  const pRes = await sb.from('issuer_profiles').select('*');
-  issuerProfilesCache = pRes.data || [];
-  renderIssuerProfileSelect();
-  renderProfileList();
-  cancelProfileForm();
-  showToast(editId ? 'Updated!' : 'Profile added!');
 }
 
 async function deleteProfile(id) {
@@ -5506,7 +5516,8 @@ async function outputInvoicePDF(d) {
   const payLines = [];
   if(d.profile.bank_name) payLines.push('Bank: ' + d.profile.bank_name);
   if(d.profile.bank_account) payLines.push('Account No: ' + d.profile.bank_account);
-  if((d.profile.bank_name || d.profile.bank_account) && d.profile.name) payLines.push('Account Name: ' + d.profile.name);
+  const _accName = d.profile.bank_acc_name || d.profile.name;
+  if((d.profile.bank_name || d.profile.bank_account) && _accName) payLines.push('Account Name: ' + _accName);
   if(d.profile.bank_details) String(d.profile.bank_details).split('\n').forEach(function(l){ if(l.trim()) payLines.push(l.trim()); });
   if(payLines.length) {
     const bankAnchor = pageH - 42;
