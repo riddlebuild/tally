@@ -125,6 +125,8 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 .bar-fill{height:100%;border-radius:4px;transition:width 0.6s ease;}
 .logo-mark{font-size:20px;font-weight:400;color:var(--matcha);letter-spacing:0.04em;font-family:'DM Serif Display',serif;}
 .logo-sub{font-size:10px;color:var(--ink-soft);letter-spacing:0.14em;text-transform:uppercase;}
+@keyframes tspin{to{transform:rotate(360deg);}}
+.tspin{display:inline-block;animation:tspin 0.7s linear infinite;}
 .hero{padding:1.25rem 1.1rem 0.5rem;}
 .hero-date{font-size:11px;color:var(--ink-soft);letter-spacing:0.06em;margin-bottom:4px;}
 .hero-greeting{font-size:20px;font-weight:400;color:var(--ink);margin-bottom:1rem;font-family:'DM Serif Display',serif;}
@@ -1831,6 +1833,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="form-row"><label class="form-lbl">Company no. <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><input class="inp" id="profile-no" type="text" placeholder="e.g. 202401234567"/></div>
       <div class="form-row"><label class="form-lbl">Address</label><textarea class="inp" id="profile-addr" rows="2" placeholder="Business address"></textarea></div>
       <div class="form-row"><label class="form-lbl">Phone <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><input class="inp" id="profile-phone" type="text" placeholder="e.g. 012-3456789"/></div>
+      <div class="form-row"><label class="form-lbl">Website <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><input class="inp" id="profile-website" type="text" placeholder="e.g. harulabs.io"/></div>
       <div style="display:flex;gap:8px;">
         <div class="form-row" style="flex:1;"><label class="form-lbl">Bank name <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="profile-bank-name" type="text" placeholder="e.g. Maybank"/></div>
         <div class="form-row" style="flex:1.2;"><label class="form-lbl">Bank account no. <span style="color:var(--ink-soft);font-weight:400;">(opt)</span></label><input class="inp" id="profile-bank-acc" type="text" placeholder="e.g. 1234567890"/></div>
@@ -5224,6 +5227,7 @@ function editProfile(id) {
   document.getElementById('profile-no').value = p.company_no || '';
   document.getElementById('profile-addr').value = p.address || '';
   document.getElementById('profile-phone').value = p.phone || '';
+  document.getElementById('profile-website').value = p.website || '';
   document.getElementById('profile-bank').value = p.bank_details || '';
   document.getElementById('profile-bank-name').value = p.bank_name || '';
   document.getElementById('profile-bank-acc').value = p.bank_account || '';
@@ -5238,7 +5242,7 @@ function editProfile(id) {
 }
 
 function cancelProfileForm() {
-  ['profile-name','profile-no','profile-addr','profile-phone','profile-bank','profile-bank-name','profile-bank-acc','profile-terms','profile-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  ['profile-name','profile-no','profile-addr','profile-phone','profile-website','profile-bank','profile-bank-name','profile-bank-acc','profile-terms','profile-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
   const fancy = document.getElementById('profile-fancy'); if(fancy) fancy.checked = true;
   const pc = document.getElementById('profile-primary'); if(pc) pc.value = '#4a7c59';
   const sc = document.getElementById('profile-secondary'); if(sc) sc.value = '#e8f0e9';
@@ -5252,6 +5256,7 @@ async function saveProfile() {
   const no = (document.getElementById('profile-no').value || '').trim();
   const addr = (document.getElementById('profile-addr').value || '').trim();
   const phone = (document.getElementById('profile-phone').value || '').trim();
+  const website = (document.getElementById('profile-website').value || '').trim();
   const bank = (document.getElementById('profile-bank').value || '').trim();
   const bankName = (document.getElementById('profile-bank-name').value || '').trim();
   const bankAcc = (document.getElementById('profile-bank-acc').value || '').trim();
@@ -5263,9 +5268,9 @@ async function saveProfile() {
   if(!name) { showToast('Enter a company name!'); return; }
   let res;
   if(editId) {
-    res = await sb.from('issuer_profiles').update({ name:name, company_no:no, address:addr, phone:phone, bank_details:bank, bank_name:bankName, bank_account:bankAcc, terms:terms, fancy:fancy, primary_color:primary, secondary_color:secondary }).eq('id', editId);
+    res = await sb.from('issuer_profiles').update({ name:name, company_no:no, address:addr, phone:phone, website:website, bank_details:bank, bank_name:bankName, bank_account:bankAcc, terms:terms, fancy:fancy, primary_color:primary, secondary_color:secondary }).eq('id', editId);
   } else {
-    const row = { name:name, company_no:no, address:addr, phone:phone, bank_details:bank, bank_name:bankName, bank_account:bankAcc, terms:terms, fancy:fancy, primary_color:primary, secondary_color:secondary };
+    const row = { name:name, company_no:no, address:addr, phone:phone, website:website, bank_details:bank, bank_name:bankName, bank_account:bankAcc, terms:terms, fancy:fancy, primary_color:primary, secondary_color:secondary };
     if(currentTenantId) row.tenant_id = currentTenantId;
     res = await sb.from('issuer_profiles').insert(row);
   }
@@ -5293,6 +5298,7 @@ async function deleteProfile(id) {
 }
 
 async function generateInvoicePDF() {
+  if(window._genBusy) return;
   const type = document.getElementById('issue-type').value;
   const profileId = document.getElementById('issue-profile').value;
   const profile = issuerProfilesCache.find(function(p){ return p.id === profileId; });
@@ -5324,6 +5330,10 @@ async function generateInvoicePDF() {
   if(!profile) { showToast('Choose your company profile first!'); return; }
   if(items.length === 0) { showToast('Add at least one item!'); return; }
   if(!docNo) { showToast('Enter a document number!'); return; }
+  window._genBusy = true;
+  const _gb = document.getElementById('issue-gen-btn');
+  if(_gb) { _gb.disabled = true; _gb.style.opacity = '0.6'; _gb.style.cursor = 'wait'; _gb.innerHTML = '<i class="ti ti-loader-2 tspin" style="font-size:16px;"></i> Generating…'; }
+  try {
   const rec = { doc_type:type, doc_no:docNo, profile_id:profileId || null, client_name:client, client_address:clientAddr, issue_date:issueDate, items:items, grand_total:grand, notes:notes };
   if(currentTenantId) rec.tenant_id = currentTenantId;
   let savedRow;
@@ -5347,6 +5357,16 @@ async function generateInvoicePDF() {
   try { await loadJsPDF(); } catch(e) { showToast('Could not load PDF tool — check connection.'); return; }
   await outputInvoicePDF({ type:type, profile:profile, docNo:docNo, issueDate:issueDate, client:client, clientAddr:clientAddr, notes:notes, items:items, subtotal:subtotal, discount:discount, discType:discType, discInput:discInput, grand:grand });
   suggestDocNo();
+  } finally {
+    window._genBusy = false;
+    const gb = document.getElementById('issue-gen-btn');
+    if(gb) {
+      gb.disabled = false; gb.style.opacity = ''; gb.style.cursor = '';
+      gb.innerHTML = issueEditId
+        ? '<i class="ti ti-refresh" style="font-size:16px;"></i> Update &amp; share PDF'
+        : '<i class="ti ti-file-type-pdf" style="font-size:16px;"></i> Generate &amp; share PDF';
+    }
+  }
 }
 
 async function outputInvoicePDF(d) {
@@ -5422,17 +5442,20 @@ async function outputInvoicePDF(d) {
   d.items.forEach(function(it, idx){
     const descLines = doc.splitTextToSize(it.description || '', 88);
     const subLines = it.subdesc ? doc.splitTextToSize(it.subdesc, 86) : [];
-    const rowH = Math.max(6, descLines.length * 5 + subLines.length * 4);
+    const descH = descLines.length * 5;
+    const subH = subLines.length ? (subLines.length * 3.8 + 1) : 0;
+    const gapAfter = 3.2;
+    const rowH = descH + subH + gapAfter;
     if(y + rowH > pageH - 55) { doc.addPage(); y = 20; }
     doc.text(String(idx + 1), cNo, y);
     descLines.forEach(function(ln, i){ doc.text(ln, cDesc, y + i * 5); });
     doc.text(String(it.qty), cQty, y, {align:'right'});
-    doc.text(it.price.toFixed(2), cPrice, y, {align:'right'});
-    doc.text(it.total.toFixed(2), cAmt, y, {align:'right'});
+    doc.text(fmtMoney(it.price), cPrice, y, {align:'right'});
+    doc.text(fmtMoney(it.total), cAmt, y, {align:'right'});
     if(subLines.length) {
-      const yStart = y + descLines.length * 5;
+      const yStart = y + descH - 0.5;
       doc.setFontSize(8); doc.setTextColor(120,120,120);
-      subLines.forEach(function(ln, i){ doc.text(ln, cDesc + 2, yStart + i * 4); });
+      subLines.forEach(function(ln, i){ doc.text(ln, cDesc + 2, yStart + i * 3.8); });
       doc.setFontSize(9); doc.setTextColor(40,40,40);
     }
     y += rowH;
@@ -5441,10 +5464,10 @@ async function outputInvoicePDF(d) {
   if(d.discount > 0) {
     if(y + 12 > pageH - 45) { doc.addPage(); y = 20; }
     doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(90,90,90);
-    doc.text('Subtotal', cPrice, y, {align:'right'}); doc.text('RM ' + d.subtotal.toFixed(2), cAmt, y, {align:'right'}); y += 5.5;
+    doc.text('Subtotal', cPrice, y, {align:'right'}); doc.text('RM ' + fmtMoney(d.subtotal), cAmt, y, {align:'right'}); y += 5.5;
     const dLabel = 'Discount' + (d.discType === 'pct' ? ' (' + d.discInput + '%)' : '');
     doc.setTextColor(150,60,60);
-    doc.text(dLabel, cPrice, y, {align:'right'}); doc.text('- RM ' + d.discount.toFixed(2), cAmt, y, {align:'right'}); y += 6;
+    doc.text(dLabel, cPrice, y, {align:'right'}); doc.text('- RM ' + fmtMoney(d.discount), cAmt, y, {align:'right'}); y += 6;
   }
   if(fancy) {
     const bx = 120, bw = mR - bx, bh = 9;
@@ -5453,14 +5476,14 @@ async function outputInvoicePDF(d) {
     doc.rect(bx, y - 1, bw, bh, 'F');
     doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(11);
     doc.text('Grand Total', bx + 3, y + 5);
-    doc.text('RM ' + d.grand.toFixed(2), mR - 3, y + 5, {align:'right'});
+    doc.text('RM ' + fmtMoney(d.grand), mR - 3, y + 5, {align:'right'});
     y += bh + 5;
   } else {
     doc.setDrawColor(210,205,195); doc.line(mL, y, mR, y); y += 7;
     doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(ink[0],ink[1],ink[2]);
     doc.text('Grand Total', cPrice, y, {align:'right'});
     doc.setTextColor(primary[0],primary[1],primary[2]);
-    doc.text('RM ' + d.grand.toFixed(2), cAmt, y, {align:'right'}); y += 10;
+    doc.text('RM ' + fmtMoney(d.grand), cAmt, y, {align:'right'}); y += 10;
   }
 
   if(d.notes) {
@@ -5496,6 +5519,11 @@ async function outputInvoicePDF(d) {
     payLines.forEach(function(ln){ doc.text(ln, mL, by); by += 4.4; });
   }
 
+  if(d.profile.website) {
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(120,120,120);
+    doc.text(d.profile.website, mL, pageH - 8);
+  }
   doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(150,150,150);
   doc.text('This is a computer-generated document. No signature is required.', pageW / 2, pageH - 12, {align:'center'});
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(175,175,175);
