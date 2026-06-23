@@ -5344,6 +5344,7 @@ async function generateInvoicePDF() {
   const _gb = document.getElementById('issue-gen-btn');
   if(_gb) { _gb.disabled = true; _gb.style.opacity = '0.6'; _gb.style.cursor = 'wait'; _gb.innerHTML = '<i class="ti ti-loader-2 tspin" style="font-size:16px;"></i> Generating…'; }
   try {
+  const wasEdit = !!issueEditId;
   const rec = { doc_type:type, doc_no:docNo, profile_id:profileId || null, client_name:client, client_address:clientAddr, issue_date:issueDate, items:items, grand_total:grand, notes:notes };
   if(currentTenantId) rec.tenant_id = currentTenantId;
   let savedRow;
@@ -5366,7 +5367,7 @@ async function generateInvoicePDF() {
   showToast('Building PDF…');
   try { await loadJsPDF(); } catch(e) { showToast('Could not load PDF tool — check connection.'); return; }
   await outputInvoicePDF({ type:type, profile:profile, docNo:docNo, issueDate:issueDate, client:client, clientAddr:clientAddr, notes:notes, items:items, subtotal:subtotal, discount:discount, discType:discType, discInput:discInput, grand:grand });
-  suggestDocNo();
+  if(!wasEdit) suggestDocNo();
   } finally {
     window._genBusy = false;
     const gb = document.getElementById('issue-gen-btn');
@@ -5435,7 +5436,7 @@ async function outputInvoicePDF(d) {
 
   doc.setFont('helvetica','bold'); doc.setFontSize(8);
   if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(grey[0],grey[1],grey[2]);
-  doc.text('BILL TO', mL, y); y += 5;
+  doc.text(d.type === 'quotation' ? 'QUOTATION TO' : 'BILL TO', mL, y); y += 5;
   doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(ink[0],ink[1],ink[2]);
   doc.text(d.client || '—', mL, y); y += 5;
   if(d.clientAddr) { doc.setFontSize(9); doc.setTextColor(grey[0],grey[1],grey[2]); doc.splitTextToSize(d.clientAddr, 95).forEach(function(ln){ doc.text(ln, mL, y); y += 4.5; }); }
@@ -5520,23 +5521,47 @@ async function outputInvoicePDF(d) {
   if((d.profile.bank_name || d.profile.bank_account) && _accName) payLines.push('Account Name: ' + _accName);
   if(d.profile.bank_details) String(d.profile.bank_details).split('\n').forEach(function(l){ if(l.trim()) payLines.push(l.trim()); });
   if(payLines.length) {
-    const bankAnchor = pageH - 42;
-    let by = Math.max(y + 4, bankAnchor);
-    if(by > pageH - 22) { doc.addPage(); y = 20; by = pageH - 42; }
+    let by;
+    if(d.type === 'quotation') {
+      if(y > pageH - 60) { doc.addPage(); y = 20; }
+      by = y + 4;
+    } else {
+      by = Math.max(y + 4, pageH - 42);
+      if(by > pageH - 22) { doc.addPage(); y = 20; by = pageH - 42; }
+    }
     doc.setFont('helvetica','bold'); doc.setFontSize(8);
     if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(grey[0],grey[1],grey[2]);
     doc.text('PAYMENT DETAILS', mL, by); by += 4.6;
     doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(60,60,60);
     payLines.forEach(function(ln){ doc.text(ln, mL, by); by += 4.4; });
+    if(d.type === 'quotation') y = by + 2;
+  }
+
+  if(d.type === 'quotation') {
+    if(y + 42 > pageH - 14) { doc.addPage(); y = 20; }
+    y += 6;
+    doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(grey[0],grey[1],grey[2]);
+    doc.text('ACCEPTANCE', mL, y); y += 5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90,90,90);
+    doc.text('I/We hereby accept this quotation and agree to proceed.', mL, y);
+    y += 24;
+    doc.setDrawColor(140,140,140);
+    doc.line(mL, y, mL + 80, y);
+    doc.line(mR - 50, y, mR, y);
+    y += 4.6;
+    doc.setFontSize(8); doc.setTextColor(110,110,110);
+    doc.text('Signature & company chop', mL, y);
+    doc.text('Date', mR - 50, y);
   }
 
   if(d.profile.website) {
     doc.setFont('helvetica','normal'); doc.setFontSize(8);
     if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(120,120,120);
-    doc.text(d.profile.website, mL, pageH - 8);
+    doc.text(d.profile.website, mR, pageH - 8, {align:'right'});
   }
   doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(150,150,150);
-  doc.text('This is a computer-generated document. No signature is required.', pageW / 2, pageH - 12, {align:'center'});
+  doc.text(d.type === 'quotation' ? 'This quotation is computer-generated. Please sign above to confirm acceptance.' : 'This is a computer-generated document. No signature is required.', pageW / 2, pageH - 12, {align:'center'});
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(175,175,175);
   doc.text('Generated with Tally', pageW / 2, pageH - 8, {align:'center'});
 
