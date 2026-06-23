@@ -5527,8 +5527,8 @@ async function outputInvoicePDF(d) {
     const payH = payLines.length ? (4.6 + payLines.length * 4.4) : 0;
     const accH = 4.6 + accLines.length * 3.8 + 20 + 4 + 5;
     const blockH = Math.max(payH, accH);
-    let blockTop = Math.max(y + 6, pageH - 16 - blockH);
-    if(blockTop + blockH > pageH - 14) { doc.addPage(); y = 20; blockTop = pageH - 16 - blockH; }
+    let blockTop = Math.max(y + 6, pageH - 24 - blockH);
+    if(blockTop + blockH > pageH - 16) { doc.addPage(); y = 20; blockTop = pageH - 24 - blockH; }
     const centerY = blockTop + blockH / 2;
     if(payLines.length) {
       let by = centerY - payH / 2;
