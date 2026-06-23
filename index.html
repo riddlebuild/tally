@@ -4885,7 +4885,7 @@ function editIssuedDoc(id) {
   const items = document.getElementById('issue-items'); if(items) items.innerHTML = '';
   const list = Array.isArray(d.items) ? d.items : [];
   if(list.length === 0) addIssueRow();
-  else list.forEach(function(it){ addIssueRow({ description: it.description, qty: it.qty, price: it.price }); });
+  else list.forEach(function(it){ addIssueRow({ description: it.description, qty: it.qty, price: it.price, subdesc: it.subdesc }); });
   const disc = document.getElementById('issue-disc'); if(disc) disc.value = '';
   const dtype = document.getElementById('issue-disc-type'); if(dtype) dtype.value = 'rm';
   recalcIssue();
@@ -5107,22 +5107,39 @@ function addIssueRow(vals) {
   if(!wrap) return;
   const row = document.createElement('div');
   row.className = 'issue-row';
-  row.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:6px;';
+  row.style.cssText = 'display:flex;flex-direction:column;gap:4px;margin-bottom:8px;';
   row.innerHTML =
-    '<span class="issue-no" style="width:18px;font-size:12px;color:var(--ink-soft);"></span>' +
-    '<input class="inp issue-desc" type="text" placeholder="Description" list="issue-prod-options" oninput="onIssueDescInput(this)" style="flex:3;min-width:0;"/>' +
-    '<input class="inp issue-qty" type="number" inputmode="decimal" placeholder="Qty" style="flex:1;min-width:0;" oninput="recalcIssue()"/>' +
-    '<input class="inp issue-price" type="number" inputmode="decimal" placeholder="Price" style="flex:1.2;min-width:0;" oninput="recalcIssue()"/>' +
-    '<span class="issue-linetotal" style="flex:1.2;font-size:12px;text-align:right;color:var(--ink);">0.00</span>' +
-    '<button onclick="removeIssueRow(this)" style="width:20px;background:none;border:none;color:var(--vermillion);font-size:16px;cursor:pointer;padding:0;">&times;</button>';
+    '<div style="display:flex;gap:6px;align-items:center;">' +
+      '<span class="issue-no" style="width:18px;font-size:12px;color:var(--ink-soft);"></span>' +
+      '<input class="inp issue-desc" type="text" placeholder="Description" list="issue-prod-options" oninput="onIssueDescInput(this)" style="flex:3;min-width:0;"/>' +
+      '<input class="inp issue-qty" type="number" inputmode="decimal" placeholder="Qty" style="flex:1;min-width:0;" oninput="recalcIssue()"/>' +
+      '<input class="inp issue-price" type="number" inputmode="decimal" placeholder="Price" style="flex:1.2;min-width:0;" oninput="recalcIssue()"/>' +
+      '<span class="issue-linetotal" style="flex:1.2;font-size:12px;text-align:right;color:var(--ink);">0.00</span>' +
+      '<button onclick="removeIssueRow(this)" style="width:20px;background:none;border:none;color:var(--vermillion);font-size:16px;cursor:pointer;padding:0;">&times;</button>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;align-items:center;padding-left:24px;">' +
+      '<label style="font-size:11px;color:var(--ink-soft);display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;"><input type="checkbox" class="issue-sub-toggle" onchange="toggleIssueSub(this)" style="margin:0;"/> + sub-detail</label>' +
+      '<input class="inp issue-subdesc" type="text" placeholder="Sub-description (optional)" style="flex:1;min-width:0;display:none;font-size:12px;"/>' +
+    '</div>';
   wrap.appendChild(row);
   if(vals) {
     if(vals.description != null) row.querySelector('.issue-desc').value = vals.description;
     if(vals.qty != null) row.querySelector('.issue-qty').value = vals.qty;
     if(vals.price != null) row.querySelector('.issue-price').value = vals.price;
+    if(vals.subdesc) {
+      const sd = row.querySelector('.issue-subdesc'), tg = row.querySelector('.issue-sub-toggle');
+      sd.value = vals.subdesc; sd.style.display = 'block'; if(tg) tg.checked = true;
+    }
   }
   renumberIssue();
   recalcIssue();
+}
+
+function toggleIssueSub(cb) {
+  const row = cb.closest('.issue-row'); if(!row) return;
+  const sd = row.querySelector('.issue-subdesc'); if(!sd) return;
+  if(cb.checked) { sd.style.display = 'block'; sd.focus(); }
+  else { sd.style.display = 'none'; sd.value = ''; }
 }
 
 function removeIssueRow(btn) {
@@ -5278,9 +5295,11 @@ async function generateInvoicePDF() {
     const desc = (row.querySelector('.issue-desc').value || '').trim();
     const qty = parseFloat(row.querySelector('.issue-qty').value) || 0;
     const price = parseFloat(row.querySelector('.issue-price').value) || 0;
+    const subEl = row.querySelector('.issue-subdesc');
+    const subdesc = subEl ? (subEl.value || '').trim() : '';
     if(!desc && !qty && !price) return;
     const lt = qty * price; subtotal += lt;
-    items.push({ description:desc, qty:qty, price:price, total:lt });
+    items.push({ description:desc, qty:qty, price:price, total:lt, subdesc:subdesc });
   });
   const discEl = document.getElementById('issue-disc');
   const discTypeEl = document.getElementById('issue-disc-type');
@@ -5382,13 +5401,20 @@ async function outputInvoicePDF(d) {
   doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(40,40,40);
   d.items.forEach(function(it, idx){
     const descLines = doc.splitTextToSize(it.description || '', 88);
-    const rowH = Math.max(6, descLines.length * 5);
+    const subLines = it.subdesc ? doc.splitTextToSize(it.subdesc, 86) : [];
+    const rowH = Math.max(6, descLines.length * 5 + subLines.length * 4);
     if(y + rowH > pageH - 55) { doc.addPage(); y = 20; }
     doc.text(String(idx + 1), cNo, y);
     descLines.forEach(function(ln, i){ doc.text(ln, cDesc, y + i * 5); });
     doc.text(String(it.qty), cQty, y, {align:'right'});
     doc.text(it.price.toFixed(2), cPrice, y, {align:'right'});
     doc.text(it.total.toFixed(2), cAmt, y, {align:'right'});
+    if(subLines.length) {
+      const yStart = y + descLines.length * 5;
+      doc.setFontSize(8); doc.setTextColor(120,120,120);
+      subLines.forEach(function(ln, i){ doc.text(ln, cDesc + 2, yStart + i * 4); });
+      doc.setFontSize(9); doc.setTextColor(40,40,40);
+    }
     y += rowH;
   });
   y += 2;
