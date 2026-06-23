@@ -5520,39 +5520,40 @@ async function outputInvoicePDF(d) {
   const _accName = d.profile.bank_acc_name || d.profile.name;
   if((d.profile.bank_name || d.profile.bank_account) && _accName) payLines.push('Account Name: ' + _accName);
   if(d.profile.bank_details) String(d.profile.bank_details).split('\n').forEach(function(l){ if(l.trim()) payLines.push(l.trim()); });
-  if(payLines.length) {
-    let by;
-    if(d.type === 'quotation') {
-      if(y > pageH - 60) { doc.addPage(); y = 20; }
-      by = y + 4;
-    } else {
-      by = Math.max(y + 4, pageH - 42);
-      if(by > pageH - 22) { doc.addPage(); y = 20; by = pageH - 42; }
+
+  if(d.type === 'quotation') {
+    // Payment details (left) and acceptance/signature (right), side by side near the bottom
+    let blockY = Math.max(y + 6, pageH - 60);
+    if(blockY + 42 > pageH - 12) { doc.addPage(); y = 20; blockY = pageH - 60; }
+    const rightX = 112;
+    if(payLines.length) {
+      let by = blockY;
+      doc.setFont('helvetica','bold'); doc.setFontSize(8);
+      if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(grey[0],grey[1],grey[2]);
+      doc.text('PAYMENT DETAILS', mL, by); by += 4.6;
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(60,60,60);
+      payLines.forEach(function(ln){ doc.text(ln, mL, by); by += 4.4; });
     }
+    let ay = blockY;
+    doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(grey[0],grey[1],grey[2]);
+    doc.text('ACCEPTANCE', rightX, ay); ay += 4.6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(90,90,90);
+    doc.splitTextToSize('I/We hereby accept this quotation and agree to proceed.', mR - rightX).forEach(function(ln){ doc.text(ln, rightX, ay); ay += 3.8; });
+    ay += 20;
+    doc.setDrawColor(140,140,140);
+    doc.line(rightX, ay, mR, ay); ay += 4;
+    doc.setFontSize(8); doc.setTextColor(110,110,110);
+    doc.text('Signature & company chop', rightX, ay); ay += 5;
+    doc.text('Date: ____________________', rightX, ay);
+  } else if(payLines.length) {
+    let by = Math.max(y + 4, pageH - 42);
+    if(by > pageH - 22) { doc.addPage(); y = 20; by = pageH - 42; }
     doc.setFont('helvetica','bold'); doc.setFontSize(8);
     if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(grey[0],grey[1],grey[2]);
     doc.text('PAYMENT DETAILS', mL, by); by += 4.6;
     doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(60,60,60);
     payLines.forEach(function(ln){ doc.text(ln, mL, by); by += 4.4; });
-    if(d.type === 'quotation') y = by + 2;
-  }
-
-  if(d.type === 'quotation') {
-    if(y + 42 > pageH - 14) { doc.addPage(); y = 20; }
-    y += 6;
-    doc.setFont('helvetica','bold'); doc.setFontSize(8);
-    if(fancy) doc.setTextColor(primary[0],primary[1],primary[2]); else doc.setTextColor(grey[0],grey[1],grey[2]);
-    doc.text('ACCEPTANCE', mL, y); y += 5;
-    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(90,90,90);
-    doc.text('I/We hereby accept this quotation and agree to proceed.', mL, y);
-    y += 24;
-    doc.setDrawColor(140,140,140);
-    doc.line(mL, y, mL + 80, y);
-    doc.line(mR - 50, y, mR, y);
-    y += 4.6;
-    doc.setFontSize(8); doc.setTextColor(110,110,110);
-    doc.text('Signature & company chop', mL, y);
-    doc.text('Date', mR - 50, y);
   }
 
   if(d.profile.website) {
