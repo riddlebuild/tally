@@ -1935,9 +1935,13 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div style="padding:1rem 1.1rem 2rem;">
-      <div style="font-size:12px;color:var(--ink-soft);line-height:1.5;margin-bottom:0.9rem;">Group bills under a project (e.g. a renovation) to see total spend, what's still owed, and how you're tracking against budget. Tag a bill to a project in the "We owe" form.</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:0.4rem;">
+        <span style="font-size:15px;font-weight:600;color:var(--ink);">Your projects</span>
+        <button id="proj-add-toggle" onclick="showProjectForm()" style="flex-shrink:0;padding:7px 13px;background:none;border:1px solid #3f6e8c;border-radius:10px;color:#3f6e8c;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap;"><i class="ti ti-plus" style="font-size:13px;"></i> Add project</button>
+      </div>
+      <div style="font-size:12px;color:var(--ink-soft);line-height:1.5;margin-bottom:0.9rem;">Group bills under a project to track total spend, what's owed, and how you're tracking against budget.</div>
       <div id="projects-list"><div class="loading">Loading...</div></div>
-      <div class="card" style="margin-top:1rem;">
+      <div class="card" id="proj-form-card" style="margin-top:1rem;display:none;">
         <div class="card-head" style="color:#3f6e8c;"><i class="ti ti-folder-plus" style="font-size:14px"></i> <span id="proj-form-title">Add project</span></div>
         <div class="form-row"><label class="form-lbl">Project name</label><input class="inp" id="proj-name" type="text" placeholder="e.g. Third outlet renovation"/></div>
         <div class="form-row"><label class="form-lbl">Budget (RM) <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><input class="inp" id="proj-budget" type="number" inputmode="decimal" placeholder="e.g. 50000"/></div>
@@ -4243,7 +4247,7 @@ function renderProjectsList() {
   if(!el) return;
   const active = projectsCache.filter(function(p){ return (p.status || 'active') !== 'archived'; });
   if(active.length === 0) {
-    el.innerHTML = '<div class="empty-state" style="padding:1.5rem;">No projects yet.<br/><span style="font-size:12px;">Start one below — e.g. "Third outlet renovation".</span></div>';
+    el.innerHTML = '<div class="empty-state" style="padding:1.5rem;">No projects yet.<br/><span style="font-size:12px;">Tap "Add project" to start one.</span></div>';
     return;
   }
   el.innerHTML = active.map(function(p) {
@@ -4333,9 +4337,21 @@ function renderProjectDetail() {
 
 function addInvoiceToProject(id) { pendingProjectId = id; openInvoices('payable'); }
 
+function showProjectForm() {
+  cancelProjectForm();
+  const card = document.getElementById('proj-form-card'); if(card) card.style.display = '';
+  const c = document.getElementById('proj-cancel-btn'); if(c) c.style.display = '';
+  const toggle = document.getElementById('proj-add-toggle'); if(toggle) toggle.style.display = 'none';
+  const nm = document.getElementById('proj-name'); if(nm) nm.focus();
+  const sc = document.getElementById('s-projects').querySelector('div[style*="overflow-y"]');
+  if(sc) sc.scrollTop = sc.scrollHeight;
+}
+
 function fillProjectForm(id) {
   const p = projectsCache.find(function(x){ return x.id === id; });
   if(!p) return;
+  const card = document.getElementById('proj-form-card'); if(card) card.style.display = '';
+  const toggle = document.getElementById('proj-add-toggle'); if(toggle) toggle.style.display = 'none';
   document.getElementById('proj-name').value = p.name || '';
   document.getElementById('proj-budget').value = (p.budget ? p.budget : '');
   document.getElementById('proj-notes').value = p.notes || '';
@@ -4356,6 +4372,8 @@ function cancelProjectForm() {
   const b = document.getElementById('proj-save-btn'); if(b) b.textContent = 'Add project';
   const c = document.getElementById('proj-cancel-btn'); if(c) c.style.display = 'none';
   const del = document.getElementById('proj-delete-btn'); if(del) del.style.display = 'none';
+  const card = document.getElementById('proj-form-card'); if(card) card.style.display = 'none';
+  const toggle = document.getElementById('proj-add-toggle'); if(toggle) toggle.style.display = '';
 }
 
 async function saveProject() {
