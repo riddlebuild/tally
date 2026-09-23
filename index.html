@@ -2012,10 +2012,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div id="popup-cart-total" style="display:none;"></div>
         <div id="popup-pay-row" style="display:none;margin-top:0.7rem;">
           <div style="font-size:12px;color:var(--ink-soft);margin-bottom:5px;">Payment</div>
-          <div style="display:flex;gap:8px;">
-            <button id="popup-pay-cash" onclick="setPopupPay('cash')" style="flex:1;padding:9px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Cash</button>
-            <button id="popup-pay-qr" onclick="setPopupPay('qr')" style="flex:1;padding:9px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">QR</button>
-          </div>
+          <div id="popup-pay-methods" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
         </div>
         <div id="popup-order-actions" style="display:none;gap:8px;margin-top:0.8rem;">
           <button onclick="clearPopupCart()" style="padding:0 16px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Clear</button>
@@ -2056,6 +2053,21 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="card">
         <div class="card-head" style="color:#c2407a;"><i class="ti ti-list" style="font-size:14px"></i> Menu items <span class="badge badge-neutral" id="pmenu-count" style="text-transform:none;letter-spacing:0;"></span></div>
         <div id="pmenu-list"></div>
+      </div>
+      <div class="section-lbl" style="margin-top:1.4rem;">Payment methods</div>
+      <div style="font-size:12px;color:var(--ink-soft);line-height:1.5;margin:0.3rem 0 0.9rem;">Choose what you'll accept — cash, QR, card, or your own. Each gets its own colour on the order screen.</div>
+      <div class="card">
+        <div class="card-head" style="color:#c2407a;"><i class="ti ti-plus" style="font-size:14px"></i> <span id="pmethod-form-title">Add payment</span></div>
+        <div class="form-row"><label class="form-lbl">Payment name</label><input class="inp" id="pmethod-label" type="text" placeholder="e.g. Cash, QR, Card, GrabPay"/></div>
+        <input type="hidden" id="pmethod-edit-id"/>
+        <div style="display:flex;gap:8px;">
+          <button class="submit-btn" id="pmethod-save-btn" onclick="savePopupMethod()" style="background:#c2407a;flex:1;margin:0;">Add payment</button>
+          <button id="pmethod-cancel-btn" onclick="cancelPopupMethodEdit()" style="display:none;padding:0 16px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Cancel</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#c2407a;"><i class="ti ti-credit-card" style="font-size:14px"></i> Accepted</div>
+        <div id="pmethod-list"></div>
       </div>
       <div class="section-lbl" style="margin-top:1.4rem;">Session</div>
       <div class="card" style="margin-top:0.6rem;">
@@ -3305,9 +3317,11 @@ function applyPopupPrefill() {
   if(pt && pt.disabled) { showToast("Today\u2019s entry is locked — can\u2019t auto-fill"); return; }
   if(pt) pt.value = p.total.toFixed(2);
   const cc = document.getElementById('ch-cash'); if(cc) cc.value = p.cash ? p.cash.toFixed(2) : '';
+  const cd = document.getElementById('ch-card'); if(cd) cd.value = p.card ? p.card.toFixed(2) : '';
   const cq = document.getElementById('ch-qr'); if(cq) cq.value = p.qr ? p.qr.toFixed(2) : '';
   if(typeof calcVar === 'function') calcVar();
-  showToast('Totals filled in — review & save');
+  if(p.other && p.other > 0) showToast('Filled in — RM ' + p.other.toFixed(2) + ' from other methods is in POS total only');
+  else showToast('Totals filled in — review & save');
 }
 
 function canEditSales(entry) {
@@ -4528,8 +4542,19 @@ async function deleteProject() {
 
 // ===== POPUP POS (on-device, localStorage) =====
 let popupCart = [];
-let popupPay = 'cash';
+let popupPay = null;
 let popupMenuEditId = null;
+let popupMethodEditId = null;
+
+const POPUP_PAY_PALETTE = [
+  { fg:'#4a7c59', bg:'#eef3ec' }, // green
+  { fg:'#2d6bc4', bg:'#e8f0fb' }, // blue
+  { fg:'#b07a1e', bg:'#fbeede' }, // amber
+  { fg:'#7a4ea8', bg:'#efe8f5' }, // purple
+  { fg:'#c2407a', bg:'#fdeef5' }, // pink
+  { fg:'#3a8a8a', bg:'#e4f2f2' }  // teal
+];
+function popupPalette(i) { return POPUP_PAY_PALETTE[(i || 0) % POPUP_PAY_PALETTE.length]; }
 
 function popupKey(kind) { return 'tally_popup_' + kind + '_' + (currentTenantId || 'default'); }
 function loadPopupMenuData() { try { return JSON.parse(localStorage.getItem(popupKey('menu')) || '[]'); } catch(e) { return []; } }
@@ -4538,9 +4563,25 @@ function loadPopupOrdersData() { try { return JSON.parse(localStorage.getItem(po
 function savePopupOrdersData(arr) { try { localStorage.setItem(popupKey('orders'), JSON.stringify(arr)); } catch(e) {} }
 function nextPopupNo() { return loadPopupOrdersData().reduce(function(m,x){ return Math.max(m, x.no || 0); }, 0) + 1; }
 
+function loadPopupMethods() {
+  try { const raw = localStorage.getItem(popupKey('methods')); if(raw) { const arr = JSON.parse(raw); if(Array.isArray(arr) && arr.length) return arr; } } catch(e) {}
+  return [ { id:'pay_cash', label:'Cash', c:0 }, { id:'pay_qr', label:'QR', c:1 } ];
+}
+function savePopupMethods(arr) { try { localStorage.setItem(popupKey('methods'), JSON.stringify(arr)); } catch(e) {} }
+function firstPopupMethodId() { const m = loadPopupMethods(); return m.length ? m[0].id : 'pay_cash'; }
+
+function orderPayMeta(o) {
+  if(o.payLabel) return { label:o.payLabel, c:o.payC || 0 };
+  if(o.pay === 'qr') return { label:'QR', c:1 };
+  if(o.pay === 'cash') return { label:'Cash', c:0 };
+  const m = loadPopupMethods().find(function(x){ return x.id === o.pay; });
+  if(m) return { label:m.label, c:m.c || 0 };
+  return { label:(o.pay || '—'), c:0 };
+}
+
 function loadPopup() {
   popupCart = [];
-  popupPay = 'cash';
+  popupPay = firstPopupMethodId();
   renderPopupGrid();
   renderPopupCart();
   renderPopupOrders();
@@ -4647,33 +4688,49 @@ function renderPopupCart() {
   }
   if(payRow) payRow.style.display = 'block';
   if(actions) actions.style.display = 'flex';
+  renderPopupPayRow();
+}
+
+function renderPopupPayRow() {
+  const wrap = document.getElementById('popup-pay-methods'); if(!wrap) return;
+  const methods = loadPopupMethods();
+  if(!methods.some(function(m){ return m.id === popupPay; })) popupPay = methods.length ? methods[0].id : null;
+  wrap.innerHTML = methods.map(function(m){
+    return '<button id="popup-pay-' + m.id + '" onclick="setPopupPay(\'' + m.id + '\')" style="flex:1;min-width:72px;padding:9px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--ink-mid);font-size:13px;font-family:\'DM Sans\',sans-serif;cursor:pointer;">' + escHtml(m.label) + '</button>';
+  }).join('');
   setPopupPay(popupPay);
 }
 
-function setPopupPay(method) {
-  popupPay = method;
-  const cash = document.getElementById('popup-pay-cash');
-  const qr = document.getElementById('popup-pay-qr');
+function setPopupPay(id) {
+  popupPay = id;
+  const methods = loadPopupMethods();
+  methods.forEach(function(m){
+    const btn = document.getElementById('popup-pay-' + m.id);
+    if(!btn) return;
+    const p = popupPalette(m.c);
+    if(m.id === id) {
+      btn.style.cssText = "flex:1;min-width:72px;padding:9px;border-radius:10px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;border:1px solid " + p.fg + ";background:" + p.bg + ";color:" + p.fg + ";";
+    } else {
+      btn.style.cssText = "flex:1;min-width:72px;padding:9px;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;border:1px solid var(--border);background:none;color:var(--ink-mid);";
+    }
+  });
   const rec = document.getElementById('popup-record-btn');
-  const base = "flex:1;padding:9px;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;";
-  const cashOn = base + "border:1px solid #4a7c59;background:#eef3ec;color:#4a7c59;font-weight:600;";
-  const qrOn = base + "border:1px solid #2d6bc4;background:#e8f0fb;color:#2d6bc4;font-weight:600;";
-  const off = base + "border:1px solid var(--border);background:none;color:var(--ink-mid);";
-  if(cash) cash.style.cssText = (method === 'cash') ? cashOn : off;
-  if(qr) qr.style.cssText = (method === 'qr') ? qrOn : off;
-  if(rec) rec.style.background = (method === 'qr') ? '#2d6bc4' : '#4a7c59';
+  const sel = methods.find(function(m){ return m.id === id; });
+  if(rec) rec.style.background = sel ? popupPalette(sel.c).fg : '#4a7c59';
 }
 
 function recordPopupOrder() {
   if(popupCart.length === 0) return;
+  const methods = loadPopupMethods();
+  const sel = methods.find(function(m){ return m.id === popupPay; }) || methods[0] || { id:'pay_cash', label:'Cash', c:0 };
   let total = 0;
   const items = popupCart.map(function(l){ const lt = (parseFloat(l.price) || 0) * l.qty; total += lt; return { name:l.name, price:parseFloat(l.price) || 0, qty:l.qty }; });
   const orders = loadPopupOrdersData();
   const no = orders.reduce(function(m,x){ return Math.max(m, x.no || 0); }, 0) + 1;
-  orders.push({ id:'o' + Date.now(), no:no, ts:Date.now(), time:mytClock(), items:items, total:total, pay:popupPay });
+  orders.push({ id:'o' + Date.now(), no:no, ts:Date.now(), time:mytClock(), items:items, total:total, pay:sel.id, payLabel:sel.label, payC:sel.c || 0 });
   savePopupOrdersData(orders);
   popupCart = [];
-  popupPay = 'cash';
+  popupPay = firstPopupMethodId();
   renderPopupCart();
   renderPopupOrders();
   renderPopupSummary();
@@ -4688,9 +4745,9 @@ function renderPopupOrders() {
   if(countEl) countEl.textContent = orders.length + (orders.length === 1 ? ' order' : ' orders');
   if(orders.length === 0) { el.innerHTML = '<div class="empty-state" style="padding:1rem;">No orders yet this session.</div>'; return; }
   el.innerHTML = orders.slice().reverse().map(function(o){
-    const badge = (o.pay === 'qr')
-      ? '<span style="font-size:10px;background:#e8f0fb;color:#2d6bc4;padding:2px 7px;border-radius:20px;">QR</span>'
-      : '<span style="font-size:10px;background:#eef3ec;color:#4a7c59;padding:2px 7px;border-radius:20px;">Cash</span>';
+    const meta = orderPayMeta(o);
+    const pal = popupPalette(meta.c);
+    const badge = '<span style="font-size:10px;background:' + pal.bg + ';color:' + pal.fg + ';padding:2px 7px;border-radius:20px;">' + escHtml(meta.label) + '</span>';
     const itemCount = o.items.reduce(function(s,i){ return s + i.qty; }, 0);
     const detail = o.items.map(function(i){
       return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-mid);padding:2px 0;"><span>' + i.qty + '× ' + escHtml(i.name) + '</span><span>RM ' + fmtMoney((parseFloat(i.price) || 0) * i.qty) + '</span></div>';
@@ -4731,16 +4788,23 @@ function voidPopupOrder(id) {
 function pushPopupToSales() {
   const orders = loadPopupOrdersData();
   if(orders.length === 0) { showToast('No orders to send'); return; }
-  let total = 0, cash = 0, qr = 0;
-  orders.forEach(function(o){ total += o.total || 0; if(o.pay === 'qr') qr += o.total || 0; else cash += o.total || 0; });
-  window._popupPrefill = { total:total, cash:cash, qr:qr };
+  let total = 0, cash = 0, card = 0, qr = 0, other = 0;
+  orders.forEach(function(o){
+    total += o.total || 0;
+    const lbl = (orderPayMeta(o).label || '').toLowerCase();
+    if(lbl.indexOf('cash') > -1) cash += o.total || 0;
+    else if(lbl.indexOf('card') > -1) card += o.total || 0;
+    else if(lbl.indexOf('qr') > -1) qr += o.total || 0;
+    else other += o.total || 0;
+  });
+  window._popupPrefill = { total:total, cash:cash, card:card, qr:qr, other:other };
   go('s-sales');
 }
 
 function endPopupSession() {
   const orders = loadPopupOrdersData();
   if(orders.length === 0) { showToast('No orders to clear'); return; }
-  if(!confirm('End this popup and clear all ' + orders.length + ' recorded order' + (orders.length === 1 ? '' : 's') + '? The menu stays saved.')) return;
+  if(!confirm('End this popup and clear all ' + orders.length + ' recorded order' + (orders.length === 1 ? '' : 's') + '? The menu and payment methods stay saved.')) return;
   savePopupOrdersData([]);
   popupCart = [];
   renderPopupCart();
@@ -4753,21 +4817,26 @@ function endPopupSession() {
 
 function loadPopupSettings() {
   cancelPopupMenuEdit();
+  cancelPopupMethodEdit();
   renderPopupMenuList();
+  renderPopupMethodsList();
   renderPopupSettingsSummary();
 }
 
 function renderPopupSettingsSummary() {
   const el = document.getElementById('popup-settings-summary'); if(!el) return;
   const orders = loadPopupOrdersData();
-  let total = 0, cash = 0, qr = 0;
-  orders.forEach(function(o){ total += o.total || 0; if(o.pay === 'qr') qr += o.total || 0; else cash += o.total || 0; });
-  el.innerHTML =
-    '<div style="display:flex;justify-content:space-between;text-align:center;gap:8px;">' +
-      '<div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--ink);">RM ' + fmtMoney(total) + '</div><div style="font-size:11px;color:var(--ink-soft);">Total · ' + orders.length + ' order' + (orders.length === 1 ? '' : 's') + '</div></div>' +
-      '<div style="flex:1;"><div style="font-size:17px;font-weight:600;color:#4a7c59;">RM ' + fmtMoney(cash) + '</div><div style="font-size:11px;color:var(--ink-soft);">Cash</div></div>' +
-      '<div style="flex:1;"><div style="font-size:17px;font-weight:600;color:#2d6bc4;">RM ' + fmtMoney(qr) + '</div><div style="font-size:11px;color:var(--ink-soft);">QR</div></div>' +
-    '</div>';
+  let total = 0; const byMethod = {};
+  orders.forEach(function(o){ total += o.total || 0; const meta = orderPayMeta(o); if(!byMethod[meta.label]) byMethod[meta.label] = { amt:0, c:meta.c }; byMethod[meta.label].amt += o.total || 0; });
+  let html = '<div style="text-align:center;margin-bottom:0.7rem;"><div style="font-size:20px;font-weight:700;color:var(--ink);">RM ' + fmtMoney(total) + '</div><div style="font-size:11px;color:var(--ink-soft);">Total · ' + orders.length + ' order' + (orders.length === 1 ? '' : 's') + '</div></div>';
+  const keys = Object.keys(byMethod);
+  if(keys.length) {
+    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + keys.map(function(k){
+      const p = popupPalette(byMethod[k].c);
+      return '<div style="flex:1;min-width:82px;text-align:center;border:1px solid ' + p.fg + ';background:' + p.bg + ';border-radius:10px;padding:0.5rem;"><div style="font-size:14px;font-weight:600;color:' + p.fg + ';">RM ' + fmtMoney(byMethod[k].amt) + '</div><div style="font-size:11px;color:' + p.fg + ';opacity:0.85;">' + escHtml(k) + '</div></div>';
+    }).join('') + '</div>';
+  }
+  el.innerHTML = html;
 }
 
 function renderPopupMenuList() {
@@ -4845,6 +4914,68 @@ function deletePopupMenuItem(id) {
   showToast('Item deleted');
 }
 
+function renderPopupMethodsList() {
+  const el = document.getElementById('pmethod-list'); if(!el) return;
+  const methods = loadPopupMethods();
+  el.innerHTML = methods.map(function(m){
+    const p = popupPalette(m.c);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0.6rem 0;border-bottom:1px solid var(--cream-dark);">' +
+      '<div style="display:flex;align-items:center;gap:9px;min-width:0;"><span style="width:14px;height:14px;border-radius:50%;background:' + p.fg + ';flex-shrink:0;"></span><span style="font-size:13px;font-weight:600;color:var(--ink);">' + escHtml(m.label) + '</span></div>' +
+      '<span style="display:flex;gap:12px;flex-shrink:0;">' +
+        '<i class="ti ti-pencil" onclick="editPopupMethod(\'' + m.id + '\')" style="cursor:pointer;color:var(--ink-soft);padding:2px;font-size:15px;"></i>' +
+        '<i class="ti ti-trash" onclick="deletePopupMethod(\'' + m.id + '\')" style="cursor:pointer;color:var(--vermillion);padding:2px;font-size:15px;"></i>' +
+      '</span>' +
+    '</div>';
+  }).join('');
+}
+
+function savePopupMethod() {
+  const label = (document.getElementById('pmethod-label').value || '').trim();
+  if(!label) { showToast('Enter a payment name!'); return; }
+  const wasEdit = !!popupMethodEditId;
+  const methods = loadPopupMethods();
+  if(popupMethodEditId) {
+    const m = methods.find(function(x){ return x.id === popupMethodEditId; });
+    if(m) { m.label = label; }
+  } else {
+    methods.push({ id:'pay_' + Date.now(), label:label, c:(methods.length % POPUP_PAY_PALETTE.length) });
+  }
+  savePopupMethods(methods);
+  cancelPopupMethodEdit();
+  renderPopupMethodsList();
+  showToast(wasEdit ? 'Payment updated' : 'Payment added');
+}
+
+function editPopupMethod(id) {
+  const m = loadPopupMethods().find(function(x){ return x.id === id; });
+  if(!m) return;
+  popupMethodEditId = id;
+  document.getElementById('pmethod-label').value = m.label || '';
+  document.getElementById('pmethod-edit-id').value = id;
+  const t = document.getElementById('pmethod-form-title'); if(t) t.textContent = 'Edit payment';
+  const b = document.getElementById('pmethod-save-btn'); if(b) b.textContent = 'Update';
+  const c = document.getElementById('pmethod-cancel-btn'); if(c) c.style.display = '';
+}
+
+function cancelPopupMethodEdit() {
+  popupMethodEditId = null;
+  ['pmethod-label','pmethod-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  const t = document.getElementById('pmethod-form-title'); if(t) t.textContent = 'Add payment';
+  const b = document.getElementById('pmethod-save-btn'); if(b) b.textContent = 'Add payment';
+  const c = document.getElementById('pmethod-cancel-btn'); if(c) c.style.display = 'none';
+}
+
+function deletePopupMethod(id) {
+  const methods = loadPopupMethods();
+  if(methods.length <= 1) { showToast('Keep at least one payment method'); return; }
+  if(!confirm('Delete this payment method? Past orders keep their label.')) return;
+  const next = methods.filter(function(x){ return x.id !== id; });
+  savePopupMethods(next);
+  if(popupMethodEditId === id) cancelPopupMethodEdit();
+  renderPopupMethodsList();
+  showToast('Payment removed');
+}
+
 function popupCsvCell(v) {
   v = String(v == null ? '' : v);
   if(/[",\n]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"';
@@ -4854,23 +4985,25 @@ function popupCsvCell(v) {
 function exportPopupSession() {
   const orders = loadPopupOrdersData();
   if(orders.length === 0) { showToast('No orders to export'); return; }
-  let total = 0, cash = 0, qr = 0;
-  orders.forEach(function(o){ total += o.total || 0; if(o.pay === 'qr') qr += o.total || 0; else cash += o.total || 0; });
-  const tally = {};
-  orders.forEach(function(o){ o.items.forEach(function(i){ if(!tally[i.name]) tally[i.name] = { qty:0, amt:0 }; tally[i.name].qty += i.qty; tally[i.name].amt += (parseFloat(i.price) || 0) * i.qty; }); });
+  let total = 0; const byMethod = {}; const tally = {};
+  orders.forEach(function(o){
+    total += o.total || 0;
+    const meta = orderPayMeta(o);
+    byMethod[meta.label] = (byMethod[meta.label] || 0) + (o.total || 0);
+    o.items.forEach(function(i){ if(!tally[i.name]) tally[i.name] = { qty:0, amt:0 }; tally[i.name].qty += i.qty; tally[i.name].amt += (parseFloat(i.price) || 0) * i.qty; });
+  });
   const rows = [];
   rows.push(['Popup session export']);
   rows.push(['Date', getToday()]);
   rows.push(['Exported', getToday() + ' ' + mytClock()]);
   rows.push(['Orders', orders.length]);
   rows.push(['Total (RM)', total.toFixed(2)]);
-  rows.push(['Cash (RM)', cash.toFixed(2)]);
-  rows.push(['QR (RM)', qr.toFixed(2)]);
+  Object.keys(byMethod).forEach(function(k){ rows.push([k + ' (RM)', byMethod[k].toFixed(2)]); });
   rows.push([]);
   rows.push(['Order', 'Time', 'Payment', 'Total (RM)', 'Items']);
   orders.forEach(function(o){
     const items = o.items.map(function(i){ return i.qty + '× ' + i.name; }).join('; ');
-    rows.push([o.no, o.time || '', (o.pay === 'qr' ? 'QR' : 'Cash'), (o.total || 0).toFixed(2), items]);
+    rows.push([o.no, o.time || '', orderPayMeta(o).label, (o.total || 0).toFixed(2), items]);
   });
   rows.push([]);
   rows.push(['Item', 'Qty sold', 'Amount (RM)']);
