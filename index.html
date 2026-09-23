@@ -422,6 +422,18 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <i class="ti ti-photo-share" style="font-size:16px;color:var(--matcha);"></i> Share daily summary
       </button>
     </div>
+    <div id="home-popup">
+    <div style="padding:0 1.1rem;">
+      <div class="section-lbl">Popup</div>
+    </div>
+    <div class="menu-card" style="margin-bottom:1.25rem;">
+      <div class="menu-item" onclick="go('s-popup')">
+        <div class="menu-icon" style="background:#fdeef5;color:#c2407a;"><i class="ti ti-device-mobile"></i></div>
+        <div class="menu-text"><strong>Popup POS</strong><span>Take orders at an event</span></div>
+        <i class="ti ti-chevron-right menu-arrow"></i>
+      </div>
+    </div>
+    </div>
     <div id="home-daily">
     <div style="padding:0 1.1rem;">
       <div class="section-lbl">Daily closing</div>
@@ -1972,6 +1984,75 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   </div>
 </div>
 
+<!-- POPUP POS -->
+<div class="screen" id="s-popup">
+  <div class="topbar" style="border-bottom-color:#fdeef5;">
+    <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Popup POS</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div style="padding:0.9rem 1.1rem 2rem;">
+      <div id="popup-summary" style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:0.8rem 1rem;margin-bottom:0.9rem;"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:0.5rem;">
+        <span style="font-size:15px;font-weight:600;color:var(--ink);">Tap to add</span>
+        <button onclick="go('s-popup-menu')" style="flex-shrink:0;padding:7px 13px;background:none;border:1px solid #c2407a;border-radius:10px;color:#c2407a;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap;"><i class="ti ti-pencil" style="font-size:13px;"></i> Edit menu</button>
+      </div>
+      <div id="popup-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:1rem;"></div>
+      <div class="card" id="popup-order-card">
+        <div class="card-head" style="color:#c2407a;"><i class="ti ti-shopping-cart" style="font-size:14px"></i> Current order</div>
+        <div id="popup-cart"></div>
+        <div id="popup-cart-total" style="display:none;"></div>
+        <div id="popup-pay-row" style="display:none;margin-top:0.7rem;">
+          <div style="font-size:12px;color:var(--ink-soft);margin-bottom:5px;">Payment</div>
+          <div style="display:flex;gap:8px;">
+            <button id="popup-pay-cash" onclick="setPopupPay('cash')" style="flex:1;padding:9px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Cash</button>
+            <button id="popup-pay-qr" onclick="setPopupPay('qr')" style="flex:1;padding:9px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">QR</button>
+          </div>
+        </div>
+        <div id="popup-order-actions" style="display:none;gap:8px;margin-top:0.8rem;">
+          <button onclick="clearPopupCart()" style="padding:0 16px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Clear</button>
+          <button id="popup-record-btn" onclick="recordPopupOrder()" class="submit-btn" style="background:#c2407a;flex:1;margin:0;">Record order</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:1rem;">
+        <div class="card-head" style="color:#c2407a;"><i class="ti ti-list-check" style="font-size:14px"></i> Orders this session <span class="badge badge-neutral" id="popup-orders-count" style="text-transform:none;letter-spacing:0;"></span></div>
+        <div id="popup-orders-list"></div>
+      </div>
+      <button onclick="pushPopupToSales()" style="width:100%;margin-top:1rem;padding:11px;background:#4a7c59;border:none;border-radius:12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;">Send totals to Sales entry</button>
+      <button onclick="endPopupSession()" style="width:100%;margin-top:0.6rem;padding:10px;background:none;border:1px solid var(--vermillion-light);border-radius:12px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">End popup · clear orders</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP MENU -->
+<div class="screen" id="s-popup-menu">
+  <div class="topbar" style="border-bottom-color:#fdeef5;">
+    <div class="back-btn" onclick="go('s-popup')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
+    <span class="topbar-title">Popup menu</span>
+  </div>
+  <div style="overflow-y:auto;flex:1;">
+    <div style="padding:1rem 1.1rem 2rem;">
+      <div style="font-size:12px;color:var(--ink-soft);line-height:1.5;margin-bottom:0.9rem;">Set the items for this popup. Saved on this phone — reuse them next time.</div>
+      <div class="card">
+        <div class="card-head" style="color:#c2407a;"><i class="ti ti-plus" style="font-size:14px"></i> <span id="pmenu-form-title">Add item</span></div>
+        <div class="form-row-2">
+          <div><label class="form-lbl">Item name</label><input class="inp" id="pmenu-name" type="text" placeholder="e.g. Custard taiyaki"/></div>
+          <div><label class="form-lbl">Price (RM)</label><input class="inp" id="pmenu-price" type="number" inputmode="decimal" placeholder="0.00"/></div>
+        </div>
+        <input type="hidden" id="pmenu-edit-id"/>
+        <div style="display:flex;gap:8px;">
+          <button class="submit-btn" id="pmenu-save-btn" onclick="savePopupMenuItem()" style="background:#c2407a;flex:1;margin:0;">Add item</button>
+          <button id="pmenu-cancel-btn" onclick="cancelPopupMenuEdit()" style="display:none;padding:0 16px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">Cancel</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head" style="color:#c2407a;"><i class="ti ti-list" style="font-size:14px"></i> Menu items <span class="badge badge-neutral" id="pmenu-count" style="text-transform:none;letter-spacing:0;"></span></div>
+        <div id="pmenu-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- PROMO POSTER -->
 <div class="screen" id="s-promo">
   <div class="topbar" style="border-bottom-color:#fdeef5;">
@@ -2367,6 +2448,8 @@ function go(id) {
   if(id === 's-promo') loadPromoScreen();
   if(id === 's-counters') loadCountersScreen();
   if(id === 's-projects') loadProjectsScreen();
+  if(id === 's-popup') loadPopup();
+  if(id === 's-popup-menu') loadPopupMenu();
   if(id === 's-project-detail') loadProjectDetail();
   if(id === 's-add-product') { prodIngredients = []; ['prod-extra-label','prod-extra-cost'].forEach(function(x){ const e=document.getElementById(x); if(e) e.value=''; }); renderIngredientsList(prodIngredients,'prod-ingredients-list','prod-total-cost',false); populateIngredientSelect('prod-ing-select'); loadOtherCostPresets(); }
 }
@@ -3197,6 +3280,19 @@ async function loadSalesHistory() {
 async function enterSalesScreen() {
   await loadDynamicChannels();
   await prepSalesScreen();
+  applyPopupPrefill();
+}
+
+function applyPopupPrefill() {
+  if(!window._popupPrefill) return;
+  const p = window._popupPrefill; window._popupPrefill = null;
+  const pt = document.getElementById('pos-total');
+  if(pt && pt.disabled) { showToast("Today\u2019s entry is locked — can\u2019t auto-fill"); return; }
+  if(pt) pt.value = p.total.toFixed(2);
+  const cc = document.getElementById('ch-cash'); if(cc) cc.value = p.cash ? p.cash.toFixed(2) : '';
+  const cq = document.getElementById('ch-qr'); if(cq) cq.value = p.qr ? p.qr.toFixed(2) : '';
+  if(typeof calcVar === 'function') calcVar();
+  showToast('Totals filled in — review & save');
 }
 
 function canEditSales(entry) {
@@ -4413,6 +4509,251 @@ async function deleteProject() {
     renderProjectsList();
     showToast('Project deleted');
   } catch(e) { showToast('Delete error: ' + (e && e.message ? e.message : 'network')); }
+}
+
+// ===== POPUP POS (on-device, localStorage) =====
+let popupCart = [];
+let popupPay = 'cash';
+let popupMenuEditId = null;
+
+function popupKey(kind) { return 'tally_popup_' + kind + '_' + (currentTenantId || 'default'); }
+function loadPopupMenuData() { try { return JSON.parse(localStorage.getItem(popupKey('menu')) || '[]'); } catch(e) { return []; } }
+function savePopupMenuData(arr) { try { localStorage.setItem(popupKey('menu'), JSON.stringify(arr)); } catch(e) {} }
+function loadPopupOrdersData() { try { return JSON.parse(localStorage.getItem(popupKey('orders')) || '[]'); } catch(e) { return []; } }
+function savePopupOrdersData(arr) { try { localStorage.setItem(popupKey('orders'), JSON.stringify(arr)); } catch(e) {} }
+
+function loadPopup() {
+  popupCart = [];
+  popupPay = 'cash';
+  renderPopupGrid();
+  renderPopupCart();
+  renderPopupOrders();
+  renderPopupSummary();
+}
+
+function renderPopupSummary() {
+  const el = document.getElementById('popup-summary'); if(!el) return;
+  const orders = loadPopupOrdersData();
+  let total = 0, cash = 0, qr = 0;
+  orders.forEach(function(o){ total += o.total || 0; if(o.pay === 'qr') qr += o.total || 0; else cash += o.total || 0; });
+  el.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+      '<div><div style="font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.5px;">Session total</div><div style="font-size:22px;font-weight:700;color:var(--ink);">RM ' + fmtMoney(total) + '</div></div>' +
+      '<div style="text-align:right;font-size:12px;color:var(--ink-mid);line-height:1.6;"><div>' + orders.length + ' order' + (orders.length === 1 ? '' : 's') + '</div><div style="color:#4a7c59;">Cash RM ' + fmtMoney(cash) + '</div><div style="color:#2d6bc4;">QR RM ' + fmtMoney(qr) + '</div></div>' +
+    '</div>';
+}
+
+function renderPopupGrid() {
+  const el = document.getElementById('popup-grid'); if(!el) return;
+  const menu = loadPopupMenuData();
+  if(menu.length === 0) {
+    el.style.display = 'block';
+    el.innerHTML = '<div class="empty-state" style="padding:1.2rem;">No items yet.<br/><span style="font-size:12px;">Tap "Edit menu" to add your popup items.</span></div>';
+    return;
+  }
+  el.style.display = 'grid';
+  el.innerHTML = menu.map(function(m){
+    return '<button onclick="addToPopupCart(\'' + m.id + '\')" style="padding:0.7rem 0.6rem;background:#fff;border:1px solid var(--border);border-radius:12px;cursor:pointer;text-align:left;font-family:\'DM Sans\',sans-serif;">' +
+      '<div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25;">' + escHtml(m.name) + '</div>' +
+      '<div style="font-size:12px;color:#c2407a;margin-top:3px;">RM ' + fmtMoney(m.price) + '</div>' +
+    '</button>';
+  }).join('');
+}
+
+function addToPopupCart(id) {
+  const menu = loadPopupMenuData();
+  const m = menu.find(function(x){ return x.id === id; });
+  if(!m) return;
+  const line = popupCart.find(function(x){ return x.id === id; });
+  if(line) { line.qty += 1; } else { popupCart.push({ id:m.id, name:m.name, price:parseFloat(m.price) || 0, qty:1 }); }
+  renderPopupCart();
+}
+
+function changePopupQty(id, delta) {
+  const line = popupCart.find(function(x){ return x.id === id; });
+  if(!line) return;
+  line.qty += delta;
+  if(line.qty <= 0) popupCart = popupCart.filter(function(x){ return x.id !== id; });
+  renderPopupCart();
+}
+
+function clearPopupCart() { popupCart = []; renderPopupCart(); }
+
+function renderPopupCart() {
+  const el = document.getElementById('popup-cart'); if(!el) return;
+  const totalEl = document.getElementById('popup-cart-total');
+  const payRow = document.getElementById('popup-pay-row');
+  const actions = document.getElementById('popup-order-actions');
+  if(popupCart.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:1rem;">Tap items above to start an order.</div>';
+    if(totalEl) totalEl.style.display = 'none';
+    if(payRow) payRow.style.display = 'none';
+    if(actions) actions.style.display = 'none';
+    return;
+  }
+  let total = 0;
+  el.innerHTML = popupCart.map(function(l){
+    const lt = (parseFloat(l.price) || 0) * l.qty; total += lt;
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0.5rem 0;border-bottom:1px solid var(--cream-dark);">' +
+      '<div style="flex:1;min-width:0;"><div style="font-size:13px;color:var(--ink);font-weight:500;">' + escHtml(l.name) + '</div><div style="font-size:11px;color:var(--ink-soft);">RM ' + fmtMoney(l.price) + ' each</div></div>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
+        '<i class="ti ti-minus" onclick="changePopupQty(\'' + l.id + '\',-1)" style="cursor:pointer;color:var(--ink-soft);border:1px solid var(--border);border-radius:6px;padding:3px;font-size:13px;"></i>' +
+        '<span style="min-width:18px;text-align:center;font-size:14px;font-weight:600;">' + l.qty + '</span>' +
+        '<i class="ti ti-plus" onclick="changePopupQty(\'' + l.id + '\',1)" style="cursor:pointer;color:var(--ink-soft);border:1px solid var(--border);border-radius:6px;padding:3px;font-size:13px;"></i>' +
+        '<span style="min-width:64px;text-align:right;font-size:13px;font-weight:600;color:var(--ink);">RM ' + fmtMoney(lt) + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  if(totalEl) {
+    totalEl.style.display = 'block';
+    totalEl.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.7rem;"><span style="font-size:13px;color:var(--ink-mid);">Order total</span><span style="font-size:18px;font-weight:600;color:var(--ink);">RM ' + fmtMoney(total) + '</span></div>';
+  }
+  if(payRow) payRow.style.display = 'block';
+  if(actions) actions.style.display = 'flex';
+  setPopupPay(popupPay);
+}
+
+function setPopupPay(method) {
+  popupPay = method;
+  const cash = document.getElementById('popup-pay-cash');
+  const qr = document.getElementById('popup-pay-qr');
+  const on = "flex:1;padding:9px;border-radius:10px;border:1px solid #c2407a;background:#fdeef5;color:#c2407a;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;";
+  const off = "flex:1;padding:9px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--ink-mid);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;";
+  if(cash) cash.style.cssText = (method === 'cash') ? on : off;
+  if(qr) qr.style.cssText = (method === 'qr') ? on : off;
+}
+
+function recordPopupOrder() {
+  if(popupCart.length === 0) return;
+  let total = 0;
+  const items = popupCart.map(function(l){ const lt = (parseFloat(l.price) || 0) * l.qty; total += lt; return { name:l.name, price:parseFloat(l.price) || 0, qty:l.qty }; });
+  const orders = loadPopupOrdersData();
+  orders.push({ id:'o' + Date.now(), ts:Date.now(), time:mytClock(), items:items, total:total, pay:popupPay });
+  savePopupOrdersData(orders);
+  popupCart = [];
+  popupPay = 'cash';
+  renderPopupCart();
+  renderPopupOrders();
+  renderPopupSummary();
+  showToast('Order recorded · RM ' + fmtMoney(total));
+}
+
+function renderPopupOrders() {
+  const el = document.getElementById('popup-orders-list'); if(!el) return;
+  const countEl = document.getElementById('popup-orders-count');
+  const orders = loadPopupOrdersData();
+  if(countEl) countEl.textContent = orders.length + (orders.length === 1 ? ' order' : ' orders');
+  if(orders.length === 0) { el.innerHTML = '<div class="empty-state" style="padding:1rem;">No orders yet this session.</div>'; return; }
+  el.innerHTML = orders.slice().reverse().map(function(o, idx){
+    const num = orders.length - idx;
+    const badge = (o.pay === 'qr')
+      ? '<span style="font-size:10px;background:#e8f0fb;color:#2d6bc4;padding:2px 7px;border-radius:20px;">QR</span>'
+      : '<span style="font-size:10px;background:#eef3ec;color:#4a7c59;padding:2px 7px;border-radius:20px;">Cash</span>';
+    const itemCount = o.items.reduce(function(s,i){ return s + i.qty; }, 0);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0.6rem 0;border-bottom:1px solid var(--cream-dark);">' +
+      '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--ink);">#' + num + ' · RM ' + fmtMoney(o.total) + ' ' + badge + '</div><div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">' + itemCount + ' item' + (itemCount === 1 ? '' : 's') + ' · ' + (o.time || '') + '</div></div>' +
+      '<i class="ti ti-trash" onclick="voidPopupOrder(\'' + o.id + '\')" style="cursor:pointer;color:var(--vermillion);padding:4px;font-size:15px;flex-shrink:0;"></i>' +
+    '</div>';
+  }).join('');
+}
+
+function voidPopupOrder(id) {
+  if(!confirm('Void this order?')) return;
+  let orders = loadPopupOrdersData();
+  orders = orders.filter(function(o){ return o.id !== id; });
+  savePopupOrdersData(orders);
+  renderPopupOrders();
+  renderPopupSummary();
+  showToast('Order voided');
+}
+
+function pushPopupToSales() {
+  const orders = loadPopupOrdersData();
+  if(orders.length === 0) { showToast('No orders to send'); return; }
+  let total = 0, cash = 0, qr = 0;
+  orders.forEach(function(o){ total += o.total || 0; if(o.pay === 'qr') qr += o.total || 0; else cash += o.total || 0; });
+  window._popupPrefill = { total:total, cash:cash, qr:qr };
+  go('s-sales');
+}
+
+function endPopupSession() {
+  const orders = loadPopupOrdersData();
+  if(orders.length === 0) { showToast('No orders to clear'); return; }
+  if(!confirm('End this popup and clear all ' + orders.length + ' recorded order' + (orders.length === 1 ? '' : 's') + '? The menu stays saved.')) return;
+  savePopupOrdersData([]);
+  popupCart = [];
+  renderPopupCart();
+  renderPopupOrders();
+  renderPopupSummary();
+  showToast('Popup ended · orders cleared');
+}
+
+function loadPopupMenu() { cancelPopupMenuEdit(); renderPopupMenuList(); }
+
+function renderPopupMenuList() {
+  const el = document.getElementById('pmenu-list'); if(!el) return;
+  const countEl = document.getElementById('pmenu-count');
+  const menu = loadPopupMenuData();
+  if(countEl) countEl.textContent = menu.length + (menu.length === 1 ? ' item' : ' items');
+  if(menu.length === 0) { el.innerHTML = '<div class="empty-state" style="padding:1rem;">No items yet. Add your first above.</div>'; return; }
+  el.innerHTML = menu.map(function(m){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0.6rem 0;border-bottom:1px solid var(--cream-dark);">' +
+      '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--ink);">' + escHtml(m.name) + '</div><div style="font-size:12px;color:#c2407a;margin-top:2px;">RM ' + fmtMoney(m.price) + '</div></div>' +
+      '<span style="display:flex;gap:12px;flex-shrink:0;">' +
+        '<i class="ti ti-pencil" onclick="editPopupMenuItem(\'' + m.id + '\')" style="cursor:pointer;color:var(--ink-soft);padding:2px;font-size:15px;"></i>' +
+        '<i class="ti ti-trash" onclick="deletePopupMenuItem(\'' + m.id + '\')" style="cursor:pointer;color:var(--vermillion);padding:2px;font-size:15px;"></i>' +
+      '</span>' +
+    '</div>';
+  }).join('');
+}
+
+function savePopupMenuItem() {
+  const name = (document.getElementById('pmenu-name').value || '').trim();
+  const price = parseFloat(document.getElementById('pmenu-price').value) || 0;
+  if(!name) { showToast('Enter an item name!'); return; }
+  const wasEdit = !!popupMenuEditId;
+  const menu = loadPopupMenuData();
+  if(popupMenuEditId) {
+    const m = menu.find(function(x){ return x.id === popupMenuEditId; });
+    if(m) { m.name = name; m.price = price; }
+  } else {
+    menu.push({ id:'m' + Date.now(), name:name, price:price });
+  }
+  savePopupMenuData(menu);
+  cancelPopupMenuEdit();
+  renderPopupMenuList();
+  showToast(wasEdit ? 'Item updated' : 'Item added');
+}
+
+function editPopupMenuItem(id) {
+  const menu = loadPopupMenuData();
+  const m = menu.find(function(x){ return x.id === id; });
+  if(!m) return;
+  popupMenuEditId = id;
+  document.getElementById('pmenu-name').value = m.name || '';
+  document.getElementById('pmenu-price').value = (m.price != null ? m.price : '');
+  document.getElementById('pmenu-edit-id').value = id;
+  const t = document.getElementById('pmenu-form-title'); if(t) t.textContent = 'Edit item';
+  const b = document.getElementById('pmenu-save-btn'); if(b) b.textContent = 'Update item';
+  const c = document.getElementById('pmenu-cancel-btn'); if(c) c.style.display = '';
+}
+
+function cancelPopupMenuEdit() {
+  popupMenuEditId = null;
+  ['pmenu-name','pmenu-price','pmenu-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  const t = document.getElementById('pmenu-form-title'); if(t) t.textContent = 'Add item';
+  const b = document.getElementById('pmenu-save-btn'); if(b) b.textContent = 'Add item';
+  const c = document.getElementById('pmenu-cancel-btn'); if(c) c.style.display = 'none';
+}
+
+function deletePopupMenuItem(id) {
+  if(!confirm('Delete this item from the popup menu?')) return;
+  let menu = loadPopupMenuData();
+  menu = menu.filter(function(x){ return x.id !== id; });
+  savePopupMenuData(menu);
+  if(popupMenuEditId === id) cancelPopupMenuEdit();
+  renderPopupMenuList();
+  showToast('Item deleted');
 }
 
 function renderInvoices() {
