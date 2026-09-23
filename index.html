@@ -2086,8 +2086,8 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 </div>
 
 <!-- POPUP RECEIPT (customer photographs this) -->
-<div id="popup-receipt-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(20,18,14,0.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1.2rem;">
-  <div style="background:#fff;border-radius:16px;max-width:340px;width:100%;overflow:hidden;box-shadow:0 10px 40px rgba(20,18,14,0.3);">
+<div id="popup-receipt-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(250,247,242,0.97);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1.2rem;">
+  <div style="background:#fff;border-radius:16px;max-width:340px;width:100%;overflow:hidden;border:1px solid var(--border);box-shadow:0 10px 40px rgba(20,18,14,0.18);">
     <div id="popup-receipt-body" style="padding:1.4rem 1.3rem;"></div>
     <div style="padding:0 1.3rem 1.3rem;">
       <button onclick="closePopupReceipt()" style="width:100%;padding:11px;background:#c2407a;border:none;border-radius:12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;">Done</button>
@@ -4846,9 +4846,12 @@ function renderPopupOrders() {
     const pal = popupPalette(meta.c);
     const badge = '<span style="font-size:10px;background:' + pal.bg + ';color:' + pal.fg + ';padding:2px 7px;border-radius:20px;">' + escHtml(meta.label) + '</span>';
     const itemCount = o.items.reduce(function(s,i){ return s + i.qty; }, 0);
-    const detail = o.items.map(function(i){
+    const dpieces = [];
+    o.items.forEach(function(i){ for(var k = 0; k < i.qty; k++) dpieces.push(i); });
+    const dtotal = dpieces.length;
+    const detail = dpieces.map(function(i, idx){
       const code = (i.code || '').trim();
-      return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-mid);padding:2px 0;"><span>' + i.qty + '× ' + (code ? '[' + escHtml(code) + '] ' : '') + escHtml(i.name) + '</span><span>RM ' + fmtMoney((parseFloat(i.price) || 0) * i.qty) + '</span></div>';
+      return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-mid);padding:2px 0;"><span><span style="font-weight:700;color:#c2407a;">' + (idx+1) + '/' + dtotal + '</span>  ' + (code ? '[' + escHtml(code) + '] ' : '') + escHtml(i.name) + '</span><span>RM ' + fmtMoney(parseFloat(i.price) || 0) + '</span></div>';
     }).join('');
     const remarkHtml = o.remark ? '<div style="font-size:11px;color:var(--amber);background:var(--amber-light);border-radius:6px;padding:4px 7px;margin-top:4px;">Note (private): ' + escHtml(o.remark) + '</div>' : '';
     return '<div style="border-bottom:1px solid var(--cream-dark);">' +
