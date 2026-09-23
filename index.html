@@ -2041,9 +2041,10 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="card-head" style="color:#c2407a;"><i class="ti ti-plus" style="font-size:14px"></i> <span id="pmenu-form-title">Add item</span></div>
         <div class="form-row"><label class="form-lbl">Item name</label><input class="inp" id="pmenu-name" type="text" placeholder="e.g. Custard taiyaki"/></div>
         <div class="form-row-2">
+          <div><label class="form-lbl">Code <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><input class="inp" id="pmenu-code" type="text" maxlength="6" placeholder="e.g. RB"/></div>
           <div><label class="form-lbl">Category <span style="color:var(--ink-soft);font-weight:400;">(optional)</span></label><input class="inp" id="pmenu-cat" type="text" list="pmenu-cat-list" placeholder="e.g. Taiyaki"/><datalist id="pmenu-cat-list"></datalist></div>
-          <div><label class="form-lbl">Price (RM)</label><input class="inp" id="pmenu-price" type="number" inputmode="decimal" placeholder="0.00"/></div>
         </div>
+        <div class="form-row"><label class="form-lbl">Price (RM)</label><input class="inp" id="pmenu-price" type="number" inputmode="decimal" placeholder="0.00"/></div>
         <input type="hidden" id="pmenu-edit-id"/>
         <div style="display:flex;gap:8px;">
           <button class="submit-btn" id="pmenu-save-btn" onclick="savePopupMenuItem()" style="background:#c2407a;flex:1;margin:0;">Add item</button>
@@ -4545,6 +4546,8 @@ let popupCart = [];
 let popupPay = null;
 let popupMenuEditId = null;
 let popupMethodEditId = null;
+let popupTotalsShown = false;
+let popupTotalsTimer = null;
 
 const POPUP_PAY_PALETTE = [
   { fg:'#4a7c59', bg:'#eef3ec' }, // green
@@ -4579,9 +4582,17 @@ function orderPayMeta(o) {
   return { label:(o.pay || '—'), c:0 };
 }
 
+function popupCodePill(code) {
+  code = (code || '').trim();
+  if(!code) return '';
+  return '<span style="font-size:10px;font-weight:700;background:#c2407a;color:#fff;padding:1px 6px;border-radius:5px;letter-spacing:0.3px;">' + escHtml(code) + '</span>';
+}
+
 function loadPopup() {
   popupCart = [];
   popupPay = firstPopupMethodId();
+  popupTotalsShown = false;
+  if(popupTotalsTimer) { clearTimeout(popupTotalsTimer); popupTotalsTimer = null; }
   renderPopupGrid();
   renderPopupCart();
   renderPopupOrders();
@@ -4594,20 +4605,36 @@ function setPopupCurrentNo() {
   if(chip) chip.textContent = '#' + nextPopupNo();
 }
 
+function togglePopupTotals() {
+  popupTotalsShown = !popupTotalsShown;
+  if(popupTotalsTimer) { clearTimeout(popupTotalsTimer); popupTotalsTimer = null; }
+  if(popupTotalsShown) { popupTotalsTimer = setTimeout(function(){ popupTotalsShown = false; renderPopupSummary(); }, 8000); }
+  renderPopupSummary();
+}
+
 function renderPopupSummary() {
   const el = document.getElementById('popup-summary'); if(!el) return;
   const orders = loadPopupOrdersData();
   let total = 0;
   orders.forEach(function(o){ total += o.total || 0; });
+  const shown = popupTotalsShown;
   el.innerHTML =
-    '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-      '<div><div style="font-size:11px;opacity:0.85;text-transform:uppercase;letter-spacing:0.5px;">Session total</div><div style="font-size:24px;font-weight:700;">RM ' + fmtMoney(total) + '</div><div style="font-size:12px;opacity:0.9;margin-top:2px;">' + orders.length + ' order' + (orders.length === 1 ? '' : 's') + ' recorded</div></div>' +
-      '<div style="text-align:center;background:rgba(255,255,255,0.18);border-radius:12px;padding:0.5rem 0.85rem;"><div style="font-size:10px;opacity:0.9;text-transform:uppercase;letter-spacing:0.5px;">Next</div><div style="font-size:22px;font-weight:700;">#' + nextPopupNo() + '</div></div>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
+      '<div onclick="togglePopupTotals()" style="cursor:pointer;min-width:0;">' +
+        '<div style="font-size:11px;opacity:0.85;text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;gap:6px;">Session total <i class="ti ti-' + (shown ? 'eye-off' : 'eye') + '" style="font-size:13px;"></i></div>' +
+        '<div style="font-size:24px;font-weight:700;">' + (shown ? ('RM ' + fmtMoney(total)) : 'RM ••••') + '</div>' +
+        (shown
+          ? '<div style="font-size:12px;opacity:0.9;margin-top:2px;">' + orders.length + ' order' + (orders.length === 1 ? '' : 's') + ' recorded · tap to hide</div>'
+          : '<div style="font-size:12px;opacity:0.75;margin-top:2px;">Tap to show</div>') +
+      '</div>' +
+      '<div style="text-align:center;background:rgba(255,255,255,0.18);border-radius:12px;padding:0.5rem 0.85rem;flex-shrink:0;"><div style="font-size:10px;opacity:0.9;text-transform:uppercase;letter-spacing:0.5px;">Next</div><div style="font-size:22px;font-weight:700;">#' + nextPopupNo() + '</div></div>' +
     '</div>';
 }
 
 function popupItemBtn(m) {
+  const code = (m.code || '').trim();
   return '<button onclick="addToPopupCart(\'' + m.id + '\', this)" class="pop-item" style="padding:0.7rem 0.6rem;background:#fff;border:1px solid var(--border);border-radius:12px;cursor:pointer;text-align:left;font-family:\'DM Sans\',sans-serif;">' +
+    (code ? '<div style="margin-bottom:3px;">' + popupCodePill(code) + '</div>' : '') +
     '<div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25;">' + escHtml(m.name) + '</div>' +
     '<div style="font-size:12px;color:#c2407a;margin-top:3px;">RM ' + fmtMoney(m.price) + '</div>' +
   '</button>';
@@ -4642,7 +4669,7 @@ function addToPopupCart(id, btn) {
   const m = menu.find(function(x){ return x.id === id; });
   if(!m) return;
   const line = popupCart.find(function(x){ return x.id === id; });
-  if(line) { line.qty += 1; } else { popupCart.push({ id:m.id, name:m.name, price:parseFloat(m.price) || 0, qty:1 }); }
+  if(line) { line.qty += 1; } else { popupCart.push({ id:m.id, name:m.name, code:(m.code || ''), price:parseFloat(m.price) || 0, qty:1 }); }
   if(btn) { btn.classList.remove('pop-added'); void btn.offsetWidth; btn.classList.add('pop-added'); }
   renderPopupCart();
 }
@@ -4672,8 +4699,9 @@ function renderPopupCart() {
   let total = 0;
   el.innerHTML = popupCart.map(function(l){
     const lt = (parseFloat(l.price) || 0) * l.qty; total += lt;
+    const code = (l.code || '').trim();
     return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0.5rem 0;border-bottom:1px solid var(--cream-dark);">' +
-      '<div style="flex:1;min-width:0;"><div style="font-size:13px;color:var(--ink);font-weight:500;">' + escHtml(l.name) + '</div><div style="font-size:11px;color:var(--ink-soft);">RM ' + fmtMoney(l.price) + ' each</div></div>' +
+      '<div style="flex:1;min-width:0;"><div style="font-size:13px;color:var(--ink);font-weight:500;">' + (code ? popupCodePill(code) + ' ' : '') + escHtml(l.name) + '</div><div style="font-size:11px;color:var(--ink-soft);">RM ' + fmtMoney(l.price) + ' each</div></div>' +
       '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
         '<i class="ti ti-minus" onclick="changePopupQty(\'' + l.id + '\',-1)" style="cursor:pointer;color:var(--ink-soft);border:1px solid var(--border);border-radius:6px;padding:3px;font-size:13px;"></i>' +
         '<span style="min-width:18px;text-align:center;font-size:14px;font-weight:600;">' + l.qty + '</span>' +
@@ -4724,13 +4752,15 @@ function recordPopupOrder() {
   const methods = loadPopupMethods();
   const sel = methods.find(function(m){ return m.id === popupPay; }) || methods[0] || { id:'pay_cash', label:'Cash', c:0 };
   let total = 0;
-  const items = popupCart.map(function(l){ const lt = (parseFloat(l.price) || 0) * l.qty; total += lt; return { name:l.name, price:parseFloat(l.price) || 0, qty:l.qty }; });
+  const items = popupCart.map(function(l){ const lt = (parseFloat(l.price) || 0) * l.qty; total += lt; return { name:l.name, code:(l.code || ''), price:parseFloat(l.price) || 0, qty:l.qty }; });
   const orders = loadPopupOrdersData();
   const no = orders.reduce(function(m,x){ return Math.max(m, x.no || 0); }, 0) + 1;
   orders.push({ id:'o' + Date.now(), no:no, ts:Date.now(), time:mytClock(), items:items, total:total, pay:sel.id, payLabel:sel.label, payC:sel.c || 0 });
   savePopupOrdersData(orders);
   popupCart = [];
   popupPay = firstPopupMethodId();
+  popupTotalsShown = false;
+  if(popupTotalsTimer) { clearTimeout(popupTotalsTimer); popupTotalsTimer = null; }
   renderPopupCart();
   renderPopupOrders();
   renderPopupSummary();
@@ -4750,7 +4780,8 @@ function renderPopupOrders() {
     const badge = '<span style="font-size:10px;background:' + pal.bg + ';color:' + pal.fg + ';padding:2px 7px;border-radius:20px;">' + escHtml(meta.label) + '</span>';
     const itemCount = o.items.reduce(function(s,i){ return s + i.qty; }, 0);
     const detail = o.items.map(function(i){
-      return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-mid);padding:2px 0;"><span>' + i.qty + '× ' + escHtml(i.name) + '</span><span>RM ' + fmtMoney((parseFloat(i.price) || 0) * i.qty) + '</span></div>';
+      const code = (i.code || '').trim();
+      return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-mid);padding:2px 0;"><span>' + i.qty + '× ' + (code ? '[' + escHtml(code) + '] ' : '') + escHtml(i.name) + '</span><span>RM ' + fmtMoney((parseFloat(i.price) || 0) * i.qty) + '</span></div>';
     }).join('');
     return '<div style="border-bottom:1px solid var(--cream-dark);">' +
       '<div onclick="togglePopupOrder(\'' + o.id + '\')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0.6rem 0;cursor:pointer;">' +
@@ -4853,8 +4884,10 @@ function renderPopupMenuList() {
   if(menu.length === 0) { el.innerHTML = '<div class="empty-state" style="padding:1rem;">No items yet. Add your first above.</div>'; return; }
   el.innerHTML = menu.map(function(m){
     const cat = (m.cat || '').trim();
+    const code = (m.code || '').trim();
+    const tags = (code ? popupCodePill(code) : '') + (cat ? (code ? ' ' : '') + '<span style="font-size:10px;font-weight:500;background:#fdeef5;color:#c2407a;padding:1px 7px;border-radius:20px;">' + escHtml(cat) + '</span>' : '');
     return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0.6rem 0;border-bottom:1px solid var(--cream-dark);">' +
-      '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--ink);">' + escHtml(m.name) + (cat ? ' <span style="font-size:10px;font-weight:500;background:#fdeef5;color:#c2407a;padding:1px 7px;border-radius:20px;margin-left:4px;">' + escHtml(cat) + '</span>' : '') + '</div><div style="font-size:12px;color:#c2407a;margin-top:2px;">RM ' + fmtMoney(m.price) + '</div></div>' +
+      '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--ink);">' + escHtml(m.name) + (tags ? ' ' + tags : '') + '</div><div style="font-size:12px;color:#c2407a;margin-top:2px;">RM ' + fmtMoney(m.price) + '</div></div>' +
       '<span style="display:flex;gap:12px;flex-shrink:0;">' +
         '<i class="ti ti-pencil" onclick="editPopupMenuItem(\'' + m.id + '\')" style="cursor:pointer;color:var(--ink-soft);padding:2px;font-size:15px;"></i>' +
         '<i class="ti ti-trash" onclick="deletePopupMenuItem(\'' + m.id + '\')" style="cursor:pointer;color:var(--vermillion);padding:2px;font-size:15px;"></i>' +
@@ -4865,6 +4898,7 @@ function renderPopupMenuList() {
 
 function savePopupMenuItem() {
   const name = (document.getElementById('pmenu-name').value || '').trim();
+  const code = (document.getElementById('pmenu-code').value || '').trim();
   const cat = (document.getElementById('pmenu-cat').value || '').trim();
   const price = parseFloat(document.getElementById('pmenu-price').value) || 0;
   if(!name) { showToast('Enter an item name!'); return; }
@@ -4872,9 +4906,9 @@ function savePopupMenuItem() {
   const menu = loadPopupMenuData();
   if(popupMenuEditId) {
     const m = menu.find(function(x){ return x.id === popupMenuEditId; });
-    if(m) { m.name = name; m.cat = cat; m.price = price; }
+    if(m) { m.name = name; m.code = code; m.cat = cat; m.price = price; }
   } else {
-    menu.push({ id:'m' + Date.now(), name:name, cat:cat, price:price });
+    menu.push({ id:'m' + Date.now(), name:name, code:code, cat:cat, price:price });
   }
   savePopupMenuData(menu);
   cancelPopupMenuEdit();
@@ -4888,6 +4922,7 @@ function editPopupMenuItem(id) {
   if(!m) return;
   popupMenuEditId = id;
   document.getElementById('pmenu-name').value = m.name || '';
+  document.getElementById('pmenu-code').value = m.code || '';
   document.getElementById('pmenu-cat').value = m.cat || '';
   document.getElementById('pmenu-price').value = (m.price != null ? m.price : '');
   document.getElementById('pmenu-edit-id').value = id;
@@ -4898,7 +4933,7 @@ function editPopupMenuItem(id) {
 
 function cancelPopupMenuEdit() {
   popupMenuEditId = null;
-  ['pmenu-name','pmenu-cat','pmenu-price','pmenu-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
+  ['pmenu-name','pmenu-code','pmenu-cat','pmenu-price','pmenu-edit-id'].forEach(function(id){ const e = document.getElementById(id); if(e) e.value = ''; });
   const t = document.getElementById('pmenu-form-title'); if(t) t.textContent = 'Add item';
   const b = document.getElementById('pmenu-save-btn'); if(b) b.textContent = 'Add item';
   const c = document.getElementById('pmenu-cancel-btn'); if(c) c.style.display = 'none';
@@ -4990,7 +5025,7 @@ function exportPopupSession() {
     total += o.total || 0;
     const meta = orderPayMeta(o);
     byMethod[meta.label] = (byMethod[meta.label] || 0) + (o.total || 0);
-    o.items.forEach(function(i){ if(!tally[i.name]) tally[i.name] = { qty:0, amt:0 }; tally[i.name].qty += i.qty; tally[i.name].amt += (parseFloat(i.price) || 0) * i.qty; });
+    o.items.forEach(function(i){ if(!tally[i.name]) tally[i.name] = { qty:0, amt:0, code:(i.code || '') }; tally[i.name].qty += i.qty; tally[i.name].amt += (parseFloat(i.price) || 0) * i.qty; });
   });
   const rows = [];
   rows.push(['Popup session export']);
@@ -5002,12 +5037,12 @@ function exportPopupSession() {
   rows.push([]);
   rows.push(['Order', 'Time', 'Payment', 'Total (RM)', 'Items']);
   orders.forEach(function(o){
-    const items = o.items.map(function(i){ return i.qty + '× ' + i.name; }).join('; ');
+    const items = o.items.map(function(i){ const code = (i.code || '').trim(); return i.qty + '× ' + (code ? '[' + code + '] ' : '') + i.name; }).join('; ');
     rows.push([o.no, o.time || '', orderPayMeta(o).label, (o.total || 0).toFixed(2), items]);
   });
   rows.push([]);
-  rows.push(['Item', 'Qty sold', 'Amount (RM)']);
-  Object.keys(tally).forEach(function(k){ rows.push([k, tally[k].qty, tally[k].amt.toFixed(2)]); });
+  rows.push(['Code', 'Item', 'Qty sold', 'Amount (RM)']);
+  Object.keys(tally).forEach(function(k){ rows.push([tally[k].code || '', k, tally[k].qty, tally[k].amt.toFixed(2)]); });
   const csv = rows.map(function(r){ return r.map(popupCsvCell).join(','); }).join('\n');
   try {
     const blob = new Blob(['\ufeff' + csv], { type:'text/csv;charset=utf-8;' });
