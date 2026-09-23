@@ -226,6 +226,11 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 #owner-welcome .ow-sub { font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink-soft); margin-top:7px; opacity:0; }
 #owner-welcome.show .ow-sub { animation:owFade 0.7s ease 1.15s forwards; }
 @keyframes owFade { to { opacity:1; } }
+.pop-item{transition:transform .09s ease, box-shadow .14s ease, border-color .14s ease;}
+.pop-item:hover{border-color:#e6a8c6;box-shadow:0 2px 8px rgba(194,64,122,0.12);}
+.pop-item:active{transform:scale(.95);}
+.pop-item.pop-added{animation:popAdded .3s ease;}
+@keyframes popAdded{0%{transform:scale(1);}35%{transform:scale(.92);box-shadow:0 3px 14px rgba(194,64,122,0.32);border-color:#c2407a;}100%{transform:scale(1);}}
 </style>
 </head>
 <body>
@@ -2055,7 +2060,8 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="section-lbl" style="margin-top:1.4rem;">Session</div>
       <div class="card" style="margin-top:0.6rem;">
         <div id="popup-settings-summary"></div>
-        <button onclick="pushPopupToSales()" style="width:100%;margin-top:0.9rem;padding:11px;background:#4a7c59;border:none;border-radius:12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;">Send totals to Sales entry</button>
+        <button onclick="exportPopupSession()" style="width:100%;margin-top:0.9rem;padding:11px;background:none;border:1px solid var(--border);border-radius:12px;color:var(--ink-mid);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;"><i class="ti ti-download" style="font-size:15px;"></i> Export session (CSV)</button>
+        <button onclick="pushPopupToSales()" style="width:100%;margin-top:0.6rem;padding:11px;background:#4a7c59;border:none;border-radius:12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;">Send totals to Sales entry</button>
         <button onclick="endPopupSession()" style="width:100%;margin-top:0.6rem;padding:10px;background:none;border:1px solid var(--vermillion-light);border-radius:12px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">End popup · clear orders</button>
       </div>
     </div>
@@ -4560,7 +4566,7 @@ function renderPopupSummary() {
 }
 
 function popupItemBtn(m) {
-  return '<button onclick="addToPopupCart(\'' + m.id + '\')" style="padding:0.7rem 0.6rem;background:#fff;border:1px solid var(--border);border-radius:12px;cursor:pointer;text-align:left;font-family:\'DM Sans\',sans-serif;">' +
+  return '<button onclick="addToPopupCart(\'' + m.id + '\', this)" class="pop-item" style="padding:0.7rem 0.6rem;background:#fff;border:1px solid var(--border);border-radius:12px;cursor:pointer;text-align:left;font-family:\'DM Sans\',sans-serif;">' +
     '<div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.25;">' + escHtml(m.name) + '</div>' +
     '<div style="font-size:12px;color:#c2407a;margin-top:3px;">RM ' + fmtMoney(m.price) + '</div>' +
   '</button>';
@@ -4590,12 +4596,13 @@ function renderPopupGrid() {
   }).join('');
 }
 
-function addToPopupCart(id) {
+function addToPopupCart(id, btn) {
   const menu = loadPopupMenuData();
   const m = menu.find(function(x){ return x.id === id; });
   if(!m) return;
   const line = popupCart.find(function(x){ return x.id === id; });
   if(line) { line.qty += 1; } else { popupCart.push({ id:m.id, name:m.name, price:parseFloat(m.price) || 0, qty:1 }); }
+  if(btn) { btn.classList.remove('pop-added'); void btn.offsetWidth; btn.classList.add('pop-added'); }
   renderPopupCart();
 }
 
@@ -4836,6 +4843,48 @@ function deletePopupMenuItem(id) {
   if(popupMenuEditId === id) cancelPopupMenuEdit();
   renderPopupMenuList();
   showToast('Item deleted');
+}
+
+function popupCsvCell(v) {
+  v = String(v == null ? '' : v);
+  if(/[",\n]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"';
+  return v;
+}
+
+function exportPopupSession() {
+  const orders = loadPopupOrdersData();
+  if(orders.length === 0) { showToast('No orders to export'); return; }
+  let total = 0, cash = 0, qr = 0;
+  orders.forEach(function(o){ total += o.total || 0; if(o.pay === 'qr') qr += o.total || 0; else cash += o.total || 0; });
+  const tally = {};
+  orders.forEach(function(o){ o.items.forEach(function(i){ if(!tally[i.name]) tally[i.name] = { qty:0, amt:0 }; tally[i.name].qty += i.qty; tally[i.name].amt += (parseFloat(i.price) || 0) * i.qty; }); });
+  const rows = [];
+  rows.push(['Popup session export']);
+  rows.push(['Date', getToday()]);
+  rows.push(['Exported', getToday() + ' ' + mytClock()]);
+  rows.push(['Orders', orders.length]);
+  rows.push(['Total (RM)', total.toFixed(2)]);
+  rows.push(['Cash (RM)', cash.toFixed(2)]);
+  rows.push(['QR (RM)', qr.toFixed(2)]);
+  rows.push([]);
+  rows.push(['Order', 'Time', 'Payment', 'Total (RM)', 'Items']);
+  orders.forEach(function(o){
+    const items = o.items.map(function(i){ return i.qty + '× ' + i.name; }).join('; ');
+    rows.push([o.no, o.time || '', (o.pay === 'qr' ? 'QR' : 'Cash'), (o.total || 0).toFixed(2), items]);
+  });
+  rows.push([]);
+  rows.push(['Item', 'Qty sold', 'Amount (RM)']);
+  Object.keys(tally).forEach(function(k){ rows.push([k, tally[k].qty, tally[k].amt.toFixed(2)]); });
+  const csv = rows.map(function(r){ return r.map(popupCsvCell).join(','); }).join('\n');
+  try {
+    const blob = new Blob(['\ufeff' + csv], { type:'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'popup-' + getToday() + '.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    showToast('Exported ' + orders.length + ' order' + (orders.length === 1 ? '' : 's'));
+  } catch(e) { showToast('Export failed: ' + (e && e.message ? e.message : 'unknown')); }
 }
 
 function renderInvoices() {
