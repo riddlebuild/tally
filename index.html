@@ -2086,7 +2086,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
 </div>
 
 <!-- POPUP RECEIPT (customer photographs this) -->
-<div id="popup-receipt-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(20,18,14,0.55);align-items:center;justify-content:center;padding:1.2rem;">
+<div id="popup-receipt-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(20,18,14,0.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1.2rem;">
   <div style="background:#fff;border-radius:16px;max-width:340px;width:100%;overflow:hidden;box-shadow:0 10px 40px rgba(20,18,14,0.3);">
     <div id="popup-receipt-body" style="padding:1.4rem 1.3rem;"></div>
     <div style="padding:0 1.3rem 1.3rem;">
@@ -4795,9 +4795,12 @@ function recordPopupOrder() {
 function buildPopupReceipt(o) {
   const biz = (localStorage.getItem('tally_biz') || '').trim() || (localStorage.getItem('tally_biz_code') || '').toUpperCase() || 'Order';
   const meta = orderPayMeta(o);
-  const itemsHtml = o.items.map(function(i){
+  const pieces = [];
+  o.items.forEach(function(i){ for(var k = 0; k < i.qty; k++) pieces.push(i); });
+  const totalPieces = pieces.length;
+  const itemsHtml = pieces.map(function(i, idx){
     const code = (i.code || '').trim();
-    return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink);padding:3px 0;"><span>' + i.qty + '× ' + (code ? '[' + escHtml(code) + '] ' : '') + escHtml(i.name) + '</span><span>RM ' + fmtMoney((parseFloat(i.price) || 0) * i.qty) + '</span></div>';
+    return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink);padding:3px 0;"><span><span style="font-weight:700;color:#c2407a;">' + (idx+1) + '/' + totalPieces + '</span>  ' + (code ? '[' + escHtml(code) + '] ' : '') + escHtml(i.name) + '</span><span>RM ' + fmtMoney(parseFloat(i.price) || 0) + '</span></div>';
   }).join('');
   return '' +
     '<div style="text-align:center;margin-bottom:0.9rem;">' +
@@ -4827,6 +4830,11 @@ function closePopupReceipt() {
   if(m) m.style.display = 'none';
 }
 
+function reshowPopupReceipt(id) {
+  const o = loadPopupOrdersData().find(function(x){ return x.id === id; });
+  if(o) showPopupReceipt(o);
+}
+
 function renderPopupOrders() {
   const el = document.getElementById('popup-orders-list'); if(!el) return;
   const countEl = document.getElementById('popup-orders-count');
@@ -4848,6 +4856,7 @@ function renderPopupOrders() {
         '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--ink);">#' + o.no + ' · RM ' + fmtMoney(o.total) + ' ' + badge + '</div><div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">' + itemCount + ' item' + (itemCount === 1 ? '' : 's') + ' · ' + (o.time || '') + (o.name ? ' · ' + escHtml(o.name) : '') + '</div></div>' +
         '<span style="display:flex;align-items:center;gap:10px;flex-shrink:0;">' +
           '<i class="ti ti-chevron-down" id="popup-ord-arrow-' + o.id + '" style="color:var(--ink-soft);transition:transform 0.15s;"></i>' +
+          '<i class="ti ti-receipt" onclick="event.stopPropagation();reshowPopupReceipt(\'' + o.id + '\')" style="cursor:pointer;color:#c2407a;padding:4px;font-size:15px;"></i>' +
           '<i class="ti ti-trash" onclick="event.stopPropagation();voidPopupOrder(\'' + o.id + '\')" style="cursor:pointer;color:var(--vermillion);padding:4px;font-size:15px;"></i>' +
         '</span>' +
       '</div>' +
