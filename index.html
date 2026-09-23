@@ -2010,6 +2010,10 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="card-head" style="color:#c2407a;"><i class="ti ti-shopping-cart" style="font-size:14px"></i> Current order <span id="popup-current-no" style="margin-left:auto;font-size:12px;font-weight:600;background:#fdeef5;color:#c2407a;padding:2px 10px;border-radius:20px;letter-spacing:0;text-transform:none;"></span></div>
         <div id="popup-cart"></div>
         <div id="popup-cart-total" style="display:none;"></div>
+        <div id="popup-order-extra" style="display:none;margin-top:0.7rem;">
+          <input class="inp" id="popup-cust-name" type="text" placeholder="Name (optional)" style="margin-bottom:6px;"/>
+          <input class="inp" id="popup-cust-remark" type="text" placeholder="Remark — only you see this (e.g. blue shirt)"/>
+        </div>
         <div id="popup-pay-row" style="display:none;margin-top:0.7rem;">
           <div style="font-size:12px;color:var(--ink-soft);margin-bottom:5px;">Payment</div>
           <div id="popup-pay-methods" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
@@ -2073,10 +2077,20 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div class="section-lbl" style="margin-top:1.4rem;">Session</div>
       <div class="card" style="margin-top:0.6rem;">
         <div id="popup-settings-summary"></div>
-        <button onclick="exportPopupSession()" style="width:100%;margin-top:0.9rem;padding:11px;background:none;border:1px solid var(--border);border-radius:12px;color:var(--ink-mid);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;"><i class="ti ti-download" style="font-size:15px;"></i> Export session (CSV)</button>
+        <button onclick="exportPopupSession()" style="width:100%;margin-top:0.9rem;padding:11px;background:none;border:1px solid var(--border);border-radius:12px;color:var(--ink-mid);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;"><i class="ti ti-file-text" style="font-size:15px;"></i> Export session (PDF)</button>
         <button onclick="pushPopupToSales()" style="width:100%;margin-top:0.6rem;padding:11px;background:#4a7c59;border:none;border-radius:12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;">Send totals to Sales entry</button>
         <button onclick="endPopupSession()" style="width:100%;margin-top:0.6rem;padding:10px;background:none;border:1px solid var(--vermillion-light);border-radius:12px;color:var(--vermillion);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;">End popup · clear orders</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP RECEIPT (customer photographs this) -->
+<div id="popup-receipt-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(20,18,14,0.55);align-items:center;justify-content:center;padding:1.2rem;">
+  <div style="background:#fff;border-radius:16px;max-width:340px;width:100%;overflow:hidden;box-shadow:0 10px 40px rgba(20,18,14,0.3);">
+    <div id="popup-receipt-body" style="padding:1.4rem 1.3rem;"></div>
+    <div style="padding:0 1.3rem 1.3rem;">
+      <button onclick="closePopupReceipt()" style="width:100%;padding:11px;background:#c2407a;border:none;border-radius:12px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;">Done</button>
     </div>
   </div>
 </div>
@@ -4593,6 +4607,8 @@ function loadPopup() {
   popupPay = firstPopupMethodId();
   popupTotalsShown = false;
   if(popupTotalsTimer) { clearTimeout(popupTotalsTimer); popupTotalsTimer = null; }
+  const nmEl = document.getElementById('popup-cust-name'); if(nmEl) nmEl.value = '';
+  const rmEl = document.getElementById('popup-cust-remark'); if(rmEl) rmEl.value = '';
   renderPopupGrid();
   renderPopupCart();
   renderPopupOrders();
@@ -4689,9 +4705,11 @@ function renderPopupCart() {
   const totalEl = document.getElementById('popup-cart-total');
   const payRow = document.getElementById('popup-pay-row');
   const actions = document.getElementById('popup-order-actions');
+  const extra = document.getElementById('popup-order-extra');
   if(popupCart.length === 0) {
     el.innerHTML = '<div class="empty-state" style="padding:1rem;">Tap items above to start an order.</div>';
     if(totalEl) totalEl.style.display = 'none';
+    if(extra) extra.style.display = 'none';
     if(payRow) payRow.style.display = 'none';
     if(actions) actions.style.display = 'none';
     return;
@@ -4716,6 +4734,7 @@ function renderPopupCart() {
   }
   if(payRow) payRow.style.display = 'block';
   if(actions) actions.style.display = 'flex';
+  if(extra) extra.style.display = 'block';
   renderPopupPayRow();
 }
 
@@ -4751,21 +4770,61 @@ function recordPopupOrder() {
   if(popupCart.length === 0) return;
   const methods = loadPopupMethods();
   const sel = methods.find(function(m){ return m.id === popupPay; }) || methods[0] || { id:'pay_cash', label:'Cash', c:0 };
+  const nmEl = document.getElementById('popup-cust-name'); const custName = nmEl ? (nmEl.value || '').trim() : '';
+  const rmEl = document.getElementById('popup-cust-remark'); const custRemark = rmEl ? (rmEl.value || '').trim() : '';
   let total = 0;
   const items = popupCart.map(function(l){ const lt = (parseFloat(l.price) || 0) * l.qty; total += lt; return { name:l.name, code:(l.code || ''), price:parseFloat(l.price) || 0, qty:l.qty }; });
   const orders = loadPopupOrdersData();
   const no = orders.reduce(function(m,x){ return Math.max(m, x.no || 0); }, 0) + 1;
-  orders.push({ id:'o' + Date.now(), no:no, ts:Date.now(), time:mytClock(), items:items, total:total, pay:sel.id, payLabel:sel.label, payC:sel.c || 0 });
+  const order = { id:'o' + Date.now(), no:no, ts:Date.now(), time:mytClock(), items:items, total:total, pay:sel.id, payLabel:sel.label, payC:sel.c || 0, name:custName, remark:custRemark };
+  orders.push(order);
   savePopupOrdersData(orders);
   popupCart = [];
   popupPay = firstPopupMethodId();
   popupTotalsShown = false;
   if(popupTotalsTimer) { clearTimeout(popupTotalsTimer); popupTotalsTimer = null; }
+  if(nmEl) nmEl.value = '';
+  if(rmEl) rmEl.value = '';
   renderPopupCart();
   renderPopupOrders();
   renderPopupSummary();
   setPopupCurrentNo();
-  showToast('Order #' + no + ' recorded · RM ' + fmtMoney(total));
+  showPopupReceipt(order);
+}
+
+function buildPopupReceipt(o) {
+  const biz = (localStorage.getItem('tally_biz') || '').trim() || (localStorage.getItem('tally_biz_code') || '').toUpperCase() || 'Order';
+  const meta = orderPayMeta(o);
+  const itemsHtml = o.items.map(function(i){
+    const code = (i.code || '').trim();
+    return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink);padding:3px 0;"><span>' + i.qty + '× ' + (code ? '[' + escHtml(code) + '] ' : '') + escHtml(i.name) + '</span><span>RM ' + fmtMoney((parseFloat(i.price) || 0) * i.qty) + '</span></div>';
+  }).join('');
+  return '' +
+    '<div style="text-align:center;margin-bottom:0.9rem;">' +
+      '<div style="font-size:15px;font-weight:700;color:var(--ink);">' + escHtml(biz) + '</div>' +
+      '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">' + formatDate(new Date()) + ' · ' + (o.time || '') + '</div>' +
+    '</div>' +
+    '<div style="text-align:center;background:#fdeef5;border-radius:12px;padding:0.7rem;margin-bottom:0.9rem;">' +
+      '<div style="font-size:11px;color:#c2407a;text-transform:uppercase;letter-spacing:0.5px;">Your order</div>' +
+      '<div style="font-size:32px;font-weight:800;color:#c2407a;line-height:1.1;">#' + o.no + '</div>' +
+      (o.name ? '<div style="font-size:13px;color:#c2407a;margin-top:2px;">' + escHtml(o.name) + '</div>' : '') +
+    '</div>' +
+    '<div style="border-top:1px solid var(--cream-dark);border-bottom:1px solid var(--cream-dark);padding:0.5rem 0;margin-bottom:0.7rem;">' + itemsHtml + '</div>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;"><span style="font-size:14px;font-weight:600;color:var(--ink);">Total</span><span style="font-size:16px;font-weight:700;color:var(--ink);">RM ' + fmtMoney(o.total) + '</span></div>' +
+    '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);"><span>Paid by</span><span>' + escHtml(meta.label) + '</span></div>' +
+    '<div style="text-align:center;font-size:11px;color:var(--ink-soft);margin-top:0.9rem;">Screenshot this to collect your order</div>';
+}
+
+function showPopupReceipt(o) {
+  const body = document.getElementById('popup-receipt-body');
+  if(body) body.innerHTML = buildPopupReceipt(o);
+  const m = document.getElementById('popup-receipt-modal');
+  if(m) m.style.display = 'flex';
+}
+
+function closePopupReceipt() {
+  const m = document.getElementById('popup-receipt-modal');
+  if(m) m.style.display = 'none';
 }
 
 function renderPopupOrders() {
@@ -4783,15 +4842,16 @@ function renderPopupOrders() {
       const code = (i.code || '').trim();
       return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-mid);padding:2px 0;"><span>' + i.qty + '× ' + (code ? '[' + escHtml(code) + '] ' : '') + escHtml(i.name) + '</span><span>RM ' + fmtMoney((parseFloat(i.price) || 0) * i.qty) + '</span></div>';
     }).join('');
+    const remarkHtml = o.remark ? '<div style="font-size:11px;color:var(--amber);background:var(--amber-light);border-radius:6px;padding:4px 7px;margin-top:4px;">Note (private): ' + escHtml(o.remark) + '</div>' : '';
     return '<div style="border-bottom:1px solid var(--cream-dark);">' +
       '<div onclick="togglePopupOrder(\'' + o.id + '\')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0.6rem 0;cursor:pointer;">' +
-        '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--ink);">#' + o.no + ' · RM ' + fmtMoney(o.total) + ' ' + badge + '</div><div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">' + itemCount + ' item' + (itemCount === 1 ? '' : 's') + ' · ' + (o.time || '') + '</div></div>' +
+        '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--ink);">#' + o.no + ' · RM ' + fmtMoney(o.total) + ' ' + badge + '</div><div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">' + itemCount + ' item' + (itemCount === 1 ? '' : 's') + ' · ' + (o.time || '') + (o.name ? ' · ' + escHtml(o.name) : '') + '</div></div>' +
         '<span style="display:flex;align-items:center;gap:10px;flex-shrink:0;">' +
           '<i class="ti ti-chevron-down" id="popup-ord-arrow-' + o.id + '" style="color:var(--ink-soft);transition:transform 0.15s;"></i>' +
           '<i class="ti ti-trash" onclick="event.stopPropagation();voidPopupOrder(\'' + o.id + '\')" style="cursor:pointer;color:var(--vermillion);padding:4px;font-size:15px;"></i>' +
         '</span>' +
       '</div>' +
-      '<div id="popup-ord-' + o.id + '" style="display:none;padding:0 0 0.6rem 0;">' + detail + '</div>' +
+      '<div id="popup-ord-' + o.id + '" style="display:none;padding:0 0 0.6rem 0;">' + detail + remarkHtml + '</div>' +
     '</div>';
   }).join('');
 }
@@ -5011,15 +5071,16 @@ function deletePopupMethod(id) {
   showToast('Payment removed');
 }
 
-function popupCsvCell(v) {
-  v = String(v == null ? '' : v);
-  if(/[",\n]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"';
-  return v;
-}
-
-function exportPopupSession() {
+async function exportPopupSession() {
   const orders = loadPopupOrdersData();
   if(orders.length === 0) { showToast('No orders to export'); return; }
+  showToast('Building PDF…');
+  try { await loadJsPDF(); } catch(e) { showToast('Could not load PDF tool — check connection.'); return; }
+  const jsPDF = window.jspdf.jsPDF;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const pageH = 297, mL = 15, mR = 195;
+  let y = 18;
+
   let total = 0; const byMethod = {}; const tally = {};
   orders.forEach(function(o){
     total += o.total || 0;
@@ -5027,32 +5088,76 @@ function exportPopupSession() {
     byMethod[meta.label] = (byMethod[meta.label] || 0) + (o.total || 0);
     o.items.forEach(function(i){ if(!tally[i.name]) tally[i.name] = { qty:0, amt:0, code:(i.code || '') }; tally[i.name].qty += i.qty; tally[i.name].amt += (parseFloat(i.price) || 0) * i.qty; });
   });
-  const rows = [];
-  rows.push(['Popup session export']);
-  rows.push(['Date', getToday()]);
-  rows.push(['Exported', getToday() + ' ' + mytClock()]);
-  rows.push(['Orders', orders.length]);
-  rows.push(['Total (RM)', total.toFixed(2)]);
-  Object.keys(byMethod).forEach(function(k){ rows.push([k + ' (RM)', byMethod[k].toFixed(2)]); });
-  rows.push([]);
-  rows.push(['Order', 'Time', 'Payment', 'Total (RM)', 'Items']);
-  orders.forEach(function(o){
-    const items = o.items.map(function(i){ const code = (i.code || '').trim(); return i.qty + '× ' + (code ? '[' + code + '] ' : '') + i.name; }).join('; ');
-    rows.push([o.no, o.time || '', orderPayMeta(o).label, (o.total || 0).toFixed(2), items]);
+
+  const bizCode = (localStorage.getItem('tally_biz_code') || '').toUpperCase();
+  const now = new Date();
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(28,26,22);
+  doc.text('Popup Session', mL, y); y += 7;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(120,120,120);
+  if(bizCode) { doc.text(bizCode, mL, y); y += 5; }
+  doc.text('Generated ' + formatDate(now) + ' ' + mytClock(now), mL, y); y += 6;
+  doc.setDrawColor(210,205,195); doc.line(mL,y,mR,y); y += 8;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(40,40,40);
+  doc.text('Summary', mL, y); y += 6;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(40,40,40);
+  doc.text('Orders', mL, y); doc.text(String(orders.length), mR, y, { align:'right' }); y += 6;
+  doc.setFont('helvetica','bold');
+  doc.text('Total', mL, y); doc.text('RM ' + total.toFixed(2), mR, y, { align:'right' }); y += 6;
+  doc.setFont('helvetica','normal'); doc.setTextColor(90,90,90);
+  Object.keys(byMethod).forEach(function(k){
+    doc.text('   ' + k, mL, y); doc.text('RM ' + byMethod[k].toFixed(2), mR, y, { align:'right' }); y += 5;
   });
-  rows.push([]);
-  rows.push(['Code', 'Item', 'Qty sold', 'Amount (RM)']);
-  Object.keys(tally).forEach(function(k){ rows.push([tally[k].code || '', k, tally[k].qty, tally[k].amt.toFixed(2)]); });
-  const csv = rows.map(function(r){ return r.map(popupCsvCell).join(','); }).join('\n');
-  try {
-    const blob = new Blob(['\ufeff' + csv], { type:'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'popup-' + getToday() + '.csv';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
-    showToast('Exported ' + orders.length + ' order' + (orders.length === 1 ? '' : 's'));
-  } catch(e) { showToast('Export failed: ' + (e && e.message ? e.message : 'unknown')); }
+  y += 4;
+  doc.setDrawColor(225,222,215); doc.line(mL,y,mR,y); y += 8;
+
+  if(y > pageH - 40) { doc.addPage(); y = 18; }
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(40,40,40);
+  doc.text('Items sold', mL, y); y += 6;
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(120,120,120);
+  doc.text('Code', mL, y); doc.text('Item', mL+18, y); doc.text('Qty', mR-40, y, { align:'right' }); doc.text('Amount', mR, y, { align:'right' }); y += 2;
+  doc.setDrawColor(225,222,215); doc.line(mL,y,mR,y); y += 5;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(40,40,40);
+  Object.keys(tally).forEach(function(k){
+    if(y > pageH - 20) { doc.addPage(); y = 18; }
+    const t = tally[k];
+    const nm = k.length > 42 ? k.slice(0,41) + '…' : k;
+    doc.text((t.code || '—'), mL, y);
+    doc.text(nm, mL+18, y);
+    doc.text(String(t.qty), mR-40, y, { align:'right' });
+    doc.text('RM ' + t.amt.toFixed(2), mR, y, { align:'right' });
+    y += 6;
+  });
+  y += 4;
+  doc.setDrawColor(225,222,215); doc.line(mL,y,mR,y); y += 8;
+
+  if(y > pageH - 40) { doc.addPage(); y = 18; }
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(40,40,40);
+  doc.text('Orders', mL, y); y += 6;
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(120,120,120);
+  doc.text('No', mL, y); doc.text('Time', mL+14, y); doc.text('Payment', mL+34, y); doc.text('Items', mL+62, y); doc.text('Total', mR, y, { align:'right' }); y += 2;
+  doc.setDrawColor(225,222,215); doc.line(mL,y,mR,y); y += 5;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(40,40,40);
+  orders.forEach(function(o){
+    let itemsStr = o.items.map(function(i){ const code = (i.code || '').trim(); return i.qty + '× ' + (code ? code + ' ' : '') + i.name; }).join(', ');
+    const extra = [];
+    if(o.name) extra.push('Name: ' + o.name);
+    if(o.remark) extra.push('Note: ' + o.remark);
+    if(extra.length) itemsStr += '\n' + extra.join('  ·  ');
+    const lines = doc.splitTextToSize(itemsStr, mR - (mL+62) - 22);
+    const rowH = Math.max(6, lines.length * 4.2);
+    if(y + rowH > pageH - 16) { doc.addPage(); y = 18; }
+    doc.text('#' + o.no, mL, y);
+    doc.text((o.time || ''), mL+14, y);
+    doc.text(orderPayMeta(o).label, mL+34, y);
+    doc.text(lines, mL+62, y);
+    doc.text('RM ' + (o.total || 0).toFixed(2), mR, y, { align:'right' });
+    y += rowH + 1.5;
+  });
+
+  doc.save('popup-' + getToday() + '.pdf');
+  showToast('PDF ready');
 }
 
 function renderInvoices() {
