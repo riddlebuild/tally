@@ -2012,7 +2012,9 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div id="popup-cart-total" style="display:none;"></div>
         <div id="popup-order-extra" style="display:none;margin-top:0.7rem;">
           <input class="inp" id="popup-cust-name" type="text" placeholder="Name (optional)" style="margin-bottom:6px;"/>
-          <input class="inp" id="popup-cust-remark" type="text" placeholder="Remark — only you see this (e.g. blue shirt)"/>
+          <input class="inp" id="popup-drink-remark" type="text" placeholder="Order note — e.g. less sugar (on receipt)"/>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-soft);margin:9px 0 4px;"><i class="ti ti-lock" style="font-size:12px;"></i> Private note — only you see this</div>
+          <input class="inp" id="popup-cust-remark" type="text" placeholder="e.g. blue shirt"/>
         </div>
         <div id="popup-pay-row" style="display:none;margin-top:0.7rem;">
           <div style="font-size:12px;color:var(--ink-soft);margin-bottom:5px;">Payment</div>
@@ -4608,6 +4610,7 @@ function loadPopup() {
   popupTotalsShown = false;
   if(popupTotalsTimer) { clearTimeout(popupTotalsTimer); popupTotalsTimer = null; }
   const nmEl = document.getElementById('popup-cust-name'); if(nmEl) nmEl.value = '';
+  const drEl = document.getElementById('popup-drink-remark'); if(drEl) drEl.value = '';
   const rmEl = document.getElementById('popup-cust-remark'); if(rmEl) rmEl.value = '';
   renderPopupGrid();
   renderPopupCart();
@@ -4771,12 +4774,13 @@ function recordPopupOrder() {
   const methods = loadPopupMethods();
   const sel = methods.find(function(m){ return m.id === popupPay; }) || methods[0] || { id:'pay_cash', label:'Cash', c:0 };
   const nmEl = document.getElementById('popup-cust-name'); const custName = nmEl ? (nmEl.value || '').trim() : '';
+  const drEl = document.getElementById('popup-drink-remark'); const custNote = drEl ? (drEl.value || '').trim() : '';
   const rmEl = document.getElementById('popup-cust-remark'); const custRemark = rmEl ? (rmEl.value || '').trim() : '';
   let total = 0;
   const items = popupCart.map(function(l){ const lt = (parseFloat(l.price) || 0) * l.qty; total += lt; return { name:l.name, code:(l.code || ''), price:parseFloat(l.price) || 0, qty:l.qty }; });
   const orders = loadPopupOrdersData();
   const no = orders.reduce(function(m,x){ return Math.max(m, x.no || 0); }, 0) + 1;
-  const order = { id:'o' + Date.now(), no:no, ts:Date.now(), time:mytClock(), items:items, total:total, pay:sel.id, payLabel:sel.label, payC:sel.c || 0, name:custName, remark:custRemark };
+  const order = { id:'o' + Date.now(), no:no, ts:Date.now(), time:mytClock(), items:items, total:total, pay:sel.id, payLabel:sel.label, payC:sel.c || 0, name:custName, note:custNote, remark:custRemark };
   orders.push(order);
   savePopupOrdersData(orders);
   popupCart = [];
@@ -4784,6 +4788,7 @@ function recordPopupOrder() {
   popupTotalsShown = false;
   if(popupTotalsTimer) { clearTimeout(popupTotalsTimer); popupTotalsTimer = null; }
   if(nmEl) nmEl.value = '';
+  if(drEl) drEl.value = '';
   if(rmEl) rmEl.value = '';
   renderPopupCart();
   renderPopupOrders();
@@ -4813,6 +4818,7 @@ function buildPopupReceipt(o) {
       (o.name ? '<div style="font-size:13px;color:#c2407a;margin-top:2px;">' + escHtml(o.name) + '</div>' : '') +
     '</div>' +
     '<div style="border-top:1px solid var(--cream-dark);border-bottom:1px solid var(--cream-dark);padding:0.5rem 0;margin-bottom:0.7rem;">' + itemsHtml + '</div>' +
+    (o.note ? '<div style="font-size:12px;color:var(--ink);background:var(--cream);border-radius:8px;padding:7px 10px;margin-bottom:0.7rem;"><span style="color:var(--ink-soft);">Note:</span> ' + escHtml(o.note) + '</div>' : '') +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;"><span style="font-size:14px;font-weight:600;color:var(--ink);">Total</span><span style="font-size:16px;font-weight:700;color:var(--ink);">RM ' + fmtMoney(o.total) + '</span></div>' +
     '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);"><span>Paid by</span><span>' + escHtml(meta.label) + '</span></div>' +
     '<div style="text-align:center;font-size:11px;color:var(--ink-soft);margin-top:0.9rem;">Screenshot this to collect your order</div>';
@@ -4853,6 +4859,7 @@ function renderPopupOrders() {
       const code = (i.code || '').trim();
       return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-mid);padding:2px 0;"><span><span style="font-weight:700;color:#c2407a;">' + (idx+1) + '/' + dtotal + '</span>  ' + (code ? '[' + escHtml(code) + '] ' : '') + escHtml(i.name) + '</span><span>RM ' + fmtMoney(parseFloat(i.price) || 0) + '</span></div>';
     }).join('');
+    const noteHtml = o.note ? '<div style="font-size:11px;color:var(--ink-mid);background:var(--cream);border-radius:6px;padding:4px 7px;margin-top:4px;">Order note: ' + escHtml(o.note) + '</div>' : '';
     const remarkHtml = o.remark ? '<div style="font-size:11px;color:var(--amber);background:var(--amber-light);border-radius:6px;padding:4px 7px;margin-top:4px;">Note (private): ' + escHtml(o.remark) + '</div>' : '';
     return '<div style="border-bottom:1px solid var(--cream-dark);">' +
       '<div onclick="togglePopupOrder(\'' + o.id + '\')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0.6rem 0;cursor:pointer;">' +
@@ -4863,7 +4870,7 @@ function renderPopupOrders() {
           '<i class="ti ti-trash" onclick="event.stopPropagation();voidPopupOrder(\'' + o.id + '\')" style="cursor:pointer;color:var(--vermillion);padding:4px;font-size:15px;"></i>' +
         '</span>' +
       '</div>' +
-      '<div id="popup-ord-' + o.id + '" style="display:none;padding:0 0 0.6rem 0;">' + detail + remarkHtml + '</div>' +
+      '<div id="popup-ord-' + o.id + '" style="display:none;padding:0 0 0.6rem 0;">' + detail + noteHtml + remarkHtml + '</div>' +
     '</div>';
   }).join('');
 }
@@ -5155,6 +5162,7 @@ async function exportPopupSession() {
     let itemsStr = o.items.map(function(i){ const code = (i.code || '').trim(); return i.qty + '× ' + (code ? code + ' ' : '') + i.name; }).join(', ');
     const extra = [];
     if(o.name) extra.push('Name: ' + o.name);
+    if(o.note) extra.push('Order: ' + o.note);
     if(o.remark) extra.push('Note: ' + o.remark);
     if(extra.length) itemsStr += '\n' + extra.join('  ·  ');
     const lines = doc.splitTextToSize(itemsStr, mR - (mL+62) - 22);
