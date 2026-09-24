@@ -437,7 +437,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="menu-text"><strong>Popup POS</strong><span>Take orders at an event</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
       </div>
-      <div class="menu-item" onclick="go('s-popup-settings')">
+      <div class="menu-item staff-hide" onclick="go('s-popup-settings')">
         <div class="menu-icon" style="background:#fdeef5;color:#c2407a;"><i class="ti ti-settings"></i></div>
         <div class="menu-text"><strong>POS settings</strong><span>Menu items &amp; end-of-day totals</span></div>
         <i class="ti ti-chevron-right menu-arrow"></i>
@@ -1999,7 +1999,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
   <div class="topbar" style="border-bottom-color:#fdeef5;">
     <div class="back-btn" onclick="go('s-home')"><i class="ti ti-arrow-left" style="font-size:16px"></i></div>
     <span class="topbar-title">Popup POS</span>
-    <div onclick="go('s-popup-settings')" title="POS settings" style="width:32px;height:32px;border-radius:8px;background:#fdeef5;display:flex;align-items:center;justify-content:center;color:#c2407a;cursor:pointer;flex-shrink:0;"><i class="ti ti-settings" style="font-size:17px;"></i></div>
+    <div id="popup-settings-gear" onclick="go('s-popup-settings')" title="POS settings" style="width:32px;height:32px;border-radius:8px;background:#fdeef5;display:flex;align-items:center;justify-content:center;color:#c2407a;cursor:pointer;flex-shrink:0;"><i class="ti ti-settings" style="font-size:17px;"></i></div>
   </div>
   <div style="overflow-y:auto;flex:1;">
     <div style="padding:0.9rem 1.1rem 2rem;">
@@ -2008,6 +2008,10 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
       <div id="popup-grid" style="margin-bottom:1rem;"></div>
       <div class="card" id="popup-order-card">
         <div class="card-head" style="color:#c2407a;"><i class="ti ti-shopping-cart" style="font-size:14px"></i> Current order <span id="popup-current-no" style="margin-left:auto;font-size:12px;font-weight:600;background:#fdeef5;color:#c2407a;padding:2px 10px;border-radius:20px;letter-spacing:0;text-transform:none;"></span></div>
+        <div id="popup-edit-banner" style="display:none;align-items:center;justify-content:space-between;gap:8px;background:var(--amber-light);color:var(--amber);border-radius:8px;padding:6px 10px;margin-bottom:8px;font-size:12px;">
+          <span>Editing order</span>
+          <button onclick="cancelPopupOrderEdit()" style="background:none;border:none;color:var(--amber);font-weight:600;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;">Cancel</button>
+        </div>
         <div id="popup-cart"></div>
         <div id="popup-cart-total" style="display:none;"></div>
         <div id="popup-order-extra" style="display:none;margin-top:0.7rem;">
@@ -2429,7 +2433,7 @@ function go(id) {
     const role = currentUser.role;
     if((id === 's-dev' || id === 's-add-client' || id === 's-edit-client') && role !== 'developer') { showToast('Restricted'); return; }
     if(role === 'staff') {
-      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-margin-ranking','s-add-product','s-edit-product','s-reserve','s-rankings','s-invoices','s-invoice-sales','s-invoice-report','s-issue','s-promo','s-projects','s-project-detail','s-counters'];
+      const restricted = ['s-insights','s-outlets','s-settings','s-add-outlet','s-edit-outlet','s-add-staff','s-edit-staff','s-ingredients','s-add-ingredient','s-edit-ingredient','s-costing','s-margin-ranking','s-add-product','s-edit-product','s-reserve','s-rankings','s-invoices','s-invoice-sales','s-invoice-report','s-issue','s-promo','s-projects','s-project-detail','s-counters','s-popup-settings'];
       if(restricted.indexOf(id) > -1) { showToast('Access restricted'); return; }
     }
     if(role === 'admin') {
@@ -4562,6 +4566,7 @@ let popupCart = [];
 let popupPay = null;
 let popupMenuEditId = null;
 let popupMethodEditId = null;
+let popupOrderEditId = null;
 let popupTotalsShown = false;
 let popupTotalsTimer = null;
 
@@ -4589,6 +4594,34 @@ function loadPopupMethods() {
 function savePopupMethods(arr) { try { localStorage.setItem(popupKey('methods'), JSON.stringify(arr)); } catch(e) {} }
 function firstPopupMethodId() { const m = loadPopupMethods(); return m.length ? m[0].id : 'pay_cash'; }
 
+async function syncPopupConfigFromServer() {
+  if(typeof sb === 'undefined' || !currentTenantId) return;
+  try {
+    const res = await sb.from('popup_config').select('menu,methods').eq('tenant_id', currentTenantId);
+    if(res && res.data && res.data[0]) {
+      const row = res.data[0];
+      if(Array.isArray(row.menu)) localStorage.setItem(popupKey('menu'), JSON.stringify(row.menu));
+      if(Array.isArray(row.methods) && row.methods.length) localStorage.setItem(popupKey('methods'), JSON.stringify(row.methods));
+    } else if(loadPopupMenuData().length) {
+      await pushPopupConfigToServer();
+    }
+  } catch(e) {}
+}
+
+async function pushPopupConfigToServer() {
+  if(typeof sb === 'undefined' || !currentTenantId) return;
+  const menu = loadPopupMenuData();
+  const methods = loadPopupMethods();
+  try {
+    const existing = await sb.from('popup_config').select('id').eq('tenant_id', currentTenantId);
+    if(existing && existing.data && existing.data[0]) {
+      await sb.from('popup_config').update({ menu:menu, methods:methods, updated_at:new Date().toISOString() }).eq('id', existing.data[0].id);
+    } else {
+      await sb.from('popup_config').insert({ tenant_id:currentTenantId, menu:menu, methods:methods });
+    }
+  } catch(e) { showToast('Saved on this phone — sync failed'); }
+}
+
 function orderPayMeta(o) {
   if(o.payLabel) return { label:o.payLabel, c:o.payC || 0 };
   if(o.pay === 'qr') return { label:'QR', c:1 };
@@ -4612,11 +4645,16 @@ function loadPopup() {
   const nmEl = document.getElementById('popup-cust-name'); if(nmEl) nmEl.value = '';
   const drEl = document.getElementById('popup-drink-remark'); if(drEl) drEl.value = '';
   const rmEl = document.getElementById('popup-cust-remark'); if(rmEl) rmEl.value = '';
+  popupOrderEditId = null;
+  const gear = document.getElementById('popup-settings-gear'); if(gear) gear.style.display = canEditEntries() ? 'flex' : 'none';
+  const banner = document.getElementById('popup-edit-banner'); if(banner) banner.style.display = 'none';
+  const rec = document.getElementById('popup-record-btn'); if(rec) rec.textContent = 'Record order';
   renderPopupGrid();
   renderPopupCart();
   renderPopupOrders();
   renderPopupSummary();
   setPopupCurrentNo();
+  if(currentTenantId) syncPopupConfigFromServer().then(function(){ renderPopupGrid(); renderPopupCart(); });
 }
 
 function setPopupCurrentNo() {
@@ -4769,6 +4807,40 @@ function setPopupPay(id) {
   if(rec) rec.style.background = sel ? popupPalette(sel.c).fg : '#4a7c59';
 }
 
+function editPopupOrder(id) {
+  const orders = loadPopupOrdersData();
+  const o = orders.find(function(x){ return x.id === id; });
+  if(!o) return;
+  const menu = loadPopupMenuData();
+  popupCart = o.items.map(function(it, idx){
+    const m = menu.find(function(x){ return x.name === it.name && (x.code || '') === (it.code || ''); });
+    return { id: m ? m.id : ('edit_' + idx + '_' + Date.now()), name:it.name, code:(it.code || ''), price:parseFloat(it.price) || 0, qty:it.qty };
+  });
+  popupPay = o.pay || firstPopupMethodId();
+  popupOrderEditId = id;
+  const nmEl = document.getElementById('popup-cust-name'); if(nmEl) nmEl.value = o.name || '';
+  const drEl = document.getElementById('popup-drink-remark'); if(drEl) drEl.value = o.note || '';
+  const rmEl = document.getElementById('popup-cust-remark'); if(rmEl) rmEl.value = o.remark || '';
+  renderPopupCart();
+  const banner = document.getElementById('popup-edit-banner');
+  if(banner) { banner.style.display = 'flex'; const s = banner.querySelector('span'); if(s) s.textContent = 'Editing order #' + o.no; }
+  const rec = document.getElementById('popup-record-btn'); if(rec) rec.textContent = 'Update order';
+  const chip = document.getElementById('popup-current-no'); if(chip) chip.textContent = '#' + o.no;
+  const card = document.getElementById('popup-order-card'); if(card) card.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function cancelPopupOrderEdit() {
+  popupOrderEditId = null;
+  popupCart = [];
+  const nmEl = document.getElementById('popup-cust-name'); if(nmEl) nmEl.value = '';
+  const drEl = document.getElementById('popup-drink-remark'); if(drEl) drEl.value = '';
+  const rmEl = document.getElementById('popup-cust-remark'); if(rmEl) rmEl.value = '';
+  const banner = document.getElementById('popup-edit-banner'); if(banner) banner.style.display = 'none';
+  const rec = document.getElementById('popup-record-btn'); if(rec) rec.textContent = 'Record order';
+  renderPopupCart();
+  setPopupCurrentNo();
+}
+
 function recordPopupOrder() {
   if(popupCart.length === 0) return;
   const methods = loadPopupMethods();
@@ -4779,6 +4851,31 @@ function recordPopupOrder() {
   let total = 0;
   const items = popupCart.map(function(l){ const lt = (parseFloat(l.price) || 0) * l.qty; total += lt; return { name:l.name, code:(l.code || ''), price:parseFloat(l.price) || 0, qty:l.qty }; });
   const orders = loadPopupOrdersData();
+  if(popupOrderEditId) {
+    const idx = orders.findIndex(function(x){ return x.id === popupOrderEditId; });
+    if(idx > -1) {
+      orders[idx].items = items;
+      orders[idx].total = total;
+      orders[idx].pay = sel.id; orders[idx].payLabel = sel.label; orders[idx].payC = sel.c || 0;
+      orders[idx].name = custName; orders[idx].note = custNote; orders[idx].remark = custRemark;
+      savePopupOrdersData(orders);
+    }
+    const updated = (idx > -1) ? orders[idx] : null;
+    popupOrderEditId = null;
+    popupCart = [];
+    popupPay = firstPopupMethodId();
+    if(nmEl) nmEl.value = '';
+    if(drEl) drEl.value = '';
+    if(rmEl) rmEl.value = '';
+    const banner = document.getElementById('popup-edit-banner'); if(banner) banner.style.display = 'none';
+    const recBtn = document.getElementById('popup-record-btn'); if(recBtn) recBtn.textContent = 'Record order';
+    renderPopupCart();
+    renderPopupOrders();
+    renderPopupSummary();
+    setPopupCurrentNo();
+    if(updated) showPopupReceipt(updated);
+    return;
+  }
   const no = orders.reduce(function(m,x){ return Math.max(m, x.no || 0); }, 0) + 1;
   const order = { id:'o' + Date.now(), no:no, ts:Date.now(), time:mytClock(), items:items, total:total, pay:sel.id, payLabel:sel.label, payC:sel.c || 0, name:custName, note:custNote, remark:custRemark };
   orders.push(order);
@@ -4866,6 +4963,7 @@ function renderPopupOrders() {
         '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--ink);">#' + o.no + ' · RM ' + fmtMoney(o.total) + ' ' + badge + '</div><div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">' + itemCount + ' item' + (itemCount === 1 ? '' : 's') + ' · ' + (o.time || '') + (o.name ? ' · ' + escHtml(o.name) : '') + '</div></div>' +
         '<span style="display:flex;align-items:center;gap:10px;flex-shrink:0;">' +
           '<i class="ti ti-chevron-down" id="popup-ord-arrow-' + o.id + '" style="color:var(--ink-soft);transition:transform 0.15s;"></i>' +
+          '<i class="ti ti-pencil" onclick="event.stopPropagation();editPopupOrder(\'' + o.id + '\')" style="cursor:pointer;color:var(--ink-soft);padding:4px;font-size:15px;"></i>' +
           '<i class="ti ti-receipt" onclick="event.stopPropagation();reshowPopupReceipt(\'' + o.id + '\')" style="cursor:pointer;color:#c2407a;padding:4px;font-size:15px;"></i>' +
           '<i class="ti ti-trash" onclick="event.stopPropagation();voidPopupOrder(\'' + o.id + '\')" style="cursor:pointer;color:var(--vermillion);padding:4px;font-size:15px;"></i>' +
         '</span>' +
@@ -4931,6 +5029,7 @@ function loadPopupSettings() {
   renderPopupMenuList();
   renderPopupMethodsList();
   renderPopupSettingsSummary();
+  if(currentTenantId) syncPopupConfigFromServer().then(function(){ renderPopupMenuList(); renderPopupMethodsList(); });
 }
 
 function renderPopupSettingsSummary() {
@@ -4976,6 +5075,7 @@ function renderPopupMenuList() {
 }
 
 function savePopupMenuItem() {
+  if(!canEditEntries()) { showToast('Only owner or admin can edit the menu.'); return; }
   const name = (document.getElementById('pmenu-name').value || '').trim();
   const code = (document.getElementById('pmenu-code').value || '').trim();
   const cat = (document.getElementById('pmenu-cat').value || '').trim();
@@ -4992,6 +5092,7 @@ function savePopupMenuItem() {
   savePopupMenuData(menu);
   cancelPopupMenuEdit();
   renderPopupMenuList();
+  pushPopupConfigToServer();
   showToast(wasEdit ? 'Item updated' : 'Item added');
 }
 
@@ -5019,12 +5120,14 @@ function cancelPopupMenuEdit() {
 }
 
 function deletePopupMenuItem(id) {
+  if(!canEditEntries()) { showToast('Only owner or admin can edit the menu.'); return; }
   if(!confirm('Delete this item from the popup menu?')) return;
   let menu = loadPopupMenuData();
   menu = menu.filter(function(x){ return x.id !== id; });
   savePopupMenuData(menu);
   if(popupMenuEditId === id) cancelPopupMenuEdit();
   renderPopupMenuList();
+  pushPopupConfigToServer();
   showToast('Item deleted');
 }
 
@@ -5044,6 +5147,7 @@ function renderPopupMethodsList() {
 }
 
 function savePopupMethod() {
+  if(!canEditEntries()) { showToast('Only owner or admin can edit payments.'); return; }
   const label = (document.getElementById('pmethod-label').value || '').trim();
   if(!label) { showToast('Enter a payment name!'); return; }
   const wasEdit = !!popupMethodEditId;
@@ -5057,6 +5161,7 @@ function savePopupMethod() {
   savePopupMethods(methods);
   cancelPopupMethodEdit();
   renderPopupMethodsList();
+  pushPopupConfigToServer();
   showToast(wasEdit ? 'Payment updated' : 'Payment added');
 }
 
@@ -5080,6 +5185,7 @@ function cancelPopupMethodEdit() {
 }
 
 function deletePopupMethod(id) {
+  if(!canEditEntries()) { showToast('Only owner or admin can edit payments.'); return; }
   const methods = loadPopupMethods();
   if(methods.length <= 1) { showToast('Keep at least one payment method'); return; }
   if(!confirm('Delete this payment method? Past orders keep their label.')) return;
@@ -5087,6 +5193,7 @@ function deletePopupMethod(id) {
   savePopupMethods(next);
   if(popupMethodEditId === id) cancelPopupMethodEdit();
   renderPopupMethodsList();
+  pushPopupConfigToServer();
   showToast('Payment removed');
 }
 
