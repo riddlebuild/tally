@@ -2080,6 +2080,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div class="card-head" style="color:#c2407a;"><i class="ti ti-credit-card" style="font-size:14px"></i> Accepted</div>
         <div id="pmethod-list"></div>
       </div>
+      <button onclick="forcePopupSync()" style="width:100%;margin-top:1rem;padding:10px;background:none;border:1px solid #c2407a;border-radius:12px;color:#c2407a;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;"><i class="ti ti-refresh" style="font-size:14px;"></i> Sync menu to all devices</button>
       <div class="section-lbl" style="margin-top:1.4rem;">Session</div>
       <div class="card" style="margin-top:0.6rem;">
         <div id="popup-settings-summary"></div>
@@ -4596,30 +4597,57 @@ function firstPopupMethodId() { const m = loadPopupMethods(); return m.length ? 
 
 async function syncPopupConfigFromServer() {
   if(typeof sb === 'undefined' || !currentTenantId) return;
-  try {
-    const res = await sb.from('popup_config').select('menu,methods').eq('tenant_id', currentTenantId);
-    if(res && res.data && res.data[0]) {
-      const row = res.data[0];
-      if(Array.isArray(row.menu)) localStorage.setItem(popupKey('menu'), JSON.stringify(row.menu));
-      if(Array.isArray(row.methods) && row.methods.length) localStorage.setItem(popupKey('methods'), JSON.stringify(row.methods));
-    } else if(loadPopupMenuData().length) {
-      await pushPopupConfigToServer();
-    }
-  } catch(e) {}
+  const res = await sb.from('popup_config').select('menu,methods').eq('tenant_id', currentTenantId);
+  if(res.error) return;
+  if(res.data && res.data[0]) {
+    const row = res.data[0];
+    if(Array.isArray(row.menu)) localStorage.setItem(popupKey('menu'), JSON.stringify(row.menu));
+    if(Array.isArray(row.methods) && row.methods.length) localStorage.setItem(popupKey('methods'), JSON.stringify(row.methods));
+  } else if(loadPopupMenuData().length) {
+    await pushPopupConfigToServer();
+  }
 }
 
 async function pushPopupConfigToServer() {
-  if(typeof sb === 'undefined' || !currentTenantId) return;
+  if(typeof sb === 'undefined' || !currentTenantId) return { error:{ message:'not signed in' } };
   const menu = loadPopupMenuData();
   const methods = loadPopupMethods();
-  try {
-    const existing = await sb.from('popup_config').select('id').eq('tenant_id', currentTenantId);
-    if(existing && existing.data && existing.data[0]) {
-      await sb.from('popup_config').update({ menu:menu, methods:methods, updated_at:new Date().toISOString() }).eq('id', existing.data[0].id);
-    } else {
-      await sb.from('popup_config').insert({ tenant_id:currentTenantId, menu:menu, methods:methods });
-    }
-  } catch(e) { showToast('Saved on this phone — sync failed'); }
+  const existing = await sb.from('popup_config').select('id').eq('tenant_id', currentTenantId);
+  if(existing.error) { showToast('Sync failed: ' + existing.error.message); return existing; }
+  let r;
+  if(existing.data && existing.data[0]) {
+    r = await sb.from('popup_config').update({ menu:menu, methods:methods, updated_at:new Date().toISOString() }).eq('id', existing.data[0].id);
+  } else {
+    r = await sb.from('popup_config').insert({ tenant_id:currentTenantId, menu:menu, methods:methods });
+  }
+  if(r && r.error) showToast('Sync failed: ' + r.error.message);
+  return r || {};
+}
+
+async function forcePopupSync() {
+  if(typeof sb === 'undefined' || !currentTenantId) { showToast('Not signed in'); return; }
+  showToast('Syncing…');
+  const menu = loadPopupMenuData();
+  const methods = loadPopupMethods();
+  const existing = await sb.from('popup_config').select('id').eq('tenant_id', currentTenantId);
+  if(existing.error) { showToast('Sync failed: ' + existing.error.message); return; }
+  let w;
+  if(existing.data && existing.data[0]) {
+    w = await sb.from('popup_config').update({ menu:menu, methods:methods, updated_at:new Date().toISOString() }).eq('id', existing.data[0].id);
+  } else {
+    w = await sb.from('popup_config').insert({ tenant_id:currentTenantId, menu:menu, methods:methods });
+  }
+  if(w && w.error) { showToast('Sync failed: ' + w.error.message); return; }
+  const res = await sb.from('popup_config').select('menu,methods').eq('tenant_id', currentTenantId);
+  if(res.error) { showToast('Sync failed: ' + res.error.message); return; }
+  if(res.data && res.data[0]) {
+    const row = res.data[0];
+    if(Array.isArray(row.menu)) localStorage.setItem(popupKey('menu'), JSON.stringify(row.menu));
+    if(Array.isArray(row.methods) && row.methods.length) localStorage.setItem(popupKey('methods'), JSON.stringify(row.methods));
+  }
+  renderPopupMenuList();
+  renderPopupMethodsList();
+  showToast('Synced · ' + loadPopupMenuData().length + ' menu items');
 }
 
 function orderPayMeta(o) {
