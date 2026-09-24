@@ -2081,6 +2081,7 @@ html,body{height:100%;background:var(--cream);font-family:'DM Sans',sans-serif;c
         <div id="pmethod-list"></div>
       </div>
       <button onclick="forcePopupSync()" style="width:100%;margin-top:1rem;padding:10px;background:none;border:1px solid #c2407a;border-radius:12px;color:#c2407a;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;"><i class="ti ti-refresh" style="font-size:14px;"></i> Sync menu to all devices</button>
+      <div id="popup-sync-status" style="font-size:11px;color:var(--ink-soft);margin-top:6px;text-align:center;line-height:1.4;"></div>
       <div class="section-lbl" style="margin-top:1.4rem;">Session</div>
       <div class="card" style="margin-top:0.6rem;">
         <div id="popup-settings-summary"></div>
@@ -4647,7 +4648,23 @@ async function forcePopupSync() {
   }
   renderPopupMenuList();
   renderPopupMethodsList();
+  refreshPopupSyncStatus();
   showToast('Synced · ' + loadPopupMenuData().length + ' menu items');
+}
+
+async function refreshPopupSyncStatus() {
+  const el = document.getElementById('popup-sync-status'); if(!el) return;
+  if(typeof sb === 'undefined' || !currentTenantId) { el.textContent = 'Not signed in'; return; }
+  const tid = String(currentTenantId).slice(0, 8);
+  const res = await sb.from('popup_config').select('menu').eq('tenant_id', currentTenantId);
+  if(res.error) {
+    const m = res.error.message || 'unknown';
+    if(/exist|relation|42P01/i.test(m)) el.innerHTML = '<span style="color:var(--vermillion);">Shared table not found — the CREATE TABLE SQL still needs to be run.</span>';
+    else el.innerHTML = '<span style="color:var(--vermillion);">Sync error: ' + escHtml(m) + '</span>';
+    return;
+  }
+  const n = (res.data && res.data[0] && Array.isArray(res.data[0].menu)) ? res.data[0].menu.length : 0;
+  el.textContent = 'On server: ' + n + ' item' + (n === 1 ? '' : 's') + ' · business ' + tid;
 }
 
 function orderPayMeta(o) {
@@ -5057,6 +5074,7 @@ function loadPopupSettings() {
   renderPopupMenuList();
   renderPopupMethodsList();
   renderPopupSettingsSummary();
+  refreshPopupSyncStatus();
   if(currentTenantId) syncPopupConfigFromServer().then(function(){ renderPopupMenuList(); renderPopupMethodsList(); });
 }
 
